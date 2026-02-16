@@ -30,10 +30,11 @@ channel on our Discord, where we can offer more help and guidance on
 contributing to Panda3D.
 
 If you haven't built Panda3D before, ensure you have an understanding of how to 
-use the [makepanda](doc/INSTALL) system to build the engine. The project 
-[README](README.md) may offer more detailed information, and you can always 
-ask questions in the Discord server or on the 
-[forums](https://discourse.Panda3D.org/).
+use either [CMake](cmake/README.md) or the [makepanda](doc/INSTALL) system to 
+build the engine. Over time, we intend to transition to using CMake as our 
+preferred build system, so use that if you're not sure which to use. The 
+project [README](README.md) may offer more information, and you can always ask 
+questions in the Discord server or on the [forums](https://discourse.Panda3D.org/). 
 
 We also recommend that you familiarize yourself with the established [coding
 style and design patterns](doc/CODING_STYLE.md) of Panda3D, as any 
