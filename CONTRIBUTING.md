@@ -13,7 +13,7 @@ Note, the 'good first issue' tag is maintained with issues that could be easily
 resolved, but are minor enough to be valuable to keep as learning/teaching tools 
 for new contributors. If you want to contribute, try starting with one of those! 
 Please note; the value of submitting a *quality* PR for one of these issues is 
-in the experience and skills you will gain working with Panda3d. It would be 
+in the experience and skills you will gain working with Panda3D. It would be 
 pointless and use much more time to review these were they done with LLM agents, 
 as the experience would be lost and the community would not continue to grow. 
 Please don't contribute generated code for the 'good first issue's, and take 
@@ -26,14 +26,14 @@ In order for a change to be accepted, it must be implemented in a way that fits
 the general design principles of the Panda3D API, and with the general
 priorities of the team.  You *must* discuss any changes with other developers. 
 You may use GitHub Issues for this, but we invite you to visit the #development 
-channel on our Discord (or #panda3d-devel on Libera Chat), where we can offer 
-more help and guidance on contributing to Panda3d.
+channel on our Discord, where we can offer more help and guidance on 
+contributing to Panda3D.
 
-If you haven't built Panda3d before, ensure you have an understanding of how to 
+If you haven't built Panda3D before, ensure you have an understanding of how to 
 use the [makepanda](doc/INSTALL) system to build the engine. The project 
 [README](README.md) may offer more detailed information, and you can always 
 ask questions in the Discord server or on the 
-[forums](https://discourse.panda3d.org/).
+[forums](https://discourse.Panda3D.org/).
 
 We also recommend that you familiarize yourself with the established [coding
 style and design patterns](doc/CODING_STYLE.md) of Panda3D, as any 
@@ -57,7 +57,7 @@ Submitting a PR requires you to:
 3) push your changes to this branch,
 4) review that your changes meet the style guide, design patterns, systems,
 and the copyright standards are met (you own the rights to all code), and
-that your code does not break existing Panda3d API uses. You should now
+that your code does not break existing Panda3D API uses. You should now
 establish it is covered by the test suite where required, and run tests,
 5) then you can request that this branch is merged into the upstream branch.
 Each pull request is reviewed by a maintainer and automatically tested for
@@ -65,7 +65,7 @@ regressions and unit test coverage.
 6) The maintainer will suggest any changes, which you can add by committing
 more code to the same branch.  You may need to do a force push to make these
 changes.  Once the change is in an acceptable state, the maintainer will merge
-your change into the appropriate branch of the Panda3d repository.
+your change into the appropriate branch of the Panda3D repository.
 
 #### Preparing to Submit a change
 1) To make it easier for the maintainer to review your changes, prepare a clear
@@ -84,7 +84,7 @@ uncertain that you're going in the right direction, you should definitely mark
 the PR as a draft.
 
 For more information on making a contribution, please visit the
-[Get Involved](https://www.panda3d.org/get-involved/) page on our website, or
+[Get Involved](https://www.Panda3D.org/get-involved/) page on our website, or
 the excellent [Open Source Guide](https://opensource.guide/how-to-contribute/).
 
 ## Copyright Notice
