@@ -24,11 +24,9 @@
 #include "reMutex.h"
 #include "vector_string.h"
 
-
 #include "miniaudio.h"
 
 class MaAudioSound;
-
 
 class EXPCL_MA_AUDIO MaAudioManager : public AudioManager {
     friend class MaAudioSound;
@@ -56,7 +54,7 @@ class EXPCL_MA_AUDIO MaAudioManager : public AudioManager {
 
         virtual void set_volume(PN_stdfloat volume);
         virtual PN_stdfloat get_volume() const;
-        
+
         virtual void set_active(bool flag);
         virtual bool get_active() const;
 
@@ -89,12 +87,12 @@ class EXPCL_MA_AUDIO MaAudioManager : public AudioManager {
 
         virtual void audio_3d_set_drop_off_factor(PN_stdfloat factor);
         virtual PN_stdfloat audio_3d_get_drop_off_factor() const;
-        
+
         virtual void output(std::ostream &out) const;
         virtual void write(std::ostream &out) const;
         virtual void register_AudioManager_creator(Create_AudioManager_proc* proc);
-        
+
         virtual TypeHandle get_type() const;
         virtual TypeHandle force_init_type();
-    
+
 }
