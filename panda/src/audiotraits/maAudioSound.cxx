@@ -33,5 +33,48 @@ MaAudioSound(MaAudioManager *manager,
   _cone_outer_angle(360.0f),
   _cone_outer_gain(0.0f)
 {
+  _location[0] = 0.0f;
+  _location[1] = 0.0f;
+  _location[2] = 0.0f;
+  _velocity[0] = 0.0f;
+  _velocity[1] = 0.0f;
+  _velocity[2] = 0.0f;
+  _direction[0] = 0.0f;
+  _direction[1] = 0.0f;
+  _direction[2] = 0.0f;
 
+  //ReMutexHolder holder(MaAudioManager::_lock);
+
+  if (!require_sound_data()) {
+    cleanup();
+    return;
+  }
+
+  _length = _sd->_length;
+  if (positional) {
+    if (_sd->_channels != 1) {
+      audio_warning("stereo sound " << file_name << " will not be spatialized");
+    }
+  }
+
+  ma_resource_manager_data_source data_src;
+  //int flags = (loop_sound) ? MA_RESOURCE_MANAGER_DATA_SOURCE_FLAG_LOOPING : 0;
+  int flags = MA_RESOURCE_MANAGER_DATA_SOURCE_FLAG_STREAM; // decode in 1s pages
+  //int flags = MA_RESOURCE_MANAGER_DATA_SOURCE_FLAG_DECODE; // decode to ram
+  //int flags = MA_RESOURCE_MANAGER_DATA_SOURCE_FLAG_ASYNC; load to ram later
+  check_ma(ma_resource_manager_data_source_init(manager->get_resource_mgr(),
+        file_name.get_fullpath(), flags, &data_src));
+
+  _comment = std::move(_sd->_comment);
+  release_sound_data(false);
+}
+
+MaAudioSound::
+~MaAudioSound() {
+  cleanup();
+}
+
+void MaAudioSound::
+cleanup() {
+  ma_resource_manager_data_source_uninit(&data_src);
 }
