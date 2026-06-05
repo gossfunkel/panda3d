@@ -65,6 +65,22 @@ MaAudioManager() {
   ma_engine_start(&audio_engine);
 }
 
+/**
+ * This is what creates a sound instance.
+ */
+PT(AudioSound) MaAudioManager::
+get_sound(const Filename &file_name, bool positional, int mode) {
+  int flags = 0;
+  // TODO put data_src in MaAudioSound for refcount and destructor -
+  //      pass the constructor a PT(_resource_mgr)?
+  ma_resource_manager_data_source data_src;
+  //int flags = (loop_sound) ? MA_RESOURCE_MANAGER_DATA_SOURCE_FLAG_LOOPING : 0;
+  check_ma(ma_resource_manager_data_source_init(_resource_mgr,
+        file_name.get_fullpath(), flags, &data_src));
+  // TODO put in ~MaAudioSound()
+  ma_resource_manager_data_source_uninit(&data_src);
+}
+
 ~MaAudioManager() {
   ma_device_uninit(&_device);
   ma_engine_uninit(&_audio_engine);
