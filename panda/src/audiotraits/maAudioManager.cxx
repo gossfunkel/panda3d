@@ -1,10 +1,7 @@
 #include "maAudioManager.h"
 
 #define check_ma(result, failcond, outstr) if ((result) != MA_SUCCESS) {  \
-  (failcond);                                                             \
-  std::cerr << (outstr) << std::endl;                                   \
-  return NULL;                                                            \
-}
+  (failcond); audio_error(outstr); return NULL; }
 
 MaAudioManager::
 MaAudioManager() {
@@ -36,8 +33,13 @@ MaAudioManager() {
     resource_mgr_conf.decodedFormat = _device.playback.format;
     resource_mgr_conf.decodedChannels = _device.playback.channels;
     resource_mgr_conf.decodedSampleRate = _device.sampleRate;
-    //resource_mgr_conf.jobThreadCount = 2;
-    //resource_mgr_conf.pVFS = _vfs;
+#ifdef HAVE_THREADS
+    resource_mgr_conf.jobThreadCount = 2;
+#endif
+
+    // this will probably be removed, but just in case, here's where we
+    //  can assign a custom VFS to the resource mgr
+    //resource_mgr_conf.pVFS = VirtualFileSystem::get_global_pointer();
     check_ma(
       ma_resource_manager_init(&resource_mgr_conf, &_resource_mgr),
       ma_device_uninit(&_device),
