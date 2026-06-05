@@ -1,11 +1,22 @@
 #include "maAudioManager.h"
 
+using std::string;
+
+TypeHandle MaAudioManager::_type_handle;
+
+ReMutex MaAudioManager::_lock;
+int MaAudioManager::_active_managers = 0;
+bool MaAudioManager::_ma_active = false;
+ma_device *MaAudioManager::_device = nullptr;
+ma_resource_manager_config MaAudioManager::_resource_mgr_conf;
+ma_resource_manager MaAudioManager::_resource_mgr;
+
 #define check_ma(result, failcond, outstr) if ((result) != MA_SUCCESS) {  \
   (failcond); audio_error(outstr); return NULL; }
 
 MaAudioManager::
 MaAudioManager() {
-  // lock mutex
+  ReMutexHolder holder(_lock);
 
   audio_cat.init();
 
@@ -27,8 +38,6 @@ MaAudioManager() {
     audio_cat.info() << "Using MiniAudio device " << device.playback.name <<
       "." << std::endl;
 
-    //ma_resource_manager_config _resource_mgr_conf; TODO member variable
-    //ma_resource_manager _resource_mgr; TODO member variable
     resource_mgr_conf = ma_resource_manager_config_init();
     resource_mgr_conf.decodedFormat = _device.playback.format;
     resource_mgr_conf.decodedChannels = _device.playback.channels;
@@ -80,7 +89,37 @@ get_resource_manager() {
   return PT(_resource_mgr);
 }
 
+/**
+ * Call this at exit time to shut down the audio system.  This will invalidate
+ * all currently-active AudioManagers and AudioSounds in the system.  If you
+ * change your mind and want to play sounds again, you will have to recreate
+ * all of these objects.
+ */
+void MaAudioManager::
+shutdown() {
+  ReMutexHolder holder(_lock);
+  if (_managers != nullptr) {
+    Managers::iterator mi;
+    for (mi = _managers->begin(); mi != _managers->end(); ++mi) {
+      (*mi)->cleanup();
+    }
+  }
+
+  nassertv(_active_managers == 0);
+}
+
 ~MaAudioManager() {
+  ReMutexHolder holder(_lock);
+  nassertv(_managers != nullptr);
+  Managers::iterator mi = _managers->find(this);
+  nassertv(mi != _managers->end());
+  _managers->erase(mi);
+  cleanup();
+}
+
+void MaAudioManager::
+cleanup() {
+  // TODO do we need to uninit all AudioSounds?
   ma_device_uninit(&_device);
   ma_engine_uninit(&_audio_engine);
 }
