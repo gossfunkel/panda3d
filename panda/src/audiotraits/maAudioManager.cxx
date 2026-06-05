@@ -10,9 +10,18 @@ bool MaAudioManager::_ma_active = false;
 ma_device *MaAudioManager::_device = nullptr;
 ma_resource_manager_config MaAudioManager::_resource_mgr_conf;
 ma_resource_manager MaAudioManager::_resource_mgr;
+ma_engine MaAudioManager::_audio_engine;
 
 #define check_ma(result, failcond, outstr) if ((result) != MA_SUCCESS) {  \
   (failcond); audio_error(outstr); return NULL; }
+
+/**
+ * Factory Function
+ */
+AudioManager *Create_MaAudioManager() {
+  audio_debug("Create_MaAudioManager()");
+  return new MaAudioManager;
+}
 
 MaAudioManager::
 MaAudioManager() {
@@ -58,7 +67,6 @@ MaAudioManager() {
 
   _managers->insert(this);
 
-  //ma_engine _audio_engine; TODO member variable
   ma_engine_config audio_engine_conf;
   audio_engine_conf = ma_engine_config_init();
   audio_engine_conf.pResourceManager = &_resource_mgr;
@@ -74,6 +82,10 @@ MaAudioManager() {
 
   // we'll do this when p3d is ready for it, or remove the noAutoStart line
   ma_engine_start(&audio_engine);
+
+  if (audio_cat.is_debug()) {
+    audio_cat.debug() << "MA ... " << var << std::endl;
+  }
 }
 
 /**
@@ -115,6 +127,15 @@ shutdown() {
   nassertv(mi != _managers->end());
   _managers->erase(mi);
   cleanup();
+}
+
+/**
+ * This is mostly for debugging, but it it could be used to detect errors in a
+ * release build if you don't mind the cpu cost.
+ */
+bool MaAudioManager::
+is_valid() {
+  return _is_valid;
 }
 
 void MaAudioManager::
