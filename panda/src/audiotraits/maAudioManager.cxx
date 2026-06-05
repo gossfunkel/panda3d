@@ -70,11 +70,14 @@ MaAudioManager() {
  */
 PT(AudioSound) MaAudioManager::
 get_sound(const Filename &file_name, bool positional, int mode) {
-  int flags = 0;
+  //int flags = 0; load to ram without decoding
   // TODO put data_src in MaAudioSound for refcount and destructor -
   //      pass the constructor a PT(_resource_mgr)?
   ma_resource_manager_data_source data_src;
   //int flags = (loop_sound) ? MA_RESOURCE_MANAGER_DATA_SOURCE_FLAG_LOOPING : 0;
+  int flags = MA_RESOURCE_MANAGER_DATA_SOURCE_FLAG_STREAM; // decode in 1s pages
+  //int flags = MA_RESOURCE_MANAGER_DATA_SOURCE_FLAG_DECODE; // decode to ram
+  //int flags = MA_RESOURCE_MANAGER_DATA_SOURCE_FLAG_ASYNC; load to ram later
   check_ma(ma_resource_manager_data_source_init(_resource_mgr,
         file_name.get_fullpath(), flags, &data_src));
   // TODO put in ~MaAudioSound()
