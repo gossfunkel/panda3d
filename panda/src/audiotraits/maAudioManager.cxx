@@ -1,3 +1,15 @@
+/**
+ * PANDA 3D SOFTWARE
+ * Copyright (c) Carnegie Mellon University.  All rights reserved.
+ *
+ * All use of this software is subject to the terms of the revised BSD
+ * license.  You should have received a copy of this license along
+ * with this source code in a file named "LICENSE."
+ *
+ * @file config_maAudio.h
+ * @author Katie & J0y
+ */
+
 #include "maAudioManager.h"
 
 using std::string;
@@ -77,11 +89,11 @@ MaAudioManager() {
     "Failed to initialise MiniAudio engine."
   );
 
-  ma_engine_listener_set_position(&audio_engine, 0, 0, 0, 0);
-  ma_engine_listener_set_direction(&audio_engine, 0, 0, 0, 0);
+  ma_engine_listener_set_position(&_audio_engine, 0, 0, 0, 0);
+  ma_engine_listener_set_direction(&_audio_engine, 0, 0, 0, 0);
 
   // we'll do this when p3d is ready for it, or remove the noAutoStart line
-  ma_engine_start(&audio_engine);
+  ma_engine_start(&_audio_engine);
 
   if (audio_cat.is_debug()) {
     audio_cat.debug() << "MA ... " << var << std::endl;
@@ -101,14 +113,97 @@ get_sound(MovieAudio *source, bool positional, int mode) {
   return new MaAudioSound(this, source, positional, mode);
 }
 
-void MaAudioManager::
-uncache_sound(const Filename &file_name) {
+void MaAudioManager::uncache_sound(const Filename &file_name) {
+  ReMutexHolder holder(_lock);
   // TODO
 }
 
-PT(ma_resource_manager) MaAudioManager::
-get_resource_manager() {
+void MaAudioManager::clear_cache() {
+  ReMutexHolder holder(_lock);
+  // TODO
+}
+
+void MaAudioManager::set_cache_limit(unsigned int count) {
+  ReMutexHolder holder(_lock);
+  // TODO
+}
+
+unsigned int MaAudioManager::get_cache_limit() const {
+  // TODO
+}
+
+/*
+ * Sets global volume (gain) setting on our MiniAudio engine
+ */
+void MaAudioManager::set_volume(PN_stdfloat volume) {
+  ReMutexHolder holder(_lock);
+  if (_volume != volume) {
+    _volume = volume;
+    check_ma(ma_engine_set_volume(&_audio_engine, volume), ,
+        "Failed to set MiniAudio engine global volume.");
+  }
+}
+
+/*
+ * Gets the global volume (gain) setting on our MiniAudio engine
+ */
+PN_stdfloat MaAudioManager::get_volume() const {
+  _volume = ma_engine_get_volume(&_audio_engine);
+  return _volume;
+}
+
+/*
+ * Gets a pointer to the MiniAudio resource manager we use
+ */
+PT(ma_resource_manager) MaAudioManager::get_resource_manager() {
   return PT(_resource_mgr);
+}
+
+/**
+ * Turn on/off via active flag. Warning: not implemented.
+ */
+void MaAudioManager::set_active(bool flag) {
+  ReMutexHolder holder(_lock);
+  if (_active!=flag) {
+    _active=flag;
+    // Tell our AudioSounds to adjust:
+    AllSounds::iterator i=_all_sounds.begin();
+    for (; i!=_all_sounds.end(); ++i) {
+      (**i).set_active(_active);
+    }
+  }
+}
+
+bool MaAudioManager::get_active() const {
+  return _active;
+}
+
+void MaAudioManager::
+set_concurent_sound_limit(unsigned int) {
+  ReMutexHolder holder(_lock);
+  _concurrent_sound_limit = limit;
+  reduce_sounds_playing_to(_concurrent_sound_limit);
+}
+
+unsigned int MaAudioManager::get_concurrent_sound_limit() const {
+  return _concurrent_sound_limit;
+}
+
+void MaAudioManager::reduce_sounds_playing_to(unsigned int count) {
+  ReMutexHolder holder(_lock);
+  // give all sounds that have finished playing a chance to stop first
+  update();
+
+  int limit = _sounds_playing.size() - count;
+  while (limit-- > 0) {
+    SoundsPlaying::iterator sound = _sounds_playing.begin();
+    nassertv(sound != _sounds_playing.end());
+    // Stop should be called while holding a PT the sound- we have to make a
+    // temporary one here to prevent a loop with the destructor calling stop
+    // and stop calling the destructor.
+    PT(MaAudioSound) s = (*sound);
+    s->stop();
+  }
 }
 
 /**
