@@ -25,7 +25,7 @@ ma_resource_manager MaAudioManager::_resource_mgr;
 ma_engine MaAudioManager::_audio_engine;
 
 #define check_ma(result, failcond, outstr) if ((result) != MA_SUCCESS) {  \
-  (failcond); audio_error(outstr); return NULL; }
+  (failcond); audio_error(outstr); return nullptr; }
 
 /**
  * Factory Function
@@ -89,8 +89,12 @@ MaAudioManager() {
     "Failed to initialise MiniAudio engine."
   );
 
-  ma_engine_listener_set_position(&_audio_engine, 0, 0, 0, 0);
-  ma_engine_listener_set_direction(&_audio_engine, 0, 0, 0, 0);
+  audio_3d_set_listener_attributes(
+      0, 0, 0,
+      0, 0, 0,
+      1, 0, 0,
+      0, 0, 1);
+  // TODO check set, if not, set _is_valid = false;
 
   // we'll do this when p3d is ready for it, or remove the noAutoStart line
   ma_engine_start(&_audio_engine);
@@ -199,12 +203,168 @@ void MaAudioManager::reduce_sounds_playing_to(unsigned int count) {
     SoundsPlaying::iterator sound = _sounds_playing.begin();
     nassertv(sound != _sounds_playing.end());
     // Stop should be called while holding a PT the sound- we have to make a
-    // temporary one here to prevent a loop with the destructor calling stop
-    // and stop calling the destructor.
+    // temporary one here so the refcount doesn't go to 0 and recurse, with
+    // the destructor calling stop() and stop() calling the destructor.
+    // TODO shouldn't the destructor just check if it's stopped already?
     PT(MaAudioSound) s = (*sound);
     s->stop();
   }
 }
+
+void MaAudioManager::stop_all_sounds() {
+  reduce_sounds_playing_to(0);
+}
+
+/*
+ * Must be called every frame. Do housework on buffers and playing sounds
+ */
+void MaAudioManager::update() {
+  // TODO
+}
+
+/* MiniAudio uses y-up by default, this function compensates for any
+ * disparity between the P3D coord system and the audio engine. Please
+ * take care of this coordinate difference if you're going beyond the
+ * exposed API of this module.
+ */
+void MaAudioManager::
+audio_3d_set_listener_attributes(
+    PN_stdfloat px, PN_stdfloat py, PN_stdfloat pz, //pos
+    PN_stdfloat vx, PN_stdfloat vy, PN_stdfloat vz, //vel
+    PN_stdfloat fx, PN_stdfloat fy, PN_stdfloat fz, //fwd
+    PN_stdfloat ux, PN_stdfloat uy, PN_stdfloat uz) { //up
+  CoordinateSystem cs = get_default_coordinate_system();
+  switch (cs) {
+  case CS_yup_right:
+    _position[0] = px;
+    _position[1] = py;
+    _position[2] = pz;
+
+    _velocity[0] = vx;
+    _velocity[1] = vy;
+    _velocity[2] = vz;
+
+    _forward_up[0] = fx;
+    _forward_up[1] = fy;
+    _forward_up[2] = fz;
+
+    _forward_up[3] = ux;
+    _forward_up[4] = uy;
+    _forward_up[5] = uz;
+    ma_engine_listener_set_position(&_audio_engine, 0, px, py, pz);
+    ma_engine_listener_set_velocity(&_audio_engine, 0, vx, vy, vz);
+    ma_engine_listener_set_direction(&_audio_engine, 0, fx, fy, fz);
+    ma_engine_listener_set_world_up(&_audio_engine, 0, ux, uy, uz);
+    break;
+  case CS_zup_right:
+    _position[0] = px;
+    _position[1] = pz;
+    _position[2] = -py;
+
+    _velocity[0] = vx;
+    _velocity[1] = vz;
+    _velocity[2] = -vy;
+
+    _forward_up[0] = fx;
+    _forward_up[1] = fz;
+    _forward_up[2] = -fy;
+
+    _forward_up[3] = ux;
+    _forward_up[4] = uz;
+    _forward_up[5] = -uy;
+    ma_engine_listener_set_position(&_audio_engine, 0, px, -pz, py);
+    ma_engine_listener_set_velocity(&_audio_engine, 0, vx, -vz, vy);
+    ma_engine_listener_set_direction(&_audio_engine, 0, fx, -fz, fy);
+    ma_engine_listener_set_world_up(&_audio_engine, 0, ux, -uz, uy);
+    break;
+  case CS_yup_left:
+    _position[0] = px;
+    _position[1] = py;
+    _position[2] = -pz;
+
+    _velocity[0] = vx;
+    _velocity[1] = vy;
+    _velocity[2] = -vz;
+
+    _forward_up[0] = fx;
+    _forward_up[1] = fy;
+    _forward_up[2] = -fz;
+
+    _forward_up[3] = ux;
+    _forward_up[4] = uy;
+    _forward_up[5] = -uz;
+    ma_engine_listener_set_position(&_audio_engine, 0, px, py, -pz);
+    ma_engine_listener_set_velocity(&_audio_engine, 0, vx, vy, -vz);
+    ma_engine_listener_set_direction(&_audio_engine, 0, fx, fy, -fz);
+    ma_engine_listener_set_world_up(&_audio_engine, 0, ux, uy, -uz);
+    break;
+  case CS_zup_left:
+    _position[0] = px;
+    _position[1] = pz;
+    _position[2] = py;
+
+    _velocity[0] = vx;
+    _velocity[1] = vz;
+    _velocity[2] = vy;
+
+    _forward_up[0] = fx;
+    _forward_up[1] = fz;
+    _forward_up[2] = fy;
+
+    _forward_up[3] = ux;
+    _forward_up[4] = uz;
+    _forward_up[5] = uy;
+    ma_engine_listener_set_position(&_audio_engine, 0, px, pz, py);
+    ma_engine_listener_set_velocity(&_audio_engine, 0, vx, vz, vy);
+    ma_engine_listener_set_direction(&_audio_engine, 0, fx, fz, fy);
+    ma_engine_listener_set_world_up(&_audio_engine, 0, ux, uz, uy);
+    break;
+  default:
+    nassert_raise("Invalid coordinate system given to MiniAudio.");
+  }
+}
+
+void MaAudioManager::
+audio_3d_get_listener_attributes(
+    PN_stdfloat *px, PN_stdfloat *py, PN_stdfloat *pz, //pos
+    PN_stdfloat *vx, PN_stdfloat *vy, PN_stdfloat *vz, //vel
+    PN_stdfloat *fx, PN_stdfloat *fy, PN_stdfloat *fz, //fwd
+    PN_stdfloat *ux, PN_stdfloat *uy, PN_stdfloat *uz) { //up
+  ma_vec3f l_pos = ma_engine_listener_get_position(&_audio_engine, 0);
+  ma_vec3f l_vel = ma_engine_listener_get_velocity(&_audio_engine, 0);
+  ma_vec3f l_fwd = ma_engine_listener_get_direction(&_audio_engine, 0);
+  ma_vec3f l_up = ma_engine_listener_get_world_up(&_audio_engine, 0);
+  CoordinateSystem cs = get_default_coordinate_system();
+  switch (cs) {
+  case CS_yup_right:
+    *px = l_pos.x; *py = l_pos.y; *pz = l_pos.z;
+    *vx = l_vel.x; *vy = l_vel.y; *vz = l_vel.z;
+    *fx = l_fwd.x; *fy = l_fwd.y; *fz = l_fwd.z;
+    *ux = l_up.x; *uy = l_up.y; *uz = l_up.z;
+    break;
+  case CS_zup_right:
+    *px = l_pos.x; *py = l_pos.z; *pz = -l_pos.y;
+    *vx = l_vel.x; *vy = l_vel.z; *vz = -l_vel.y;
+    *fx = l_fwd.x; *fy = l_fwd.z; *fz = -l_fwd.y;
+    *ux = l_up.x; *uy = l_up.z; *uz = -l_up.y;
+    break;
+  case CS_yup_left:
+    *px = l_pos.x; *py = l_pos.y; *pz = -l_pos.z;
+    *vx = l_vel.x; *vy = l_vel.y; *vz = -l_vel.z;
+    *fx = l_fwd.x; *fy = l_fwd.y; *fz = -l_fwd.z;
+    *ux = l_up.x; *uy = l_up.y; *uz = -l_up.z;
+    break;
+  case CS_zup_left:
+    *px = l_pos.x; *py = l_pos.z; *pz = l_pos.y;
+    *vx = l_vel.x; *vy = l_vel.z; *vz = l_vel.y;
+    *fx = l_fwd.x; *fy = l_fwd.z; *fz = l_fwd.y;
+    *ux = l_up.x; *uy = l_up.z; *uz = l_up.y;
+    break;
+  default:
+    nassert_raise("Invalid coordinate system given to MiniAudio.");
+  }
+}
+
 
 /**
  * Call this at exit time to shut down the audio system.  This will invalidate

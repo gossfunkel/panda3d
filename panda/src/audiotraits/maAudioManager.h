@@ -30,7 +30,6 @@ class MaAudioSound;
 
 class EXPCL_MA_AUDIO MaAudioManager final : public AudioManager {
   friend class MaAudioSound;
-protected:
   PT(ma_resource_manager) get_resource_manager();
 
 public:
