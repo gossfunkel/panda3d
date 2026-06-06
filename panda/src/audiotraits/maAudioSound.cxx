@@ -64,6 +64,9 @@ MaAudioSound(MaAudioManager *manager,
   check_ma(ma_resource_manager_data_source_init(manager->get_resource_mgr(),
         file_name.get_fullpath(), flags, &data_src));
 
+  // TODO do we get access from friend class? should we do this in the AudioManager get_sound method?
+  check_ma(ma_sound_init_from_data_source(&manager->_audio_engine, &data_src, flags,
+        &manager->_all_sounds_grp), , "
   _comment = std::move(_sd->_comment);
   release_sound_data(false);
 }

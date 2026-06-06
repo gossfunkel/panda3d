@@ -14,16 +14,10 @@
 
 using std::string;
 
-TypeHandle MaAudioManager::_type_handle;
-
-ReMutex MaAudioManager::_lock;
 int MaAudioManager::_active_managers = 0;
 bool MaAudioManager::_ma_active = false;
-ma_device *MaAudioManager::_device = nullptr;
-ma_resource_manager_config MaAudioManager::_resource_mgr_conf;
-ma_resource_manager MaAudioManager::_resource_mgr;
-ma_engine MaAudioManager::_audio_engine;
 
+// TODO replace this with an inline function, takes callback fn ptr, returns status
 #define check_ma(result, failcond, outstr) if ((result) != MA_SUCCESS) {  \
   (failcond); audio_error(outstr); return nullptr; }
 
@@ -95,6 +89,9 @@ MaAudioManager() {
       1, 0, 0,
       0, 0, 1);
   // TODO check set, if not, set _is_valid = false;
+
+  int sg_flags = 0;
+  ma_sound_group_init(&_audio_engine, sg_flags, nullptr, &_all_sounds_grp);
 
   // we'll do this when p3d is ready for it, or remove the noAutoStart line
   ma_engine_start(&_audio_engine);
@@ -198,6 +195,7 @@ void MaAudioManager::reduce_sounds_playing_to(unsigned int count) {
   // give all sounds that have finished playing a chance to stop first
   update();
 
+  // TODO use _all_sounds_grp?
   int limit = _sounds_playing.size() - count;
   while (limit-- > 0) {
     SoundsPlaying::iterator sound = _sounds_playing.begin();
@@ -236,84 +234,40 @@ audio_3d_set_listener_attributes(
   CoordinateSystem cs = get_default_coordinate_system();
   switch (cs) {
   case CS_yup_right:
-    _position[0] = px;
-    _position[1] = py;
-    _position[2] = pz;
-
-    _velocity[0] = vx;
-    _velocity[1] = vy;
-    _velocity[2] = vz;
-
-    _forward_up[0] = fx;
-    _forward_up[1] = fy;
-    _forward_up[2] = fz;
-
-    _forward_up[3] = ux;
-    _forward_up[4] = uy;
-    _forward_up[5] = uz;
+    l_pos = {px, py, pz};
+    l_vel = {vx, vy, vz};
+    l_fwd = {fx, fy, fz};
+    l_up = {ux, uy, uz};
     ma_engine_listener_set_position(&_audio_engine, 0, px, py, pz);
     ma_engine_listener_set_velocity(&_audio_engine, 0, vx, vy, vz);
     ma_engine_listener_set_direction(&_audio_engine, 0, fx, fy, fz);
     ma_engine_listener_set_world_up(&_audio_engine, 0, ux, uy, uz);
     break;
   case CS_zup_right:
-    _position[0] = px;
-    _position[1] = pz;
-    _position[2] = -py;
-
-    _velocity[0] = vx;
-    _velocity[1] = vz;
-    _velocity[2] = -vy;
-
-    _forward_up[0] = fx;
-    _forward_up[1] = fz;
-    _forward_up[2] = -fy;
-
-    _forward_up[3] = ux;
-    _forward_up[4] = uz;
-    _forward_up[5] = -uy;
+    l_pos = {px, pz, -py};
+    l_vel = {vx, vz, -vy};
+    l_fwd = {fx, fz, -fy};
+    l_up = {ux, uz, -uy};
     ma_engine_listener_set_position(&_audio_engine, 0, px, -pz, py);
     ma_engine_listener_set_velocity(&_audio_engine, 0, vx, -vz, vy);
     ma_engine_listener_set_direction(&_audio_engine, 0, fx, -fz, fy);
     ma_engine_listener_set_world_up(&_audio_engine, 0, ux, -uz, uy);
     break;
   case CS_yup_left:
-    _position[0] = px;
-    _position[1] = py;
-    _position[2] = -pz;
-
-    _velocity[0] = vx;
-    _velocity[1] = vy;
-    _velocity[2] = -vz;
-
-    _forward_up[0] = fx;
-    _forward_up[1] = fy;
-    _forward_up[2] = -fz;
-
-    _forward_up[3] = ux;
-    _forward_up[4] = uy;
-    _forward_up[5] = -uz;
+    l_pos = {px, py, -pz};
+    l_vel = {vx, vy, -vz};
+    l_fwd = {fx, fy, -fz};
+    l_up = {ux, uy, -uz};
     ma_engine_listener_set_position(&_audio_engine, 0, px, py, -pz);
     ma_engine_listener_set_velocity(&_audio_engine, 0, vx, vy, -vz);
     ma_engine_listener_set_direction(&_audio_engine, 0, fx, fy, -fz);
     ma_engine_listener_set_world_up(&_audio_engine, 0, ux, uy, -uz);
     break;
   case CS_zup_left:
-    _position[0] = px;
-    _position[1] = pz;
-    _position[2] = py;
-
-    _velocity[0] = vx;
-    _velocity[1] = vz;
-    _velocity[2] = vy;
-
-    _forward_up[0] = fx;
-    _forward_up[1] = fz;
-    _forward_up[2] = fy;
-
-    _forward_up[3] = ux;
-    _forward_up[4] = uz;
-    _forward_up[5] = uy;
+    l_pos = {px, pz, py};
+    l_vel = {vx, vz, vy};
+    l_fwd = {fx, fz, fy};
+    l_up = {ux, uz, uy};
     ma_engine_listener_set_position(&_audio_engine, 0, px, pz, py);
     ma_engine_listener_set_velocity(&_audio_engine, 0, vx, vz, vy);
     ma_engine_listener_set_direction(&_audio_engine, 0, fx, fz, fy);
@@ -330,10 +284,10 @@ audio_3d_get_listener_attributes(
     PN_stdfloat *vx, PN_stdfloat *vy, PN_stdfloat *vz, //vel
     PN_stdfloat *fx, PN_stdfloat *fy, PN_stdfloat *fz, //fwd
     PN_stdfloat *ux, PN_stdfloat *uy, PN_stdfloat *uz) { //up
-  ma_vec3f l_pos = ma_engine_listener_get_position(&_audio_engine, 0);
-  ma_vec3f l_vel = ma_engine_listener_get_velocity(&_audio_engine, 0);
-  ma_vec3f l_fwd = ma_engine_listener_get_direction(&_audio_engine, 0);
-  ma_vec3f l_up = ma_engine_listener_get_world_up(&_audio_engine, 0);
+  l_pos = ma_engine_listener_get_position(&_audio_engine, 0);
+  l_vel = ma_engine_listener_get_velocity(&_audio_engine, 0);
+  l_fwd = ma_engine_listener_get_direction(&_audio_engine, 0);
+  l_up = ma_engine_listener_get_world_up(&_audio_engine, 0);
   CoordinateSystem cs = get_default_coordinate_system();
   switch (cs) {
   case CS_yup_right:
@@ -365,6 +319,41 @@ audio_3d_get_listener_attributes(
   }
 }
 
+/*
+ * NOT IMPLEMENTED (yet?)
+ */
+void MaAudioManager::
+audio_3d_set_distance_factor(PN_stdfloat factor) {
+  return;
+}
+
+/*
+ * NOT IMPLEMENTED (yet?)
+ */
+PN_stdfloat MaAudioManager::
+audio_3d_get_distance_factor() const {
+  return 1.f;
+}
+
+void MaAudioManager::
+audio_3d_set_doppler_factor(PN_stdfloat factor) {
+  ma_sound_group_set_doppler_factor(&_all_sounds_grp, factor);
+}
+
+PN_stdfloat MaAudioManager::
+audio_3d_get_doppler_factor() const {
+  ma_sound_group_get_doppler_factor(&_all_sounds_grp);
+}
+
+void MaAudioManager::
+audio_3d_set_drop_off_factor(PN_stdfloat factor) {
+  ma_sound_group_set_rolloff(&_all_sounds_grp, factor);
+}
+
+PN_stdfloat MaAudioManager::
+audio_3d_get_drop_off_factor() const {
+  ma_sound_group_get_rolloff(&_all_sounds_grp);
+}
 
 /**
  * Call this at exit time to shut down the audio system.  This will invalidate
@@ -405,7 +394,7 @@ is_valid() {
 
 void MaAudioManager::
 cleanup() {
-  // TODO do we need to uninit all AudioSounds?
+  // TODO do we need to uninit all AudioSounds? _all_sounds_grp?
   ma_device_uninit(&_device);
   ma_engine_uninit(&_audio_engine);
 }

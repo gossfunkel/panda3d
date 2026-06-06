@@ -11,8 +11,8 @@
  */
 
 
-#ifndef MAAUDIOMANAGER_H
-#define MAAUDIOMANAGER_H
+#ifndef MINIAUDIOMANAGER_H
+#define MINIAUDIOMANAGER_H
 
 #include "pandabase.h"
 
@@ -31,6 +31,40 @@ class MaAudioSound;
 class EXPCL_MA_AUDIO MaAudioManager final : public AudioManager {
   friend class MaAudioSound;
   PT(ma_resource_manager) get_resource_manager();
+  // protects access to audio manager fields in multithreaded user applications
+  static ReMutex _lock;
+
+  ma_device _device;
+  int _active_managers;
+  bool _ma_active;
+  bool _is_valid;
+  //int _cache_limit;
+  PN_stdfload _volume;
+  PN_stdfloat _play_rate;
+  bool _cleanup_required;
+
+  ma_resource_manager_config _resource_mgr_conf;
+  ma_resource_manager _resource_mgr;
+  ma_engine _audio_engine;
+  //unsigned int _concurrent_sound_limit;
+
+  typedef pset<OpenALAudioManager *> Managers;
+  static Managers *_managers;
+  // We can use ExpirationQueues to keep AudioSounds in memory for a little
+  // after they're stopped, as it's not uncommon to re-use sounds in a short
+  // timespan. This could be disabled?
+  typedef plist<void *> ExpirationQueue;
+  ExpirationQueue _expiring_samples;
+  ExpirationQueue _expiring_streams;
+
+  PN_stdfloat _distance_factor;
+  PN_stdfloat _doppler_factor;
+  PN_stdfloat _drop_off_factor;
+
+  ma_vec3 l_pos;
+  ma_vec3 l_vel;
+  ma_vec3 l_fwd;
+  ma_vec3 l_up;
 
 public:
   MaAudioManager();
@@ -88,10 +122,28 @@ public:
   virtual void audio_3d_set_drop_off_factor(PN_stdfloat factor);
   virtual PN_stdfloat audio_3d_get_drop_off_factor() const;
 
-  virtual void output(std::ostream &out) const;
-  virtual void write(std::ostream &out) const;
-  virtual void register_AudioManager_creator(Create_AudioManager_proc* proc);
+  // For Panda3D's pointer system
+ public:
+  static TypeHandle get_class_type() {
+    return _type_handle;
+  }
+  static void init_type() {
+    AudioManager::init_type();
+    register_type(_type_handle, "MaAudioManager", AudioManager::get_class_type());
+  }
+  virtual TypeHandle get_type() const {
+    return get_class_type();
+  }
+  virtual TypeHandle force_init_type() {
+    init_type();
+    return get_class_type();
+  }
 
-  virtual TypeHandle get_type() const;
-  virtual TypeHandle force_init_type();
-}
+ private:
+  static TypeHandle _type_handle;
+
+};
+
+EXPCL_MA_AUDIO AudioManager *Create_MaAudioManager();
+
+#endif /* MINIAUDIOMANAGER_H */
