@@ -96,6 +96,16 @@ get_sound(const Filename &file_name, bool positional, int mode) {
   return new MaAudioSound(this, file_name, positional, mode);
 }
 
+PT(AudioSound) MaAudioManager::
+get_sound(MovieAudio *source, bool positional, int mode) {
+  return new MaAudioSound(this, source, positional, mode);
+}
+
+void MaAudioManager::
+uncache_sound(const Filename &file_name) {
+  // TODO
+}
+
 PT(ma_resource_manager) MaAudioManager::
 get_resource_manager() {
   return PT(_resource_mgr);
