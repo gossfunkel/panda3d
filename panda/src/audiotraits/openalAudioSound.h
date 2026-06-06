@@ -72,7 +72,7 @@ public:
   void set_play_rate(PN_stdfloat play_rate=1.0f);
   PN_stdfloat get_play_rate() const;
 
-  // inits to manager's state.
+  // Inits to manager's state.
   void set_active(bool active=true);
   bool get_active() const;
 
@@ -208,13 +208,13 @@ private:
   Filename _basename;
 
   // _active is for things like a 'turn off sound effects' in a preferences
-  // pannel.  _active is not about whether a sound is currently playing.  Use
+  // panel.  _active is not about whether a sound is currently playing.  Use
   // status() for info on whether the sound is playing.
   bool _active;
   bool _paused;
 
-  // these settings are used to define a directional sound source. The inner angle
-  // defines a cone wherein the sound can be heard with normal volume. _cone_outer_angle defines a second cone.
+  // These settings are used to define a directional sound source. The inner angle
+  // defines a cone wherein the sound can be heard at normal volume. _cone_outer_angle defines a second cone.
   // Between the inner and the outer cone the volume is attenuated.
   // _cone_outer_gain is a factor applied to the volume setting to define the volume in the zone outside of the outer cone.
   PN_stdfloat _cone_inner_angle;
