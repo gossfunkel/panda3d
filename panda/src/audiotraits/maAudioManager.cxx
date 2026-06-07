@@ -102,7 +102,7 @@ MaAudioManager() {
 }
 
 /**
- * This is what creates a sound instance.
+ * Creates a MaAudioSound object, constructing a source if it's new.
  */
 PT(AudioSound) MaAudioManager::
 get_sound(const Filename &file_name, bool positional, int mode) {
@@ -117,28 +117,26 @@ get_sound(const Filename &file_name, bool positional, int mode) {
     data_src    = _source_cache.find(path);
   }
 
-  PT(ma_resorce_manager_data_source) new_src;
+  ma_resource_manager_data_source *ds_ptr = &(*data_src);
   if (data_src == _source_cache.end()) {
-    new_src     = new ma_resource_manager_data_source;
     int flags   = 0; // TODO set appropriate flags
     ma_resource_manager_data_source_init(&_resource_mgr,
-        path.get_basename(), flags, new_src);
-  } else {
-    new_src = *data_src;
+        path.get_basename(), flags, ds_ptr);
   }
 
   // TODO should we allocate this to the array?
-  PT(MaAudioSound) new_sound = new MaAudioSound(this, file_name, positional, mode);
+  MaAudioSound *new_sound = _all_sounds.begin();
   if (_all_sounds.size() >= _cache_limit) {
-    // TODO check if any sounds can be uncached
-    // TODO drop a sound to make space for the new sound
+    // TODO check if any sounds can be uncached to make space non-destructively
   }
+  *new_sound = MaAudioSound(this, ds_ptr, positional, mode);
   return new_sound;
 }
 
 PT(AudioSound) MaAudioManager::
 get_sound(MovieAudio *source, bool positional, int mode) {
-  // TODO check cache for source
+  // TODO make a ma_data_source object if none exists in the cache for
+  //  this MovieAudio
   // TODO check cache size; if limit is hit, pop one from _expiring_sources
   return new MaAudioSound(this, source, positional, mode);
 }

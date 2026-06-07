@@ -54,13 +54,17 @@ class EXPCL_MA_AUDIO MaAudioManager final : public AudioManager {
   // as it's not uncommon to re-use sounds in a short timespan. This cache is
   // a FIFO array to refcount & garbage collect
   // TODO Option to disable?
+  // TODO is this a separate cache from _all_sounds, or just a list? If the
+  //  latter, we could replace it with an array of indices of or ptrs to
+  //  expiring sounds and use that as a 'free' list for sounds to replace
+  //  when memory is needed for allocations
   std::array<void *, _cache_limit> _expiring_sources;
   void discard_excess_cache();
 
-  // TODO should we make these arrays fixed-size and allocate data to them?
-  phash_map<std::string, PT(ma_data_source)> _source_cache;
-  std::array<PT(MaAudioSound)> _sounds_playing;
-  std::array<PT(MaAudioSound)> _all_sounds;
+  // Caches in memory for data_source data and AudioSound data
+  phash_map<std::string, ma_resource_manager_data_source> _source_cache;
+  std::array<MaAudioSound *, _concurrent_sound_limit> _sounds_playing;
+  std::array<MaAudioSound, _cache_limit> _all_sounds;
 
   PN_stdfloat _distance_factor;
   PN_stdfloat _doppler_factor;
