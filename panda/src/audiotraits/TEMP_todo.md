@@ -17,6 +17,12 @@ MaAudioSound:
 - TypeHandle
 
 ## General notes
+I finally read the docs on PointerTo()! PT() does garbage collection, i.e. it
+establishes a refcount and frees an object when the refcount reaches 0. These
+can help us out a little, but we also need to be careful not to use them when
+we should be using regular pointers, as they could result in something being
+removed from memory when we don't expect it to in odd edge cases.
+
 The 'cache' generally refers to the cache of all loaded AudioSounds, but some
 methods (such as `uncache_sound`) refer to the expiration queue. We have both
 `_cache_size` and `_concurrent_sound_limit`, the former of which refers to

@@ -106,9 +106,34 @@ MaAudioManager() {
  */
 PT(AudioSound) MaAudioManager::
 get_sound(const Filename &file_name, bool positional, int mode) {
-  // TODO check cache for source
   // TODO check cache size; if limit is hit, pop one from _expiring_sources
-  return new MaAudioSound(this, file_name, positional, mode);
+  // TODO use the miniaudio vfs?
+  VirtualFileSystem *vfs = VirtualFileSystem::get_global_ptr();
+  vfs->resolve_filename(path, get_model_path());
+
+  auto data_src = _source_cache.find(path);
+  if (data_src == _source_cache.end()) {
+    path        = file_name;
+    data_src    = _source_cache.find(path);
+  }
+
+  PT(ma_resorce_manager_data_source) new_src;
+  if (data_src == _source_cache.end()) {
+    new_src     = new ma_resource_manager_data_source;
+    int flags   = 0; // TODO set appropriate flags
+    ma_resource_manager_data_source_init(&_resource_mgr,
+        path.get_basename(), flags, new_src);
+  } else {
+    new_src = *data_src;
+  }
+
+  // TODO should we allocate this to the array?
+  PT(MaAudioSound) new_sound = new MaAudioSound(this, file_name, positional, mode);
+  if (_all_sounds.size() >= _cache_limit) {
+    // TODO check if any sounds can be uncached
+    // TODO drop a sound to make space for the new sound
+  }
+  return new_sound;
 }
 
 PT(AudioSound) MaAudioManager::

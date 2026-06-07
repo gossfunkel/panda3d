@@ -57,6 +57,7 @@ class EXPCL_MA_AUDIO MaAudioManager final : public AudioManager {
   std::array<void *, _cache_limit> _expiring_sources;
   void discard_excess_cache();
 
+  // TODO should we make these arrays fixed-size and allocate data to them?
   phash_map<std::string, PT(ma_data_source)> _source_cache;
   std::array<PT(MaAudioSound)> _sounds_playing;
   std::array<PT(MaAudioSound)> _all_sounds;
