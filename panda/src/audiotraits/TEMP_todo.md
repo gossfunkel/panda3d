@@ -45,6 +45,12 @@ it is uncached from memory. Also, if the queue size is decreased to smaller than
 the number of sources loaded, or the limit is reached, the oldest sound[s]
 is/are uncached from memory.
 
+Once I've got the caches figured out, I can write up a basic constructor/
+destructor test for the AudioManager. The first test will be the hardest to
+write (because I've got to get my head around PyTest and the P3D test
+infrastructure again heh), but then it should be easier to add new tests for
+methods and specific use-cases/edge-cases/error-cases.
+
 ### Crucial engine tools
 - `MovieAudio` objects have refcounts.
 - `SoundsPlaying::iterator` to help allocate and deallocate sounds safely.
