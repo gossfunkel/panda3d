@@ -116,21 +116,45 @@ get_sound(MovieAudio *source, bool positional, int mode) {
 
 void MaAudioManager::uncache_sound(const Filename &file_name) {
   ReMutexHolder holder(_lock);
-  // TODO
+
+  // TODO `ma_data_source`s don't have filenames so the phash_map approach
+  //  doesn't work for MiniAudio. We need to figure out how we can match the
+  //  API parameter and find the appropriate sound, check if it's playing,
+  //  locate its data_source, and then we can:
+  //
+    ma_data_source_uninit(ds);
+    _expiring_sources.pop_front();
+    _source_cache.erase(ds);
 }
 
 void MaAudioManager::clear_cache() {
   ReMutexHolder holder(_lock);
-  // TODO
+  discard_excess_cache(0);
 }
 
 void MaAudioManager::set_cache_limit(unsigned int count) {
   ReMutexHolder holder(_lock);
-  // TODO
+  if (((int)_expiring_sources.size() > count) {
+    discard_excess_cache(count);
+  }
+  _cache_limit = count;
 }
 
 unsigned int MaAudioManager::get_cache_limit() const {
-  // TODO
+  return _cache_limit;
+}
+
+void MaAudioManager::discard_excess_cache() {
+  ReMutexHolder holder(_lock);
+  while (((int)_expiring_sources.size()) > sample_limit) {
+    PT(ma_data_source) ds = _expiring_sources.front();
+    // TODO can we just use uncache_sound once it's fixed/finished?
+    ma_data_source_uninit(ds);
+    _expiring_sources.pop_front();
+    _source_cache.erase(ds);
+    audio_debug("Expiring data source.");
+    delete ds;
+  }
 }
 
 /*

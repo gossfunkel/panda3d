@@ -38,7 +38,7 @@ class EXPCL_MA_AUDIO MaAudioManager final : public AudioManager {
   int _active_managers;
   bool _ma_active;
   bool _is_valid;
-  //int _cache_limit;
+  int _cache_limit;
   PN_stdfload _volume;
   PN_stdfloat _play_rate;
   bool _cleanup_required;
@@ -54,8 +54,18 @@ class EXPCL_MA_AUDIO MaAudioManager final : public AudioManager {
   // after they're stopped, as it's not uncommon to re-use sounds in a short
   // timespan. This could be disabled?
   typedef plist<void *> ExpirationQueue;
-  ExpirationQueue _expiring_samples;
-  ExpirationQueue _expiring_streams;
+  // This is for data sources, to refcount & garbage collect
+  ExpirationQueue _expiring_sources;
+  void discard_excess_cache();
+
+  typedef phash_set<PT(ma_data_source)> SourceCache;
+  SourceCache _source_cache;
+
+  typedef phash_set<PT(MaAudioSound)> SoundsPlaying;
+  SoundsPlaying _sounds_playing;
+
+  typedef phash_set<MaAudioSound *> AllSounds;
+  AllSounds _all_sounds;
 
   PN_stdfloat _distance_factor;
   PN_stdfloat _doppler_factor;
