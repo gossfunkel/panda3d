@@ -14,10 +14,10 @@
 #ifndef MINIAUDIOMANAGER_H
 #define MINIAUDIOMANAGER_H
 
+#include "array"
 #include "pandabase.h"
 
 #include "audioManager.h"
-#include "plist.h"
 #include "pmap.h"
 #include "pset.h"
 #include "movieAudioCursor.h"
@@ -50,22 +50,16 @@ class EXPCL_MA_AUDIO MaAudioManager final : public AudioManager {
 
   typedef pset<OpenALAudioManager *> Managers;
   static Managers *_managers;
-  // We cache AudioSounds in memory for a little after they're stopped, as
-  // it's not uncommon to re-use sounds in a short timespan. It's FIFO.
+  // We cache ma_data_sources in memory for a little after they're stopped,
+  // as it's not uncommon to re-use sounds in a short timespan. This cache is
+  // a FIFO array to refcount & garbage collect
   // TODO Option to disable?
-  typedef std::array<void *, _cache_limit> ExpirationQueue;
-  // This is for data sources, to refcount & garbage collect
-  ExpirationQueue _expiring_sources;
+  std::array<void *, _cache_limit> _expiring_sources;
   void discard_excess_cache();
 
-  typedef phash_map<std::string, PT(ma_data_source)> SourceCache;
-  SourceCache _source_cache;
-
-  typedef phash_set<PT(MaAudioSound)> SoundsPlaying;
-  SoundsPlaying _sounds_playing;
-
-  typedef phash_set<MaAudioSound *> AllSounds;
-  AllSounds _all_sounds;
+  phash_map<std::string, PT(ma_data_source)> _source_cache;
+  std::array<PT(MaAudioSound)> _sounds_playing;
+  std::array<PT(MaAudioSound)> _all_sounds;
 
   PN_stdfloat _distance_factor;
   PN_stdfloat _doppler_factor;

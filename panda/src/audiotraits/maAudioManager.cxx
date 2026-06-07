@@ -54,8 +54,8 @@ MaAudioManager() {
       "." << std::endl;
 
     resource_mgr_conf = ma_resource_manager_config_init();
-    resource_mgr_conf.decodedFormat = _device.playback.format;
-    resource_mgr_conf.decodedChannels = _device.playback.channels;
+    resource_mgr_conf.decodedFormat     = _device.playback.format;
+    resource_mgr_conf.decodedChannels   = _device.playback.channels;
     resource_mgr_conf.decodedSampleRate = _device.sampleRate;
 #ifdef HAVE_THREADS
     resource_mgr_conf.jobThreadCount = 2;
@@ -106,28 +106,48 @@ MaAudioManager() {
  */
 PT(AudioSound) MaAudioManager::
 get_sound(const Filename &file_name, bool positional, int mode) {
+  // TODO check cache for source
+  // TODO check cache size; if limit is hit, pop one from _expiring_sources
   return new MaAudioSound(this, file_name, positional, mode);
 }
 
 PT(AudioSound) MaAudioManager::
 get_sound(MovieAudio *source, bool positional, int mode) {
+  // TODO check cache for source
+  // TODO check cache size; if limit is hit, pop one from _expiring_sources
   return new MaAudioSound(this, source, positional, mode);
 }
 
+/*
+ * Deletes a cached source from the expiration cache, if not in use
+ */
 void MaAudioManager::uncache_sound(const Filename &file_name) {
   ReMutexHolder holder(_lock);
+  Filename path = file_name;
 
-  // TODO `ma_data_source`s don't have filenames so the phash_map approach
-  //  doesn't work for MiniAudio. We need to figure out how we can match the
-  //  API parameter and find the appropriate sound, check if it's playing,
-  //  locate its data_source, and then we can:
-  //
+  // TODO use the miniaudio vfs?
+  VirtualFileSystem *vfs = VirtualFileSystem::get_global_ptr();
+  vfs->resolve_filename(path, get_model_path());
 
-  ma_data_source_uninit(ds);
-  _expiring_sources.pop_front();
-  _source_cache.erase(ds);
+  auto data_src = _sample_cache.find(path);
+  if (data_src == _sample_cache.end())
+      data_src  = _sample_cache.find(file_name);
+
+  // TODO check if data_src is in use by an active sound
+  if (src_unused) {
+    ma_data_source_uninit(data_src);
+    _expiring_sources.pop_front();
+    _source_cache.erase(data_src);
+    delete data_src;
+  } else {
+    // TODO should this just stop the sound then remove it?
+    audio_error("Sound is active, cannot be uncached.");
+  }
 }
 
+/*
+ * Empty the cache of data sources not in use by sounds
+ */
 void MaAudioManager::clear_cache() {
   ReMutexHolder holder(_lock);
   if (!_source_cache.empty()) discard_excess_cache(0);
@@ -147,14 +167,17 @@ unsigned int MaAudioManager::get_cache_limit() const {
 
 void MaAudioManager::discard_excess_cache() {
   ReMutexHolder holder(_lock);
-  while (((int)_expiring_sources.size()) > sample_limit) {
-    PT(ma_data_source) ds = _expiring_sources.front();
+  for (PT(ma_data_source) data_src = _expiring_sources.begin();
+      data_src != _expiring_sources.end() &&
+      (int)_expiring_sources.size() > sample_limit;
+      ++data_src) {
     // TODO can we just use uncache_sound once it's fixed/finished?
-    ma_data_source_uninit(ds);
+    ma_data_source_uninit(*data_src);
     _expiring_sources.pop_front();
-    _source_cache.erase(ds);
+    _source_cache.erase(data_src);
+    // TODO get name from hashmap before removal to print
     audio_debug("Expiring data source.");
-    delete ds;
+    delete data_src;
   }
 }
 
@@ -192,9 +215,7 @@ void MaAudioManager::set_active(bool flag) {
   ReMutexHolder holder(_lock);
   if (_active!=flag) {
     _active=flag;
-    // Tell our AudioSounds to adjust:
-    AllSounds::iterator i=_all_sounds.begin();
-    for (; i!=_all_sounds.end(); ++i) {
+    for (auto i : _all_sounds) {
       (**i).set_active(_active);
     }
   }
