@@ -135,6 +135,8 @@ MaAudioSound(MaAudioManager *manager,
   //ma_resource_manager_data_buffer_init_ex_external(
   //check_ma(ma_resource_manager_register_data(manager->get_resource_mgr(),
   // TODO figure this mess out
+  //
+  // TODO use miniaudio copy method
 
   _comment = std::move(_sd->_comment);
   release_sound_data(false);

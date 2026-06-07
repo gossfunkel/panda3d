@@ -122,14 +122,15 @@ void MaAudioManager::uncache_sound(const Filename &file_name) {
   //  API parameter and find the appropriate sound, check if it's playing,
   //  locate its data_source, and then we can:
   //
-    ma_data_source_uninit(ds);
-    _expiring_sources.pop_front();
-    _source_cache.erase(ds);
+
+  ma_data_source_uninit(ds);
+  _expiring_sources.pop_front();
+  _source_cache.erase(ds);
 }
 
 void MaAudioManager::clear_cache() {
   ReMutexHolder holder(_lock);
-  discard_excess_cache(0);
+  if (!_source_cache.empty()) discard_excess_cache(0);
 }
 
 void MaAudioManager::set_cache_limit(unsigned int count) {

@@ -46,19 +46,19 @@ class EXPCL_MA_AUDIO MaAudioManager final : public AudioManager {
   ma_resource_manager_config _resource_mgr_conf;
   ma_resource_manager _resource_mgr;
   ma_engine _audio_engine;
-  //unsigned int _concurrent_sound_limit;
+  unsigned int _concurrent_sound_limit;
 
   typedef pset<OpenALAudioManager *> Managers;
   static Managers *_managers;
-  // We can use ExpirationQueues to keep AudioSounds in memory for a little
-  // after they're stopped, as it's not uncommon to re-use sounds in a short
-  // timespan. This could be disabled?
-  typedef plist<void *> ExpirationQueue;
+  // We cache AudioSounds in memory for a little after they're stopped, as
+  // it's not uncommon to re-use sounds in a short timespan. It's FIFO.
+  // TODO Option to disable?
+  typedef std::array<void *, _cache_limit> ExpirationQueue;
   // This is for data sources, to refcount & garbage collect
   ExpirationQueue _expiring_sources;
   void discard_excess_cache();
 
-  typedef phash_set<PT(ma_data_source)> SourceCache;
+  typedef phash_map<std::string, PT(ma_data_source)> SourceCache;
   SourceCache _source_cache;
 
   typedef phash_set<PT(MaAudioSound)> SoundsPlaying;

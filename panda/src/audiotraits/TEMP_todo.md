@@ -1,19 +1,25 @@
-include header and static lib / build system integration
+MiniAudio library files:
+- might need to make an empty header for interrogate?
+- might need to change the ma implementation file to a .cxx/.cpp
 
 MaAudioManager:
-- init
-- cacheing/uncacheing samples and sounds (hashmaps/sets from `pmap.h`)
-- playing sounds, looping or ending
-- modifying sounds
-- attaching sounds to nodepaths
-- removing sounds
-- clean close
-- offer TypeHandle
+- cache: playing sounds and expiring sounds
+- inline error checking function (fn ptr as parameter)
+- remaining virtual methods: update, speaker_setup, get/set concurrent_sound_limit
+- distance attenuation?
+
+MaAudioSound:
+- all property methods (active, volume, time, length, play rate, balance, loop count/pos)
+- play and stop methods
+- fix/finish copy constructor
+- 3d audio properties
+- Filename
+- TypeHandle
 
 ### Crucial engine tools
-- `SoundData` and `MovieAudio` objects have refcounts.
-- `SoundsPlaying::iterator` handles allocation and deallocation safely.
-- `ExpirationQueue::iterator`
+- `MovieAudio` objects have refcounts.
+- `SoundsPlaying::iterator` to help allocate and deallocate sounds safely.
+- `ExpirationQueue::iterator` to cache recently stopped sounds (don't use `plist`; `phash_map` is good)
 
 #### Other tools to note / concepts involved
 - `nassertv` - assert a condition
@@ -23,9 +29,8 @@ MaAudioManager:
 - `pset<MaAudioManager *>` - fast set of audio managers
 - `plist<void *>` - fast list of pointers
 - `vector_string` -
-- 'friend classes'
-- iterators
-- inheritance
-- bit masks
-- heap allocation / memory management
+- `friend` classes
+- `iterator`s
+- inheritance (`protected`, `virtual`, and `static` methods/members, and the `final` keyword)
+- heap allocated garbage collection, memory management in general
 
