@@ -110,32 +110,34 @@ MaAudioManager() {
  */
 PT(AudioSound) MaAudioManager::
 get_sound(const Filename &file_name, bool positional, int mode) {
-  // TODO check cache size; if limit is hit, use an index from
-  //  _expiring_sources if one exists, or overwrite the oldest
   // TODO use the miniaudio vfs?
   VirtualFileSystem *vfs = VirtualFileSystem::get_global_ptr();
   vfs->resolve_filename(path, get_model_path());
 
-  // map::emplace returns a pair of an iterator and a bool. It sets
-  //  second to false if the key was already used for any value in this
-  //  array (i.e. the source file is already cached)
-  auto src_info = _source_info.emplace(path,
-      DataSource(path, 1, 0));
-  if (!src_info.second) {
-    // Not duplicate source: find new index
-    if (_num_sources_cached >= _cache_limit) {
-        // TODO find oldest sound to pop for index
+  auto src_info = _source_cache.find(path);
+  if (src_info == _source_cache.end()) {
+    src_info = _source_cache.find(file_name);
+    if (src_info == _source_cache.end()) {
+      // source not cached
+      if (_num_sources_cached >= _cache_limit) {
+          // TODO search for oldest source to drop from cache?
+      } else {
+        if (!_free_sources.size()) {
+          if (!_expiring_sources.size())
+            audio_error(
+                "Cache corrupted: limit not reached, but no available cache.");
+          else {
+            // TODO does the data_source need uninited here or will it
+            // have been done before now?
+            src_info = _source_cache.at(*_expiring_sources.pop_front());
+          }
+        } else src_info = _source_cache.at(*_free_sources.pop_front());
+      }
     }
-    if (!_free_sources.size()) {
-      if (!_expiring_sources.size())
-        audio_error("Cache corrupted: limit not reached, but no available cache.");
-      else src_info.first->idx = _expiring_sources.pop_front();
-    } else src_info.first->idx = _free_sources.pop_front();
-
   }
 
-  ma_resource_manager_data_source *ds_ptr = &(*src_info.first);
-  if (data_src == _source_cache.end()) {
+  ma_resource_manager_data_source *ds_ptr = &src_info->data_src;
+  if (src_info == _source_cache.end()) {
     int flags   = 0; // TODO set appropriate flags
     ma_resource_manager_data_source_init(&_resource_mgr,
         path.get_basename(), flags, ds_ptr);
@@ -176,40 +178,24 @@ void MaAudioManager::uncache_sound(const Filename &file_name) {
     _source_cache.erase(data_src);
     delete data_src;
   } else {
-    // TODO should this just stop the sound then remove it?
     audio_error("Sound is active, cannot be uncached.");
   }
 }
 
 /*
- * Marks all inactive source cache locations as
+ * Marks all inactive source cache locations as free
  */
 void MaAudioManager::clear_cache() {
   ReMutexHolder holder(_lock);
 
-  // first, make a list of un-expired (cached) sources to check
   std::vector<unsigned int> check_if_active;
   for (unsigned int idx = 0;idx < _cache_limit; ++idx)
     check_if_active.emplace_back(idx);
-  for (unsigned int &cached_id : _expiring_sources)
-    check_if_active.pop(cached_id);
-  // next, step through each of these cached items in the source cache
-  for (unsigned int idx : check_if_active) {
-    ma_resource_manager_data_source *curr_src = _source_cache.at(idx);
-    auto uses_source = [ma_resource_manager_data_source *exp_src]
-        (MaAudioSound *curr_sound) {
-      return (curr_sound->_data_source == curr_src)
-    };
-    // then do a search through all loaded sounds to see if any active
-    //   AudioSounds reference this data source
-    // FIXME can't we just have a nice O(1) refcount instead of this O(n) search?
-    auto using_sound = std::findif(_all_sounds.begin(),
-        _all_sounds.end(), uses_source);
-    if ((using_sound != _all_sounds.end()) && !using_sound->active) {
-      _expiring_sources.emplace_back(idx);
-      _num_sources_cached++;
-    }
-  }
+  for (auto cached_id : _expiring_sources)
+    check_if_active.erase(check_if_active.at(*cached_id));
+  for (auto idx : check_if_active)
+    if (_source_cache.at(*idx)->refcount == 0)
+      _free_sources.push_back(*idx);
 }
 
 void MaAudioManager::set_cache_limit(unsigned int count) {

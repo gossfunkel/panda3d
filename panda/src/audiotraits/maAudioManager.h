@@ -59,7 +59,7 @@ class EXPCL_MA_AUDIO MaAudioManager final : public AudioManager {
   typedef struct DataSource {
     Filename file_name;
     unsigned int refcount;
-    unsigned int idx;
+    ma_resource_manager_data_source data_src;
   } DataSource;
 
   /* We keep ma_data_sources in memory for a little after they're stopped,
@@ -67,11 +67,12 @@ class EXPCL_MA_AUDIO MaAudioManager final : public AudioManager {
    *  a FIFO 'deque' of cache indices available to overwrite or re-link to
    *  a new AudioSound, removing from this array on use.
    */
-  pdeque<DataSource, _cache_limit> _expiring_sources;
+  pdeque<unsigned int> _expiring_sources;
+  // this deque is to allow users to acquire a new cache position quickly
+  pdeque<unsigned int> _free_sources;
 
   // Caches in memory for source data handles and AudioSound objects
-  phash_map<std::string, ma_resource_manager_data_source> _source_cache;
-  phash_map<std::string, DataSource> _source_info;
+  phash_map<std::string, DataSource> _source_cache;
   std::array<MaAudioSound *, _concurrent_sound_limit> _sounds_playing;
   // TODO should this limit be higher, since multiple sounds can use one src?
   std::array<MaAudioSound, _cache_limit> _all_sounds;
