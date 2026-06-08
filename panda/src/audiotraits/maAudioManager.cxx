@@ -133,15 +133,15 @@ get_sound(const Filename &file_name, bool positional, int mode) {
           }
         } else src_info = _source_cache.at(*_free_sources.pop_front());
       }
+      ma_resource_manager_data_source new_src;
+      *src_info = DataSource(new_src, path, 1, 1, true);
+      int flags   = 0; // TODO set appropriate flags
+      ma_resource_manager_data_source_init(&_resource_mgr,
+          path.get_basename(), flags, &src_info->data_src);
     }
   }
 
   ma_resource_manager_data_source *ds_ptr = &src_info->data_src;
-  if (src_info == _source_cache.end()) {
-    int flags   = 0; // TODO set appropriate flags
-    ma_resource_manager_data_source_init(&_resource_mgr,
-        path.get_basename(), flags, ds_ptr);
-  }
 
   MaAudioSound *new_sound = _all_sounds.at(src_info.first->idx);
   *new_sound = MaAudioSound(this, ds_ptr, positional, mode);
@@ -158,6 +158,7 @@ get_sound(MovieAudio *source, bool positional, int mode) {
 
 /*
  * Deletes a cached source from the expiration cache, if not in use
+ * by an active AudioSound.
  */
 void MaAudioManager::uncache_sound(const Filename &file_name) {
   ReMutexHolder holder(_lock);
@@ -169,17 +170,18 @@ void MaAudioManager::uncache_sound(const Filename &file_name) {
 
   auto data_src = _sample_cache.find(path);
   if (data_src == _sample_cache.end())
-      data_src  = _sample_cache.find(file_name);
+    data_src  = _sample_cache.find(file_name);
+  if (data_src == _sample_cache.end())
+    return;
 
-  // TODO check if data_src is in use by an active sound
-  if (src_unused) {
-    ma_data_source_uninit(data_src);
-    _expiring_sources.pop_front();
-    _source_cache.erase(data_src);
-    delete data_src;
-  } else {
+  if (data_src->active) {
     audio_error("Sound is active, cannot be uncached.");
+    return;
   }
+  ma_data_source_uninit(data_src);
+  _expiring_sources.pop_front();
+  _source_cache.erase(data_src);
+  delete data_src;
 }
 
 /*

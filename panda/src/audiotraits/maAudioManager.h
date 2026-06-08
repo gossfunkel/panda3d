@@ -57,9 +57,10 @@ class EXPCL_MA_AUDIO MaAudioManager final : public AudioManager {
    * _source_cache array.
    */
   typedef struct DataSource {
+    ma_resource_manager_data_source data_src;
     Filename file_name;
     unsigned int refcount;
-    ma_resource_manager_data_source data_src;
+    bool cached;
   } DataSource;
 
   /* We keep ma_data_sources in memory for a little after they're stopped,
