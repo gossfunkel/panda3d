@@ -16,6 +16,31 @@ MaAudioSound:
 - Filename
 - TypeHandle
 
+## Cacheing sounds
+Load new sound with source file:
+1) get_sound checks if source has been cached in `_source_info`
+1) finding no match for the filename in the phash_map, it finds an available cache location.
+1) finding space, it creates the data source in the `_source_cache`. If it doesn't find a space, it overwrites the oldest data source
+1) it then finds space for the AudioSound in the `_all_sounds` phash_map, similarly
+1) it then calls the MaAudioSound constructor, passing a pointer to the data source
+
+Load new sound with new MovieAudio:
+TODO
+
+Load sound with already-used source file:
+1) get_sound checks if source has been cached in `_source_info`
+1) finding a match, it finds space for the sound in `_all_sounds`, overwriting the oldest if needed
+1) it then calls the MaAudioSound constructor, passing a pointer to the data source
+
+Delete sound using unique source:
+TODO
+
+Call uncache_sound on valid target:
+TODO
+
+Call uncache_sound on invalid target:
+TODO
+
 ## General notes
 I finally read the docs on PointerTo()! PT() does garbage collection, i.e. it
 establishes a refcount and frees an object when the refcount reaches 0. These

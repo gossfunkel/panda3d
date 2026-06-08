@@ -73,6 +73,10 @@ MaAudioManager() {
 
   _managers->insert(this);
 
+  _num_sources_cached = 0;
+  for (int ds_idx = 0; ds_idx < _cache_limit; ++ds_idx)
+    _free_sources.push_back(ds_idx);
+
   ma_engine_config audio_engine_conf;
   audio_engine_conf = ma_engine_config_init();
   audio_engine_conf.pResourceManager = &_resource_mgr;
@@ -106,18 +110,31 @@ MaAudioManager() {
  */
 PT(AudioSound) MaAudioManager::
 get_sound(const Filename &file_name, bool positional, int mode) {
-  // TODO check cache size; if limit is hit, pop one from _expiring_sources
+  // TODO check cache size; if limit is hit, use an index from
+  //  _expiring_sources if one exists, or overwrite the oldest
   // TODO use the miniaudio vfs?
   VirtualFileSystem *vfs = VirtualFileSystem::get_global_ptr();
   vfs->resolve_filename(path, get_model_path());
 
-  auto data_src = _source_cache.find(path);
-  if (data_src == _source_cache.end()) {
-    path        = file_name;
-    data_src    = _source_cache.find(path);
+  // map::emplace returns a pair of an iterator and a bool. It sets
+  //  second to false if the key was already used for any value in this
+  //  array (i.e. the source file is already cached)
+  auto src_info = _source_info.emplace(path,
+      DataSource(path, 1, 0));
+  if (!src_info.second) {
+    // Not duplicate source: find new index
+    if (_num_sources_cached >= _cache_limit) {
+        // TODO find oldest sound to pop for index
+    }
+    if (!_free_sources.size()) {
+      if (!_expiring_sources.size())
+        audio_error("Cache corrupted: limit not reached, but no available cache.");
+      else src_info.first->idx = _expiring_sources.pop_front();
+    } else src_info.first->idx = _free_sources.pop_front();
+
   }
 
-  ma_resource_manager_data_source *ds_ptr = &(*data_src);
+  ma_resource_manager_data_source *ds_ptr = &(*src_info.first);
   if (data_src == _source_cache.end()) {
     int flags   = 0; // TODO set appropriate flags
     ma_resource_manager_data_source_init(&_resource_mgr,
@@ -125,10 +142,7 @@ get_sound(const Filename &file_name, bool positional, int mode) {
   }
 
   // TODO should we allocate this to the array?
-  MaAudioSound *new_sound = _all_sounds.begin();
-  if (_all_sounds.size() >= _cache_limit) {
-    // TODO check if any sounds can be uncached to make space non-destructively
-  }
+  MaAudioSound *new_sound = _all_sounds.at(src_info.first->idx);
   *new_sound = MaAudioSound(this, ds_ptr, positional, mode);
   return new_sound;
 }
