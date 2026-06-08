@@ -2,7 +2,7 @@
 
 MaAudioSound::
 MaAudioSound(MaAudioManager *manager,
-             Filename file_name,
+             PT(ma_data_source) data_src,
              bool positional,
              int mode) :
   AudioSound(positional),
