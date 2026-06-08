@@ -169,11 +169,34 @@ void MaAudioManager::uncache_sound(const Filename &file_name) {
 }
 
 /*
- * Empty the cache of data sources not in use by sounds
+ * Marks all inactive source cache locations as
  */
 void MaAudioManager::clear_cache() {
   ReMutexHolder holder(_lock);
-  if (!_source_cache.empty()) discard_excess_cache(0);
+
+  // first, make a list of un-expired (cached) sources to check
+  std::vector<unsigned int> check_if_active;
+  for (unsigned int idx = 0;idx < _cache_limit; ++idx)
+    check_if_active.emplace_back(idx);
+  for (unsigned int &cached_id : _expiring_sources)
+    check_if_active.pop(cached_id);
+  // next, step through each of these cached items in the source cache
+  for (unsigned int idx : check_if_active) {
+    ma_resource_manager_data_source *curr_src = _source_cache.at(idx);
+    auto uses_source = [ma_resource_manager_data_source *exp_src]
+        (MaAudioSound *curr_sound) {
+      return (curr_sound->_data_source == curr_src)
+    };
+    // then do a search through all loaded sounds to see if any active
+    //   AudioSounds reference this data source
+    // FIXME can't we just have a nice O(1) refcount instead of this O(n) search?
+    auto using_sound = std::findif(_all_sounds.begin(),
+        _all_sounds.end(), uses_source);
+    if ((using_sound != _all_sounds.end()) && !using_sound->active) {
+      _expiring_sources.emplace_back(idx);
+      _num_sources_cached++;
+    }
+  }
 }
 
 void MaAudioManager::set_cache_limit(unsigned int count) {
@@ -186,22 +209,6 @@ void MaAudioManager::set_cache_limit(unsigned int count) {
 
 unsigned int MaAudioManager::get_cache_limit() const {
   return _cache_limit;
-}
-
-void MaAudioManager::discard_excess_cache() {
-  ReMutexHolder holder(_lock);
-  for (PT(ma_data_source) data_src = _expiring_sources.begin();
-      data_src != _expiring_sources.end() &&
-      (int)_expiring_sources.size() > sample_limit;
-      ++data_src) {
-    // TODO can we just use uncache_sound once it's fixed/finished?
-    ma_data_source_uninit(*data_src);
-    _expiring_sources.pop_front();
-    _source_cache.erase(data_src);
-    // TODO get name from hashmap before removal to print
-    audio_debug("Expiring data source.");
-    delete data_src;
-  }
 }
 
 /*

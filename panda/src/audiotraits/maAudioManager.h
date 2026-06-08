@@ -50,21 +50,20 @@ class EXPCL_MA_AUDIO MaAudioManager final : public AudioManager {
 
   typedef pset<OpenALAudioManager *> Managers;
   static Managers *_managers;
-  // We cache ma_data_sources in memory for a little after they're stopped,
-  // as it's not uncommon to re-use sounds in a short timespan. This cache is
-  // a FIFO array to refcount & garbage collect
-  // TODO Option to disable?
-  // TODO is this a separate cache from _all_sounds, or just a list? If the
-  //  latter, we could replace it with an array of indices of or ptrs to
-  //  expiring sounds and use that as a 'free' list for sounds to replace
-  //  when memory is needed for allocations
-  std::array<void *, _cache_limit> _expiring_sources;
-  void discard_excess_cache();
+
+  /* We keep ma_data_sources in memory for a little after they're stopped,
+   *  as it's not uncommon to re-use sounds in a short timespan. This is
+   *  a FIFO 'deque' of cache indices available to overwrite or re-link to
+   *  a new AudioSound, removing from this array on use.
+   */
+  std::deque<unsigned int, _cache_limit> _expiring_sources;
 
   // Caches in memory for data_source data and AudioSound data
   phash_map<std::string, ma_resource_manager_data_source> _source_cache;
   std::array<MaAudioSound *, _concurrent_sound_limit> _sounds_playing;
+  // TODO should this limit be higher, since multiple sounds can use one src?
   std::array<MaAudioSound, _cache_limit> _all_sounds;
+  unsigned int _num_sources_cached;
 
   PN_stdfloat _distance_factor;
   PN_stdfloat _doppler_factor;
