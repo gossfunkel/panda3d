@@ -56,6 +56,7 @@ MaAudioSound(MaAudioManager *manager,
     }
   }
 
+  // TODO make conditional on length
   ma_resource_manager_data_source data_src;
   //int flags = (loop_sound) ? MA_RESOURCE_MANAGER_DATA_SOURCE_FLAG_LOOPING : 0;
   int flags = MA_RESOURCE_MANAGER_DATA_SOURCE_FLAG_STREAM; // decode in 1s pages

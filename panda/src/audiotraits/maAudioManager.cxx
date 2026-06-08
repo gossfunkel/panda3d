@@ -141,7 +141,6 @@ get_sound(const Filename &file_name, bool positional, int mode) {
         path.get_basename(), flags, ds_ptr);
   }
 
-  // TODO should we allocate this to the array?
   MaAudioSound *new_sound = _all_sounds.at(src_info.first->idx);
   *new_sound = MaAudioSound(this, ds_ptr, positional, mode);
   return new_sound;
