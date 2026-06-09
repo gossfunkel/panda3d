@@ -28,6 +28,87 @@
 
 class MaAudioSound;
 
+typedef struct ma_movie_audio {
+    ma_data_source_base base;
+    MovieAudio *movie_audio;
+};
+
+static ma_result ma_movie_audio_read(
+    ma_data_source* pDataSource,
+    void* pFramesOut,
+    ma_uint64 frameCount,
+    ma_uint64* pFramesRead) {
+  // TODO Read data here.
+  // Output in the same format returned by
+  // ma_movie_audio_get_data_format().
+}
+
+static ma_result ma_movie_audio_seek(
+    ma_data_source* pDataSource,
+    ma_uint64 frameIndex) {
+  // Seek to a specific PCM frame here.
+  // Return MA_NOT_IMPLEMENTED if seeking is not supported.
+}
+
+static ma_result ma_movie_audio_get_data_format(
+    ma_data_source* pDataSource,
+    ma_format* pFormat,
+    ma_uint32* pChannels,
+    ma_uint32* pSampleRate,
+    ma_channel* pChannelMap,
+    size_t channelMapCap) {
+  // Return the format of the data here.
+}
+
+static ma_result ma_movie_audio_get_cursor(
+    ma_data_source* pDataSource,
+    ma_uint64* pCursor) {
+  // TODO Retrieve the current position of the cursor here.
+  // Return MA_NOT_IMPLEMENTED and set *pCursor to 0 if there is no
+  // notion of a cursor.
+}
+
+static ma_result ma_movie_audio_get_length(
+    ma_data_source* pDataSource,
+    ma_uint64* pLength) {
+  // TODO Retrieve the length in PCM frames here.
+  // Return MA_NOT_IMPLEMENTED and set *pLength to 0 if there is no
+  // notion of a length, or if the length is unknown.
+}
+
+static ma_data_source_vtable g_ma_movie_audio_vtable = {
+  my_data_source_read,
+  my_data_source_seek,
+  my_data_source_get_data_format,
+  my_data_source_get_cursor,
+  my_data_source_get_length
+};
+
+ma_result ma_movie_audio_init(
+    MovieAudio *movie_audio,
+    ma_movie_audio* p_ma_MovieAudio) {
+  ma_result result;
+  ma_data_source_config baseConfig;
+
+  baseConfig = ma_data_source_config_init();
+  baseConfig.vtable = &g_ma_movie_audio_vtable;
+
+  result = ma_data_source_init(&baseConfig, &p_ma_MovieAudio->base);
+  if (result != MA_SUCCESS) return result;
+
+  // TODO ensure this is properly initialised
+  p_ma_MovieAudio->movie_audio = movie_audio;
+
+  return MA_SUCCESS;
+}
+
+void ma_movie_audio_uninit(ma_movie_audio *p_ma_MovieAudio) {
+  // TODO uninitialise/free MovieAudio here
+
+  // You must uninitialize the base data source.
+  ma_data_source_uninit(&p_ma_MovieAudio->base);
+}
+
 class EXPCL_MA_AUDIO MaAudioManager final : public AudioManager {
   friend class MaAudioSound;
   PT(ma_resource_manager) get_resource_manager();

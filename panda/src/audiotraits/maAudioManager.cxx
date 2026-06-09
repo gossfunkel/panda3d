@@ -142,6 +142,8 @@ get_sound(const Filename &file_name, bool positional, int mode) {
 
 PT(AudioSound) MaAudioManager::
 get_sound(MovieAudio *source, bool positional, int mode) {
+  ma_movie_audio new_ma_ma;
+  ma_movie_audio_init(source, &new_ma_ma);
   // TODO make a ma_data_source object if none exists in the cache for
   //  this MovieAudio
   // TODO check cache size; if limit is hit, pop one from _expiring_sources
