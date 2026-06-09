@@ -142,6 +142,7 @@ class EXPCL_MA_AUDIO MaAudioManager final : public AudioManager {
     Filename file_name;
     bool cached;
     unsigned int refcount;
+    unsigned int active_sounds;
     ma_resource_manager_data_source data_src;
   } DataSource;
 
@@ -149,7 +150,7 @@ class EXPCL_MA_AUDIO MaAudioManager final : public AudioManager {
   phash_map<std::string, DataSource> _data_sources;
   unsigned int _num_sources_cached;
   // track age of cached sources for when cache is full with order
-  // TODO linked list?
+  // TODO ordered list?
   phash_map<std::string, DataSource *> _cached_sources;
   // This holds pointers to ma_data_sources available to uncache - these are
   //  held for a limited time after stopping in case of re-use

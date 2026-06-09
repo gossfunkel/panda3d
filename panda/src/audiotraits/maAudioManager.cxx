@@ -113,18 +113,29 @@ get_sound(const Filename &file_name, bool positional, int mode) {
   if (data_src_it == _data_sources.end()) {
     // make new DataSource
     DataSource *new_src = _data_sources.emplace_back(DataSource(
-          file_name,
-          true,
-          1,
-
-    _cache_order.emplace_back(new_src);
-    _num_sources_cached++;
-  } else {
-    data_src_it->refcount++;
-    if (!data_src_it->cached && _num_sources_cached < _cache_limit);
-      _cached_sources.emplace(file_name, &(*data_src_it));
+        file_name,
+        false,
+        1,
+        0,
+        data_src
+    ));
+    if (_num_sources_cached < _cache_limit) {
+      ma_resource_manager_data_source_init(&new_src->data_src);
+      _cache_order.emplace_back(new_src);
+      new_src->cached = true;
+      new_src->active_sounds = 1;
       _num_sources_cached++;
+    }
+  } else { // source file is already loaded to _data_sources
+    data_src_it->refcount++;
+    if (!data_src_it->cached && _num_sources_cached < _cache_limit) {
+      ma_resource_manager_data_source_init(&data_src_it->data_src);
+      _cached_sources.emplace(file_name, &(*data_src_it));
       data_src_it->cached = true;
+      new_src->active_sounds = 1;
+      _num_sources_cached++;
+    } else if (data_src_it->cached) {
+      data_src_it->active_sounds++;
     }
     // TODO this constructor
     _all_sounds.emplace_back(MaAudioSound(
@@ -140,14 +151,52 @@ get_sound(const Filename &file_name, bool positional, int mode) {
   return new_sound;
 }
 
+/*
+ * Construct a new sound using a MovieAudio source. Note: this will not
+ * benefit from MiniAudio's resource management.
+ */
 PT(AudioSound) MaAudioManager::
 get_sound(MovieAudio *source, bool positional, int mode) {
-  ma_movie_audio new_ma_ma;
-  ma_movie_audio_init(source, &new_ma_ma);
-  // TODO make a ma_data_source object if none exists in the cache for
-  //  this MovieAudio
-  // TODO check cache size; if limit is hit, pop one from _expiring_sources
-  return new MaAudioSound(this, source, positional, mode);
+  auto data_src_it = _data_sources.find(source.get_filename());
+  if (data_src_it == _data_sources.end()) {
+    ma_movie_audio new_ma_ma;
+    DataSource *new_src = _data_sources.emplace_back(DataSource(
+        file_name,
+        false,
+        1,
+        0,
+        new_ma_ma;
+    ));
+    if (_num_sources_cached < _cache_limit) {
+      ma_movie_audio_init(source, &new_src->data_src);
+      _cache_order.emplace_back(new_src);
+      new_src->cached = true;
+      new_src->active_sounds = 1;
+      _num_sources_cached++;
+    }
+  } else { // source file is already loaded to _data_sources
+    data_src_it->refcount++;
+    if (!data_src_it->cached && _num_sources_cached < _cache_limit) {
+      ma_movie_audio_init(source, &data_src_it->data_src);
+      _cached_sources.emplace(file_name, &(*data_src_it));
+      data_src_it->cached = true;
+      new_src->active_sounds = 1;
+      _num_sources_cached++;
+    } else if (data_src_it->cached) {
+      data_src_it->active_sounds++;
+    }
+    // TODO this constructor
+    _all_sounds.emplace_back(MaAudioSound(
+          this,
+          &_resource_manager,
+          &(*data_src_it),
+          positional,
+          mode
+    ));
+  }
+  PT(AudioSound) new_sound =
+    (AudioSound *)(MaAudioSound *)_all_sounds.back();
+  return new_sound;
 }
 
 /*
@@ -159,45 +208,55 @@ void MaAudioManager::uncache_sound(const Filename &file_name) {
   Filename path = file_name;
 
   // TODO use the miniaudio vfs?
-  VirtualFileSystem *vfs = VirtualFileSystem::get_global_ptr();
-  vfs->resolve_filename(path, get_model_path());
 
-  auto data_src = _sample_cache.find(path);
-  if (data_src == _sample_cache.end())
-    data_src  = _sample_cache.find(file_name);
-  if (data_src == _sample_cache.end())
-    return;
+  auto data_src = _cached_sources.find(path);
+  if (data_src == _cached_sources.end()) {
+    VirtualFileSystem *vfs = VirtualFileSystem::get_global_ptr();
+    vfs->resolve_filename(path, get_model_path());
+    data_src    = _cached_sources.find(path);
+  }
+  if (data_src == _cached_sources.end()) return;
 
-  if (data_src->active) {
+  if (data_src->active_sounds) {
     audio_error("Sound is active, cannot be uncached.");
     return;
   }
-  ma_data_source_uninit(data_src);
-  _expiring_sources.pop_front();
-  _source_cache.erase(data_src);
-  delete data_src;
+  ma_data_source_uninit(&(*data_src));
+  _cached_sources.erase(path);
+  if (!data_src->refcount) {
+    _data_sources.erase(path);
+    delete data_src;
+  }
 }
 
 /*
- * Marks all inactive source cache locations as free
+ * Garbage collects data sources
  */
 void MaAudioManager::clear_cache() {
   ReMutexHolder holder(_lock);
 
-  std::vector<unsigned int> check_if_active;
-  for (unsigned int idx = 0;idx < _cache_limit; ++idx)
-    check_if_active.emplace_back(idx);
-  for (auto cached_id : _expiring_sources)
-    check_if_active.erase(check_if_active.at(*cached_id));
-  for (auto idx : check_if_active)
-    if (_source_cache.at(*idx)->refcount == 0)
-      _free_sources.push_back(*idx);
+  for (auto data_src_p_it : _cached_sources) {
+    if (!(*data_src_p_it)->active_sounds) {
+      _cached_sources.erase((*data_src_p_it)->file_name.get_basename());
+    }
+  }
+  for (auto data_src_it : _data_sources) {
+    if (!data_src_it->refcount) {
+      if (data_src_it->cached)
+        _cached_sources.erase(data_src_it->file_name.get_basename());
+      _data_sources.erase(data_src_it->file_name.get_basename());
+      delete data_src_it;
+    }
+  }
 }
 
 void MaAudioManager::set_cache_limit(unsigned int count) {
   ReMutexHolder holder(_lock);
-  if (((int)_expiring_sources.size() > count) {
-    discard_excess_cache(count);
+  while (_num_sources_cached > count) {
+    _cached_sources.front()->cached = false;
+    // TODO hashmap doesn't have this
+    _cached_sources.pop_front();
+    _num_sources_cached--;
   }
   _cache_limit = count;
 }
