@@ -138,7 +138,7 @@ class EXPCL_MA_AUDIO MaAudioSound final : public AudioSound {
         INLINE bool has_sound_data() const;
 
     private:
-        
+
         PT(MovieAudio) _movie;
         OpenALAudioManager::SoundData *_sd;
 
@@ -157,6 +157,8 @@ class EXPCL_MA_AUDIO MaAudioSound final : public AudioSound {
 
         ALuint _source;
         PT(OpenALAudioManager) _manager;
+
+        ma_resource_manager_data_source _data_src;
 
         PN_stdfloat _volume; // 0..1.0
         PN_stdfloat _balance; // -1..1

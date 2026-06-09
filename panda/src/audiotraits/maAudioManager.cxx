@@ -120,7 +120,10 @@ get_sound(const Filename &file_name, bool positional, int mode) {
     if (src_info == _source_cache.end()) {
       // source not cached
       if (_num_sources_cached >= _cache_limit) {
-          // TODO search for oldest source to drop from cache?
+        // oldest source is popped to make space
+        src_info = _source_cache.at(_cache_order.front());
+
+        _cache_order.pop_front()
       } else {
         if (!_free_sources.size()) {
           if (!_expiring_sources.size())
@@ -141,6 +144,7 @@ get_sound(const Filename &file_name, bool positional, int mode) {
     }
   }
 
+  // TODO constructor gets DataSource ptr
   ma_resource_manager_data_source *ds_ptr = &src_info->data_src;
 
   MaAudioSound *new_sound = _all_sounds.at(src_info.first->idx);

@@ -51,33 +51,20 @@ class EXPCL_MA_AUDIO MaAudioManager final : public AudioManager {
   typedef pset<OpenALAudioManager *> Managers;
   static Managers *_managers;
 
-  /*
-   * These data objects store a way to find a source by name, keep a count
-   * of how many AudioSounds use it, and the index of the sound in the
-   * _source_cache array.
-   */
-  typedef struct DataSource {
-    ma_resource_manager_data_source data_src;
-    Filename file_name;
-    unsigned int refcount;
-    bool cached;
-  } DataSource;
-
+  // Cache in memory for source data handles
+  phash_map<std::string, DataSource> _source_cache;
+  unsigned int _num_sources_cached;
+  // track age of cached sources for when cache is full
+  pdeque<unsigned int> _cache_order;
   /* We keep ma_data_sources in memory for a little after they're stopped,
    *  as it's not uncommon to re-use sounds in a short timespan. This is
    *  a FIFO 'deque' of cache indices available to overwrite or re-link to
    *  a new AudioSound, removing from this array on use.
    */
   pdeque<unsigned int> _expiring_sources;
-  // this deque is to allow users to acquire a new cache position quickly
-  pdeque<unsigned int> _free_sources;
-
-  // Caches in memory for source data handles and AudioSound objects
-  phash_map<std::string, DataSource> _source_cache;
+  // TODO doubly linked list for AudioSounds
+  std::vector<MaAudioSound> _all_sounds;
   std::array<MaAudioSound *, _concurrent_sound_limit> _sounds_playing;
-  // TODO should this limit be higher, since multiple sounds can use one src?
-  std::array<MaAudioSound, _cache_limit> _all_sounds;
-  unsigned int _num_sources_cached;
 
   PN_stdfloat _distance_factor;
   PN_stdfloat _doppler_factor;
