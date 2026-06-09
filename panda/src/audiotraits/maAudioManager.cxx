@@ -110,45 +110,16 @@ MaAudioManager() {
  */
 PT(AudioSound) MaAudioManager::
 get_sound(const Filename &file_name, bool positional, int mode) {
-  // TODO use the miniaudio vfs?
-  VirtualFileSystem *vfs = VirtualFileSystem::get_global_ptr();
-  vfs->resolve_filename(path, get_model_path());
-
-  auto src_info = _source_cache.find(path);
-  if (src_info == _source_cache.end()) {
-    src_info = _source_cache.find(file_name);
-    if (src_info == _source_cache.end()) {
-      // source not cached
-      if (_num_sources_cached >= _cache_limit) {
-        // oldest source is popped to make space
-        src_info = _source_cache.at(_cache_order.front());
-
-        _cache_order.pop_front()
-      } else {
-        if (!_free_sources.size()) {
-          if (!_expiring_sources.size())
-            audio_error(
-                "Cache corrupted: limit not reached, but no available cache.");
-          else {
-            // TODO does the data_source need uninited here or will it
-            // have been done before now?
-            src_info = _source_cache.at(*_expiring_sources.pop_front());
-          }
-        } else src_info = _source_cache.at(*_free_sources.pop_front());
-      }
-      ma_resource_manager_data_source new_src;
-      *src_info = DataSource(new_src, path, 1, 1, true);
-      int flags   = 0; // TODO set appropriate flags
-      ma_resource_manager_data_source_init(&_resource_mgr,
-          path.get_basename(), flags, &src_info->data_src);
-    }
+  _all_sounds.emplace_back(
+      MaAudioSound(this, &_resource_manager, file_name, positional, mode));
+  PT(AudioSound) new_sound = (AudioSound *)(MaAudioSound *)_all_sounds.back();
+  if (new_sound->cached()) {
+    // TODO should manager or sounds manage cache?
+    auto src = _source_cache.find(file_name);
+    // FIXME iterator, not index
+    _cache_order.emplace_back(src);
+    _num_sources_cached++;
   }
-
-  // TODO constructor gets DataSource ptr
-  ma_resource_manager_data_source *ds_ptr = &src_info->data_src;
-
-  MaAudioSound *new_sound = _all_sounds.at(src_info.first->idx);
-  *new_sound = MaAudioSound(this, ds_ptr, positional, mode);
   return new_sound;
 }
 

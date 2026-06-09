@@ -18,11 +18,10 @@ MaAudioSound:
 
 ## Cacheing sounds
 Load new sound with source file:
-1) get_sound checks if source has been cached in `_source_info`
-1) finding no match for the filename in the phash_map, it finds an available cache location.
-1) finding space, it creates the data source in the `_source_cache`. If it doesn't find a space, it overwrites the oldest data source
-1) it then finds space for the AudioSound in the `_all_sounds` phash_map, similarly
-1) it then calls the MaAudioSound constructor, passing a pointer to the data source
+1) AudioSound constructor checks if the file is cached and sets _cached appropriately
+1) if it is to be loaded active, it then init()s its own data_source
+1) the constructor updates the cache
+1) a PT() the new sound is returned to the caller of get_sound()
 
 Load new sound with new MovieAudio:
 TODO
