@@ -51,19 +51,31 @@ class EXPCL_MA_AUDIO MaAudioManager final : public AudioManager {
   typedef pset<OpenALAudioManager *> Managers;
   static Managers *_managers;
 
-  // Cache in memory for source data handles
-  phash_map<std::string, DataSource> _source_cache;
-  unsigned int _num_sources_cached;
-  // track age of cached sources for when cache is full
-  pdeque<unsigned int> _cache_order;
-  /* We keep ma_data_sources in memory for a little after they're stopped,
-   *  as it's not uncommon to re-use sounds in a short timespan. This is
-   *  a FIFO 'deque' of cache indices available to overwrite or re-link to
-   *  a new AudioSound, removing from this array on use.
+  /*
+   * On loading any sound, a source is found or made for the given
+   * filename. Although MiniAudio handles redundant loads, this struct
+   * avoids tracking which sounds use which sources when we limit the
+   * cache with the Panda3D API.
    */
-  pdeque<unsigned int> _expiring_sources;
-  // TODO doubly linked list for AudioSounds
-  std::vector<MaAudioSound> _all_sounds;
+  typedef struct DataSource {
+    Filename file_name;
+    bool cached;
+    unsigned int refcount;
+    ma_resource_manager_data_source data_src;
+  } DataSource;
+
+  // source data handles
+  phash_map<std::string, DataSource> _data_sources;
+  unsigned int _num_sources_cached;
+  // track age of cached sources for when cache is full with order
+  // TODO linked list?
+  phash_map<std::string, DataSource *> _cached_sources;
+  // This holds pointers to ma_data_sources available to uncache - these are
+  //  held for a limited time after stopping in case of re-use
+  pdeque<DataSource *> _expiring_sources;
+  // This is where AudioSounds are stored in memory
+  pdeque<MaAudioSound> _all_sounds;
+  // This array contains pointers to playing sounds
   std::array<MaAudioSound *, _concurrent_sound_limit> _sounds_playing;
 
   PN_stdfloat _distance_factor;

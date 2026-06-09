@@ -73,10 +73,6 @@ MaAudioManager() {
 
   _managers->insert(this);
 
-  _num_sources_cached = 0;
-  for (int ds_idx = 0; ds_idx < _cache_limit; ++ds_idx)
-    _free_sources.push_back(ds_idx);
-
   ma_engine_config audio_engine_conf;
   audio_engine_conf = ma_engine_config_init();
   audio_engine_conf.pResourceManager = &_resource_mgr;
@@ -92,8 +88,11 @@ MaAudioManager() {
       0, 0, 0,
       1, 0, 0,
       0, 0, 1);
-  // TODO check set, if not, set _is_valid = false;
+  // TODO check these values set, if not, set _is_valid = false;
 
+  _num_sources_cached = 0;
+
+  // TODO flags for global sound group
   int sg_flags = 0;
   ma_sound_group_init(&_audio_engine, sg_flags, nullptr, &_all_sounds_grp);
 
@@ -110,16 +109,34 @@ MaAudioManager() {
  */
 PT(AudioSound) MaAudioManager::
 get_sound(const Filename &file_name, bool positional, int mode) {
-  _all_sounds.emplace_back(
-      MaAudioSound(this, &_resource_manager, file_name, positional, mode));
-  PT(AudioSound) new_sound = (AudioSound *)(MaAudioSound *)_all_sounds.back();
-  if (new_sound->cached()) {
-    // TODO should manager or sounds manage cache?
-    auto src = _source_cache.find(file_name);
-    // FIXME iterator, not index
-    _cache_order.emplace_back(src);
+  auto data_src_it = _data_sources.find(file_name);
+  if (data_src_it == _data_sources.end()) {
+    // make new DataSource
+    DataSource *new_src = _data_sources.emplace_back(DataSource(
+          file_name,
+          true,
+          1,
+
+    _cache_order.emplace_back(new_src);
     _num_sources_cached++;
+  } else {
+    data_src_it->refcount++;
+    if (!data_src_it->cached && _num_sources_cached < _cache_limit);
+      _cached_sources.emplace(file_name, &(*data_src_it));
+      _num_sources_cached++;
+      data_src_it->cached = true;
+    }
+    // TODO this constructor
+    _all_sounds.emplace_back(MaAudioSound(
+          this,
+          &_resource_manager,
+          &(*data_src_it),
+          positional,
+          mode
+    ));
   }
+  PT(AudioSound) new_sound =
+    (AudioSound *)(MaAudioSound *)_all_sounds.back();
   return new_sound;
 }
 
