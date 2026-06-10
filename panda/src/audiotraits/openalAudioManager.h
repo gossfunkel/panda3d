@@ -138,7 +138,6 @@ private:
 
   void cleanup();
 
-private:
   // This global lock protects all access to OpenAL library interfaces.
   static ReMutex _lock;
 

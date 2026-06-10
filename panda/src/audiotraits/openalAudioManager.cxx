@@ -215,9 +215,9 @@ OpenALAudioManager::
 ~OpenALAudioManager() {
   ReMutexHolder holder(_lock);
   nassertv(_managers != nullptr);
-  Managers::iterator mi = _managers->find(this);
-  nassertv(mi != _managers->end());
-  _managers->erase(mi);
+  Managers::iterator m_it = _managers->find(this);
+  nassertv(m_it != _managers->end());
+  _managers->erase(m_it);
   cleanup();
 }
 
@@ -540,8 +540,8 @@ get_sound(const Filename &file_name, bool positional, int mode) {
 }
 
 /**
- * Deletes a sample from the expiration queues.  If the sound is actively in
- * use, then the sound cannot be deleted, and this function has no effect.
+ * Deletes a source from the cache. If the source is in use by an active
+ * sound it cannot be deleted, and this function has no effect.
  */
 void OpenALAudioManager::
 uncache_sound(const Filename &file_name) {
@@ -586,7 +586,8 @@ uncache_sound(const Filename &file_name) {
 void OpenALAudioManager::
 clear_cache() {
   ReMutexHolder holder(_lock);
-  discard_excess_cache(0);
+  for (auto sc_it : _sample_cache)
+    uncache_sound(sc_it->file_name.get_basename());
 }
 
 /**
