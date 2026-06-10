@@ -252,13 +252,13 @@ void MaAudioManager::clear_cache() {
 
 void MaAudioManager::set_cache_limit(unsigned int count) {
   ReMutexHolder holder(_lock);
+  _cache_limit = count;
   while (_num_sources_cached > count) {
     _cached_sources.front()->cached = false;
     // TODO hashmap doesn't have this
     _cached_sources.pop_front();
     _num_sources_cached--;
   }
-  _cache_limit = count;
 }
 
 unsigned int MaAudioManager::get_cache_limit() const {
@@ -328,14 +328,15 @@ void MaAudioManager::reduce_sounds_playing_to(unsigned int count) {
   // TODO use _all_sounds_grp?
   int limit = _sounds_playing.size() - count;
   while (limit-- > 0) {
-    SoundsPlaying::iterator sound = _sounds_playing.begin();
-    nassertv(sound != _sounds_playing.end());
-    // Stop should be called while holding a PT the sound- we have to make a
-    // temporary one here so the refcount doesn't go to 0 and recurse, with
-    // the destructor calling stop() and stop() calling the destructor.
-    // TODO shouldn't the destructor just check if it's stopped already?
-    PT(MaAudioSound) s = (*sound);
-    s->stop();
+    auto sound_it = _sounds_playing.begin();
+    nassertv(sound_it != _sounds_playing.end());
+    /* Stop should be called while holding a PT the sound- we have to make a
+     * temporary one here so the refcount doesn't go to 0 and recurse, with
+     * the destructor calling stop() and stop() calling the destructor.
+     */
+    // TODO shouldn't the AudioSound destructor just check if it's stopped?
+    PT(MaAudioSound) pt_sound = &(*sound_it);
+    pt_sound->stop();
   }
 }
 
@@ -351,9 +352,9 @@ void MaAudioManager::update() {
 }
 
 /* MiniAudio uses y-up by default, this function compensates for any
- * disparity between the P3D coord system and the audio engine. Please
- * take care of this coordinate difference if you're going beyond the
- * exposed API of this module.
+ *  disparity between the P3D coord system and the audio engine. Please
+ *  take care of this coordinate difference if you're going beyond the
+ *  exposed API of this module.
  */
 void MaAudioManager::
 audio_3d_set_listener_attributes(
@@ -486,20 +487,15 @@ audio_3d_get_drop_off_factor() const {
 }
 
 /**
- * Call this at exit time to shut down the audio system.  This will invalidate
- * all currently-active AudioManagers and AudioSounds in the system.  If you
- * change your mind and want to play sounds again, you will have to recreate
- * all of these objects.
+ * Shut down the entire audio system. Invalidates all AudioManagers and
+ *  AudioSounds in the system, even if they're active! This cannot be undone
  */
 void MaAudioManager::
 shutdown() {
   ReMutexHolder holder(_lock);
-  if (_managers != nullptr) {
-    Managers::iterator mi;
-    for (mi = _managers->begin(); mi != _managers->end(); ++mi) {
-      (*mi)->cleanup();
-    }
-  }
+  if (_managers != nullptr)
+    for (Managers::iterator man_it : _managers)
+      man_it->cleanup();
 
   nassertv(_active_managers == 0);
 }
@@ -507,24 +503,41 @@ shutdown() {
 ~MaAudioManager() {
   ReMutexHolder holder(_lock);
   nassertv(_managers != nullptr);
-  Managers::iterator mi = _managers->find(this);
-  nassertv(mi != _managers->end());
-  _managers->erase(mi);
+  Managers::iterator man_it = _managers->find(this);
+  nassertv(man_it != _managers->end());
+  _managers->erase(man_it);
   cleanup();
 }
 
 /**
- * This is mostly for debugging, but it it could be used to detect errors in a
- * release build if you don't mind the cpu cost.
+ * For debug but you can use it for release if you don't mind the cost
  */
 bool MaAudioManager::
 is_valid() {
   return _is_valid;
 }
 
+/*
+ * Stop and remove all playing sounds, remove all sources, and uninitialise
+ *  the audio engine, device, and resource manager
+ */
 void MaAudioManager::
 cleanup() {
-  // TODO do we need to uninit all AudioSounds? _all_sounds_grp?
+  for (auto sound_it : _all_sounds) {
+    sound_it->stop();
+    _all_sounds.erase(sound_it);
+    delete sound_it;
+  }
+  for (auto source_it : _data_sources) {
+    if (source_it->movie_audio == nullptr)
+      ma_resource_manager_data_source_uninit(source_it->data_src);
+    else
+      ma_movie_audio_uninit(source_it->data_src);
+    _data_sources.erase(source_it);
+    delete source_it;
+  }
+
   ma_device_uninit(&_device);
   ma_engine_uninit(&_audio_engine);
+  ma_resource_manager_uninit(&_resource_mgr);
 }
