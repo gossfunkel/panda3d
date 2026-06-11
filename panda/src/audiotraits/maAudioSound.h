@@ -112,24 +112,19 @@ class EXPCL_MA_AUDIO MaAudioSound final : public AudioSound {
 
         const vector_string& get_raw_comment() const;
 
-    /*private:
-        OpenALAudioSound(OpenALAudioManager* manager,
+    private:
+        MaAudioSound(MaAudioManager* manager,
                         MovieAudio *movie,
                         bool positional,
                         int mode);
-        OpenALAudioSound(const OpenALAudioSound &copy_sound);
+        MaAudioSound(const MaAudioSound &copy_sound);
         INLINE void   set_calibrated_clock(double rtc, double t, double playrate);
         INLINE double get_calibrated_clock(double rtc) const;
         void          correct_calibrated_clock(double rtc, double t);
         void          cache_time(double rtc);
         void cleanup();
         void restart_stalled_audio();
-        void delete_queued_buffers();
-        ALuint make_buffer(int samples, int channels, int rate, unsigned char *data);
-        void queue_buffer(ALuint buffer, int samples, int loop_index, double time_offset);
         int  read_stream_data(int bytelen, unsigned char *data);
-        void pull_used_buffers();
-        void push_fresh_buffers();
         INLINE bool require_sound_data();
         INLINE void release_sound_data(bool force);
 
@@ -140,23 +135,11 @@ class EXPCL_MA_AUDIO MaAudioSound final : public AudioSound {
     private:
 
         PT(MovieAudio) _movie;
-        OpenALAudioManager::SoundData *_sd;
+        MaAudioManager::SoundData *_sd;
 
-        struct QueuedBuffer {
-            ALuint _buffer;
-            int    _samples;
-            int    _loop_index;
-            double _time_offset;
-        };
-
-        int    _playing_loops;
-        PN_stdfloat  _playing_rate;
-
-        pdeque<QueuedBuffer> _stream_queued;
         int                  _loops_completed;
 
-        ALuint _source;
-        PT(OpenALAudioManager) _manager;
+        PT(MaAudioManager) _manager;
 
         ma_resource_manager_data_source _data_src;
 
@@ -164,9 +147,8 @@ class EXPCL_MA_AUDIO MaAudioSound final : public AudioSound {
         PN_stdfloat _balance; // -1..1
         PN_stdfloat _play_rate; // 0..1.0
 
-        ALfloat _location[3];
-        ALfloat _velocity[3];
-        ALfloat _direction[3];
+        ma_vec3f _location;
+        ma_vec3f _velocity;
 
         PN_stdfloat _min_dist;
         PN_stdfloat _max_dist;
@@ -220,7 +202,7 @@ class EXPCL_MA_AUDIO MaAudioSound final : public AudioSound {
         }
         static void init_type() {
             AudioSound::init_type();
-            register_type(_type_handle, "OpenALAudioSound", AudioSound::get_class_type());
+            register_type(_type_handle, "MaAudioSound", AudioSound::get_class_type());
         }
         virtual TypeHandle get_type() const {
             return get_class_type();
@@ -234,6 +216,6 @@ class EXPCL_MA_AUDIO MaAudioSound final : public AudioSound {
         static TypeHandle _type_handle;
         };
 
-        #include "maAudioSound.I"*/
+        #include "maAudioSound.I"
 
         #endif /* __MAAUDIOSOUND_H__ */

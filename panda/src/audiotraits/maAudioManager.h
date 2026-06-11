@@ -120,7 +120,7 @@ class EXPCL_MA_AUDIO MaAudioManager final : public AudioManager {
   bool _ma_active;
   bool _is_valid;
   int _cache_limit;
-  PN_stdfload _volume;
+  PN_stdfloat _volume;
   PN_stdfloat _play_rate;
   bool _cleanup_required;
 
@@ -129,7 +129,7 @@ class EXPCL_MA_AUDIO MaAudioManager final : public AudioManager {
   ma_engine _audio_engine;
   unsigned int _concurrent_sound_limit;
 
-  typedef pset<OpenALAudioManager *> Managers;
+  typedef pset<MaAudioManager *> Managers;
   static Managers *_managers;
 
   /*
