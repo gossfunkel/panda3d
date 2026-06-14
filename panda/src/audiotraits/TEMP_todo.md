@@ -18,18 +18,24 @@ MaAudioSound:
 
 ## Cacheing sounds
 Load new sound with source file:
-1) AudioSound constructor checks if the file is cached and sets _cached appropriately
-1) if it is to be loaded active, it then init()s its own data_source
-1) the constructor updates the cache
-1) a PT() the new sound is returned to the caller of get_sound()
+1) check if the file is cached and sets `_cached` appropriately in `get_sound()`
+1) if it is to be loaded active, `init()`s the `ma_data_source`
+1) update the cache
+1) construct an `AudioSound` with the new `DataSource`
+1) return a `PT()` to the caller of `get_sound()`
 
 Load new sound with new MovieAudio:
-TODO
+1) check if the `MovieAudio` is cached and sets `_cached` appropriately in `get_sound()`
+1) if it is to be loaded active, `init()`s the `ma_movie_audio_data_source`
+1) update the cache
+1) construct an `AudioSound` with the new `DataSource`
+1) return a `PT()` to the caller of `get_sound()`
 
 Load sound with already-used source file:
-1) get_sound checks if source has been cached in `_source_info`
-1) finding a match, it finds space for the sound in `_all_sounds`, overwriting the oldest if needed
-1) it then calls the MaAudioSound constructor, passing a pointer to the data source
+1) check if the file is cached and sets `_cached` appropriately in `get_sound()`
+1) finding the `DataSound` for the file, update its refcount and active/expiring status
+1) construct an `AudioSound` with the existing `DataSource`
+1) return a `PT()` to the caller of `get_sound()`
 
 Delete sound using unique source:
 TODO
