@@ -50,7 +50,6 @@ class EXPCL_MA_AUDIO MaAudioSound final : public AudioSound {
   INLINE bool is_playing() const;
   INLINE bool has_sound_data() const;
 
-  //PT(MovieAudio) _movie;
   MaAudioManager::DataSource *_data_src;
 
   MaAudioManager *_manager;

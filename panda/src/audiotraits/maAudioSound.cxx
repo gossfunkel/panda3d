@@ -2,19 +2,15 @@
 
 MaAudioSound::
 MaAudioSound(MaAudioManager *manager,
-             DataSource *data_src,
+             MaAudioManager::DataSource *data_src,
              Filename &file_name,
              bool positional,
              int mode) :
   AudioSound(positional),
-  _movie(MovieAudio()),
-  // TODO should we just load a MovieAudio with the filename?
-  // _movie(MovieAudio(file_name)),
-  _sd(nullptr),
+  _data_source(data_src),
   _playing_loops(0),
   _playing_rate(0.0),
   _loops_completed(0),
-  _source(0),
   _manager(manager),
   _volume(1.0f),
   _balance(0),
@@ -35,15 +31,9 @@ MaAudioSound(MaAudioManager *manager,
   _cone_outer_angle(360.0f),
   _cone_outer_gain(0.0f)
 {
-  _location[0] = 0.0f;
-  _location[1] = 0.0f;
-  _location[2] = 0.0f;
-  _velocity[0] = 0.0f;
-  _velocity[1] = 0.0f;
-  _velocity[2] = 0.0f;
-  _direction[0] = 0.0f;
-  _direction[1] = 0.0f;
-  _direction[2] = 0.0f;
+  _location = ma_vec3f(0.0f, 0.0f, 0.0f);
+  _velocity = ma_vec3f(0.0f, 0.0f, 0.0f);
+  _direction = ma_vec3f(0.0f, 0.0f, 0.0f);
 
   //ReMutexHolder holder(MaAudioManager::_lock);
 
@@ -52,7 +42,9 @@ MaAudioSound(MaAudioManager *manager,
     return;
   }
 
+  // TODO we removed _sd, so need to get length from source
   _length = _sd->_length;
+
   if (positional) {
     if (_sd->_channels != 1) {
       audio_warning("stereo sound " << file_name << " will not be spatialized");
@@ -64,51 +56,44 @@ MaAudioSound(MaAudioManager *manager,
                                           &data_src->data_src, flags,
                                           &manager->_all_sounds_grp),
                                           , "Failed to initialise AudioSound");
-  _comment = std::move(_sd->_comment);
+  // TODO save comments somewhere now we removed SoundDatas
   release_sound_data(false);
 }
 
+
+/**
+ * Copy constructor (to be used with make_copy).
+ */
 MaAudioSound::
-MaAudioSound(MaAudioManager *manager,
-             MovieAudio movie,
-             bool positional,
-             int mode) :
-  AudioSound(positional),
-  _movie(movie),
-  _sd(nullptr),
-  _playing_loops(0),
-  _playing_rate(0.0),
-  _loops_completed(0),
-  _source(0),
-  _manager(manager),
-  _volume(1.0f),
-  _balance(0),
-  _play_rate(1.0),
-  _min_dist(1.0f),
-  _max_dist(1000000000.0f),
-  _drop_off_factor(1.0f),
-  _length(0.0),
-  _loop_count(1),
-  _loop_start(0),
-  _desired_mode(mode),
-  _start_time(0.0),
+MaAudioSound(const MaAudioSound &copy_sound) :
+  AudioSound(copy_sound.is_positional()),
+  _data_source(copy_sound._data_source),
+  _playing_loops(copy_sound._playing_loops),
+  _playing_rate(copy_sound._playing_rate),
+  _loops_completed(copy_sound._loops_completed),
+  _manager(copy_sound._manager),
+  _volume(copy_sound._volume),
+  _balance(copy_sound._balance),
+  _play_rate(copy_sound._play_rate),
+  _min_dist(copy_sound._min_dist),
+  _max_dist(copy_sound._max_dist),
+  _drop_off_factor(copy_sound._drop_off),
+  _length(copy_sound._length),
+  _loop_count(copy_sound._loop_count),
+  _loop_start(copy_sound._loop_start),
+  _desired_mode(copy_sound._desired_mode),
+  _start_time(copy_sound._start_time),
   _current_time(0.0),
-  _basename(movie->get_filename().get_basename()),
-  _active(manager->get_active()),
-  _paused(false),
-  _cone_inner_angle(360.0f),
-  _cone_outer_angle(360.0f),
-  _cone_outer_gain(0.0f)
+  _basename(copy_sound._basename),
+  _active(copy_sound._active),
+  _paused(copy_sound._paused),
+  _cone_inner_angle(copy_sound._cone_inner_angle),
+  _cone_outer_angle(copy_sound._cone_outer_angle),
+  _cone_outer_gain(copy_sound._cone_outer_gain)
 {
-  _location[0] = 0.0f;
-  _location[1] = 0.0f;
-  _location[2] = 0.0f;
-  _velocity[0] = 0.0f;
-  _velocity[1] = 0.0f;
-  _velocity[2] = 0.0f;
-  _direction[0] = 0.0f;
-  _direction[1] = 0.0f;
-  _direction[2] = 0.0f;
+  _location = copy_sound._location;
+  _velocity = copy_sound._velocity;
+  _direction = copy_sound._direction;
 
   //ReMutexHolder holder(MaAudioManager::_lock);
 
@@ -120,20 +105,64 @@ MaAudioSound(MaAudioManager *manager,
   _length = _sd->_length;
   if (positional) {
     if (_sd->_channels != 1) {
-      audio_warning("stereo sound " << file_name << " will not be spatialized");
+      audio_warning("copied stereo sound " << _movie->get_filename() << " will not be spatialized");
     }
   }
 
-  ma_resource_manager_data_source data_src;
-  //int flags = (loop_sound) ? MA_RESOURCE_MANAGER_DATA_SOURCE_FLAG_LOOPING : 0;
-  int flags = MA_RESOURCE_MANAGER_DATA_SOURCE_FLAG_STREAM; // decode in 1s pages
-  //int flags = MA_RESOURCE_MANAGER_DATA_SOURCE_FLAG_DECODE; // decode to ram
-  //int flags = MA_RESOURCE_MANAGER_DATA_SOURCE_FLAG_ASYNC; load to ram later
-  //ma_resource_manager_data_buffer_init_ex_external(
-  //check_ma(ma_resource_manager_register_data(manager->get_resource_mgr(),
-  // TODO figure this mess out
-  //
-  // TODO use miniaudio copy method
+  // TODO save comments somewhere now we removed SoundDatas
+  release_sound_data(false);
+}
+OpenALAudioSound::
+OpenALAudioSound(const OpenALAudioSound &copy_sound) :
+  AudioSound(copy_sound.is_positional()),
+  _movie(copy_sound._movie),
+  _sd(copy_sound._sd),
+  _playing_loops(copy_sound._playing_loops),
+  _playing_rate(copy_sound._playing_rate),
+  _loops_completed(copy_sound._loops_completed),
+  _source(copy_sound._source),
+  _manager(copy_sound._manager),
+  _volume(copy_sound._volume),
+  _balance(copy_sound._balance),
+  _play_rate(copy_sound._play_rate),
+  _min_dist(copy_sound._min_dist),
+  _max_dist(copy_sound._max_dist),
+  _drop_off_factor(copy_sound._drop_off_factor),
+  _length(copy_sound._length),
+  _loop_count(copy_sound._loop_count),
+  _loop_start(copy_sound._loop_start),
+  _desired_mode(copy_sound._desired_mode),
+  _start_time(copy_sound._start_time),
+  _current_time(0.0),
+  _basename(copy_sound._basename),
+  _active(copy_sound._active),
+  _paused(copy_sound._paused),
+  _cone_inner_angle(copy_sound._cone_inner_angle),
+  _cone_outer_angle(copy_sound._cone_outer_angle),
+  _cone_outer_gain(copy_sound._cone_outer_gain)
+{
+  _location[0] = copy_sound._location[0];
+  _location[1] = copy_sound._location[1];
+  _location[2] = copy_sound._location[2];
+  _velocity[0] = copy_sound._velocity[0];
+  _velocity[1] = copy_sound._velocity[1];
+  _velocity[2] = copy_sound._velocity[2];
+  _direction[0] = copy_sound._direction[0];
+  _direction[1] = copy_sound._direction[1];
+  _direction[2] = copy_sound._direction[2];
+
+  ReMutexHolder holder(OpenALAudioManager::_lock);
+
+  if (!require_sound_data()) {
+    cleanup();
+    return;
+  }
+
+  if (copy_sound.is_positional()) {
+    if (_sd->_channels != 1) {
+      audio_warning("copied stereo sound " << _movie->get_filename() << " will not be spatialized");
+    }
+  }
 
   _comment = std::move(_sd->_comment);
   release_sound_data(false);
