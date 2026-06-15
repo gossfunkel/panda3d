@@ -24,195 +24,195 @@
 #include "miniaudio.h"
 
 class EXPCL_MA_AUDIO MaAudioSound final : public AudioSound {
-    friend class MaAudioManager;
+  friend class MaAudioManager;
 
-    public:
-        // Constructor and Destructor
-        ~MaAudioSound();
+  MaAudioSound(MaAudioManager* manager,
+               DataSource *data_src,
+               bool positional,
+               int mode);
+  MaAudioSound(const MaAudioSound &copy_sound);
+  INLINE void   set_calibrated_clock(double rtc, double t, double playrate);
+  INLINE double get_calibrated_clock(double rtc) const;
+  void          correct_calibrated_clock(double rtc, double t);
+  void          cache_time(double rtc);
+  void cleanup();
+  void restart_stalled_audio();
+  int  read_stream_data(int bytelen, unsigned char *data);
+  INLINE bool require_sound_data();
+  INLINE void release_sound_data(bool force);
 
-        void play();
-        void stop();
+  INLINE bool is_valid() const;
+  INLINE bool is_playing() const;
+  INLINE bool has_sound_data() const;
 
-        // loop: false = play once; true = play forever.  inits to false.
-        void set_loop(bool loop=true);
-        bool get_loop() const;
+  //PT(MovieAudio) _movie;
+  MaAudioManager::DataSource *_data_src;
 
-        // loop_count: 0 = forever; 1 = play once; n = play n times.  inits to 1.
-        void set_loop_count(unsigned long loop_count=1);
-        unsigned long get_loop_count() const;
+  PT(MaAudioManager) _manager;
 
-        // loop_start: 0 = beginning.  expressed in seconds.  inits to 0.
-        void set_loop_start(PN_stdfloat loop_start=0);
-        PN_stdfloat get_loop_start() const;
+  ma_resource_manager_data_source _data_src;
 
-        // 0 = beginning; length() = end.  inits to 0.0.
-        void set_time(PN_stdfloat time=0.0);
-        PN_stdfloat get_time() const;
+  PN_stdfloat _volume; // 0..1.0
+  PN_stdfloat _balance; // -1..1
+  PN_stdfloat _play_rate; // 0..1.0
 
-        // 0 = minimum; 1.0 = maximum.  inits to 1.0.
-        void set_volume(PN_stdfloat volume=1.0);
-        PN_stdfloat get_volume() const;
+  ma_vec3f    _location;
+  ma_vec3f    _velocity;
 
-        // -1.0 is hard left 0.0 is centered 1.0 is hard right inits to 0.0.
-        void set_balance(PN_stdfloat balance_right=0.0);
-        PN_stdfloat get_balance() const;
+  PN_stdfloat _min_dist;
+  PN_stdfloat _max_dist;
+  PN_stdfloat _drop_off_factor;
 
-        // play_rate is any positive float value.  inits to 1.0.
-        void set_play_rate(PN_stdfloat play_rate=1.0f);
-        PN_stdfloat get_play_rate() const;
+  double      _length;
+  int         _loop_count;
+  PN_stdfloat _loop_start;
+  int         _loops_completed;
 
-        // Inits to manager's state.
-        void set_active(bool active=true);
-        bool get_active() const;
+  int         _desired_mode;
 
-        // This is the string that throw_event() will throw when the sound finishes
-        // playing.  It is not triggered when the sound is stopped with stop().
-        void set_finished_event(std::string event);
-        const std::string& get_finished_event() const;
+  // The start_time field affects the next call to play.
+  double _start_time;
 
-        const std::string &get_name() const;
+  // The current_time field is updated every frame during the AudioManager
+  //  update.  Updates need to be atomic as get_time() can be called in the
+  //  cull thread.
+  PN_stdfloat  _current_time;
 
-        // return: playing time in seconds.
-        PN_stdfloat length() const;
+  // This is the string that throw_event() will throw when the sound finishes
+  //  playing.  It is not triggered when the sound is stopped with stop().
+  std::string _finished_event;
 
-        // Controls the position of this sound's emitter.  pos is a pointer to an
-        // xyz triplet of the emitter's position.  vel is a pointer to an xyz
-        // triplet of the emitter's velocity.
-        void set_3d_attributes(PN_stdfloat px, PN_stdfloat py, PN_stdfloat pz, PN_stdfloat vx, PN_stdfloat vy, PN_stdfloat vz);
-        void get_3d_attributes(PN_stdfloat *px, PN_stdfloat *py, PN_stdfloat *pz, PN_stdfloat *vx, PN_stdfloat *vy, PN_stdfloat *vz);
+  Filename _basename;
 
-        // Controls the direction of this sound emitter.
-        void set_3d_direction(LVector3 d);
-        LVector3 get_3d_direction() const;
+  // _active is for things like a 'turn off sound effects' in a preferences
+  //  panel.  _active is not about whether a sound is currently playing.  Use
+  //  status() for info on whether the sound is playing.
+  bool _active;
+  bool _paused;
 
-        void set_3d_min_distance(PN_stdfloat dist);
-        PN_stdfloat get_3d_min_distance() const;
+  /* These settings are used to define a directional sound source. The
+   *  inner angle defines a cone wherein the sound can be heard at normal
+   *  volume. _cone_outer_angle defines a second cone. Between the inner
+   *  and the outer cone the volume is attenuated.  _cone_outer_gain is a
+   *  factor applied to the volume setting to define the volume in the
+   *  zone outside of the outer cone.
+   */
+  PN_stdfloat _cone_inner_angle;
+  PN_stdfloat _cone_outer_angle;
+  PN_stdfloat _cone_outer_gain;
 
-        void set_3d_max_distance(PN_stdfloat dist);
-        PN_stdfloat get_3d_max_distance() const;
+  vector_string _comment;
 
-        void set_3d_drop_off_factor(PN_stdfloat factor);
-        PN_stdfloat get_3d_drop_off_factor() const;
+public:
+  ~MaAudioSound();
 
-        void set_3d_cone_inner_angle(PN_stdfloat angle);
-        PN_stdfloat get_3d_cone_inner_angle() const;
+  void play();
+  void stop();
 
-        void set_3d_cone_outer_angle(PN_stdfloat angle);
-        PN_stdfloat get_3d_cone_outer_angle() const;
+  // loop: false = play once; true = play forever.  inits to false.
+  void set_loop(bool loop=true);
+  bool get_loop() const;
 
-        void set_3d_cone_outer_gain(PN_stdfloat gain);
-        PN_stdfloat get_3d_cone_outer_gain() const;
+  // loop_count: 0 = forever; 1 = play once; n = play n times.  inits to 1.
+  void set_loop_count(unsigned long loop_count=1);
+  unsigned long get_loop_count() const;
 
-        // Construct a near-identical copy of this object on the heap and return a pointer to the new copy
-        virtual AudioSound *make_copy() const;
+  // loop_start: 0 = beginning.  expressed in seconds.  inits to 0.
+  void set_loop_start(PN_stdfloat loop_start=0);
+  PN_stdfloat get_loop_start() const;
 
-        AudioSound::SoundStatus status() const;
+  // 0 = beginning; length() = end.  inits to 0.0.
+  void set_time(PN_stdfloat time=0.0);
+  PN_stdfloat get_time() const;
 
-        void finished();
+  // 0 = minimum; 1.0 = maximum.  inits to 1.0.
+  void set_volume(PN_stdfloat volume=1.0);
+  PN_stdfloat get_volume() const;
 
-        const vector_string& get_raw_comment() const;
+  // -1.0 is hard left 0.0 is centered 1.0 is hard right inits to 0.0.
+  void set_balance(PN_stdfloat balance_right=0.0);
+  PN_stdfloat get_balance() const;
 
-    private:
-        MaAudioSound(MaAudioManager* manager,
-                        DataSource *data_src,
-                        bool positional,
-                        int mode);
-        MaAudioSound(const MaAudioSound &copy_sound);
-        INLINE void   set_calibrated_clock(double rtc, double t, double playrate);
-        INLINE double get_calibrated_clock(double rtc) const;
-        void          correct_calibrated_clock(double rtc, double t);
-        void          cache_time(double rtc);
-        void cleanup();
-        void restart_stalled_audio();
-        int  read_stream_data(int bytelen, unsigned char *data);
-        INLINE bool require_sound_data();
-        INLINE void release_sound_data(bool force);
+  // play_rate is any positive float value.  inits to 1.0.
+  void set_play_rate(PN_stdfloat play_rate=1.0f);
+  PN_stdfloat get_play_rate() const;
 
-        INLINE bool is_valid() const;
-        INLINE bool is_playing() const;
-        INLINE bool has_sound_data() const;
+  // Inits to manager's state.
+  void set_active(bool active=true);
+  bool get_active() const;
 
-    private:
+  // This is the string that throw_event() will throw when the sound finishes
+  //  playing.  It is not triggered when the sound is stopped with stop().
+  void set_finished_event(std::string event);
+  const std::string& get_finished_event() const;
 
-        //PT(MovieAudio) _movie;
-        MaAudioManager::DataSource *_data_src;
+  const std::string &get_name() const;
 
-        PT(MaAudioManager) _manager;
+  // return: playing time in seconds.
+  PN_stdfloat length() const;
 
-        ma_resource_manager_data_source _data_src;
+  // Controls the position of this sound's emitter.  pos is a pointer to an
+  //  xyz triplet of the emitter's position.  vel is a pointer to an xyz
+  //  triplet of the emitter's velocity.
+  void set_3d_attributes(
+      PN_stdfloat px, PN_stdfloat py, PN_stdfloat pz,
+      PN_stdfloat vx, PN_stdfloat vy, PN_stdfloat vz);
+  void get_3d_attributes(
+      PN_stdfloat *px, PN_stdfloat *py, PN_stdfloat *pz,
+      PN_stdfloat *vx, PN_stdfloat *vy, PN_stdfloat *vz);
 
-        PN_stdfloat _volume; // 0..1.0
-        PN_stdfloat _balance; // -1..1
-        PN_stdfloat _play_rate; // 0..1.0
+  // Controls the direction of this sound emitter.
+  void set_3d_direction(LVector3 d);
+  LVector3 get_3d_direction() const;
 
-        ma_vec3f _location;
-        ma_vec3f _velocity;
+  void set_3d_min_distance(PN_stdfloat dist);
+  PN_stdfloat get_3d_min_distance() const;
 
-        PN_stdfloat _min_dist;
-        PN_stdfloat _max_dist;
-        PN_stdfloat _drop_off_factor;
+  void set_3d_max_distance(PN_stdfloat dist);
+  PN_stdfloat get_3d_max_distance() const;
 
-        double      _length;
-        int         _loop_count;
-        PN_stdfloat _loop_start;
-        int         _loops_completed;
+  void set_3d_drop_off_factor(PN_stdfloat factor);
+  PN_stdfloat get_3d_drop_off_factor() const;
 
-        int         _desired_mode;
+  void set_3d_cone_inner_angle(PN_stdfloat angle);
+  PN_stdfloat get_3d_cone_inner_angle() const;
 
-        // The start_time field affects the next call to play.
-        double _start_time;
+  void set_3d_cone_outer_angle(PN_stdfloat angle);
+  PN_stdfloat get_3d_cone_outer_angle() const;
 
-        // The current_time field is updated every frame during the AudioManager
-        // update.  Updates need to be atomic, because get_time can be called in the
-        // cull thread.
-        PN_stdfloat  _current_time;
+  void set_3d_cone_outer_gain(PN_stdfloat gain);
+  PN_stdfloat get_3d_cone_outer_gain() const;
 
-        // This is the string that throw_event() will throw when the sound finishes
-        // playing.  It is not triggered when the sound is stopped with stop().
-        std::string _finished_event;
+  // Construct a near-identical copy of this object on the heap and return
+  //  a pointer to the new copy
+  virtual AudioSound *make_copy() const;
 
-        Filename _basename;
+  AudioSound::SoundStatus status() const;
 
-        // _active is for things like a 'turn off sound effects' in a preferences
-        // panel.  _active is not about whether a sound is currently playing.  Use
-        // status() for info on whether the sound is playing.
-        bool _active;
-        bool _paused;
+  void finished();
 
-        /* These settings are used to define a directional sound source. The
-         * inner angle defines a cone wherein the sound can be heard at normal
-         * volume. _cone_outer_angle defines a second cone. Between the inner
-         * and the outer cone the volume is attenuated.  _cone_outer_gain is a
-         * factor applied to the volume setting to define the volume in the
-         * zone outside of the outer cone.
-         */
-        PN_stdfloat _cone_inner_angle;
-        PN_stdfloat _cone_outer_angle;
-        PN_stdfloat _cone_outer_gain;
+  const vector_string& get_raw_comment() const;
 
-        vector_string _comment;
+  static TypeHandle get_class_type() {
+      return _type_handle;
+  }
+  static void init_type() {
+      AudioSound::init_type();
+      register_type(_type_handle, "MaAudioSound",
+          AudioSound::get_class_type());
+  }
+  virtual TypeHandle get_type() const {
+      return get_class_type();
+  }
+  virtual TypeHandle force_init_type() {
+      init_type();
+      return get_class_type();
+  }
 
-    public:
-        static TypeHandle get_class_type() {
-            return _type_handle;
-        }
-        static void init_type() {
-            AudioSound::init_type();
-            register_type(_type_handle, "MaAudioSound",
-                AudioSound::get_class_type());
-        }
-        virtual TypeHandle get_type() const {
-            return get_class_type();
-        }
-        virtual TypeHandle force_init_type() {
-            init_type();
-            return get_class_type();
-        }
+  private:
+  static TypeHandle _type_handle;
+};
 
-        private:
-        static TypeHandle _type_handle;
-        };
+#include "maAudioSound.I"
 
-        #include "maAudioSound.I"
-
-        #endif /* __MAAUDIOSOUND_H__ */
+#endif /* __MAAUDIOSOUND_H__ */
