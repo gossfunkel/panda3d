@@ -140,8 +140,8 @@ get_sound(const Filename &file_name, bool positional, int mode) {
     // TODO this constructor
     _all_sounds.emplace_back(MaAudioSound(
           this,
-          &_resource_manager,
           &(*data_src_it),
+          file_name,
           positional,
           mode
     ));
@@ -177,7 +177,14 @@ get_sound(MovieAudio *source, bool positional, int mode) {
   } else { // source file is already loaded to _data_sources
     data_src_it->refcount++;
     if (!data_src_it->cached && _num_sources_cached < _cache_limit) {
-      ma_movie_audio_init(source, &data_src_it->data_src);
+      // TODO make conditional on length
+      //int flags = (loop_sound) ? MA_RESOURCE_MANAGER_DATA_SOURCE_FLAG_LOOPING : 0;
+      int flags = MA_RESOURCE_MANAGER_DATA_SOURCE_FLAG_STREAM; // decode in 1s pages
+      //int flags = MA_RESOURCE_MANAGER_DATA_SOURCE_FLAG_DECODE; // decode to ram
+      //int flags = MA_RESOURCE_MANAGER_DATA_SOURCE_FLAG_ASYNC; load to ram later
+      check_ma(ma_movie_audio_init(*resource_mgr, source->filename.get_basename(),
+                          flags, &data_src_it->data_src), [](return NULL),
+                          "Failed to initialise MovieAudio DataSource");
       _cached_sources.emplace(file_name, &(*data_src_it));
       data_src_it->cached = true;
       new_src->active_sounds = 1;
@@ -188,8 +195,8 @@ get_sound(MovieAudio *source, bool positional, int mode) {
     // TODO this constructor
     _all_sounds.emplace_back(MaAudioSound(
           this,
-          &_resource_manager,
           &(*data_src_it),
+          source->filename,
           positional,
           mode
     ));

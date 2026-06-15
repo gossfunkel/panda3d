@@ -114,7 +114,7 @@ class EXPCL_MA_AUDIO MaAudioSound final : public AudioSound {
 
     private:
         MaAudioSound(MaAudioManager* manager,
-                        MovieAudio *movie,
+                        DataSource *data_src,
                         bool positional,
                         int mode);
         MaAudioSound(const MaAudioSound &copy_sound);
@@ -134,10 +134,8 @@ class EXPCL_MA_AUDIO MaAudioSound final : public AudioSound {
 
     private:
 
-        PT(MovieAudio) _movie;
-        MaAudioManager::SoundData *_sd;
-
-        int                  _loops_completed;
+        //PT(MovieAudio) _movie;
+        MaAudioManager::DataSource *_data_src;
 
         PT(MaAudioManager) _manager;
 
@@ -157,14 +155,9 @@ class EXPCL_MA_AUDIO MaAudioSound final : public AudioSound {
         double      _length;
         int         _loop_count;
         PN_stdfloat _loop_start;
+        int         _loops_completed;
 
         int         _desired_mode;
-
-        // The calibrated clock is initialized when the sound starts playing, and is
-        // periodically corrected thereafter.
-        double _calibrated_clock_base;
-        double _calibrated_clock_scale;
-        double _calibrated_clock_decavg;
 
         // The start_time field affects the next call to play.
         double _start_time;
@@ -186,10 +179,13 @@ class EXPCL_MA_AUDIO MaAudioSound final : public AudioSound {
         bool _active;
         bool _paused;
 
-        // These settings are used to define a directional sound source. The inner angle
-        // defines a cone wherein the sound can be heard at normal volume. _cone_outer_angle defines a second cone.
-        // Between the inner and the outer cone the volume is attenuated.
-        // _cone_outer_gain is a factor applied to the volume setting to define the volume in the zone outside of the outer cone.
+        /* These settings are used to define a directional sound source. The
+         * inner angle defines a cone wherein the sound can be heard at normal
+         * volume. _cone_outer_angle defines a second cone. Between the inner
+         * and the outer cone the volume is attenuated.  _cone_outer_gain is a
+         * factor applied to the volume setting to define the volume in the
+         * zone outside of the outer cone.
+         */
         PN_stdfloat _cone_inner_angle;
         PN_stdfloat _cone_outer_angle;
         PN_stdfloat _cone_outer_gain;
@@ -202,7 +198,8 @@ class EXPCL_MA_AUDIO MaAudioSound final : public AudioSound {
         }
         static void init_type() {
             AudioSound::init_type();
-            register_type(_type_handle, "MaAudioSound", AudioSound::get_class_type());
+            register_type(_type_handle, "MaAudioSound",
+                AudioSound::get_class_type());
         }
         virtual TypeHandle get_type() const {
             return get_class_type();

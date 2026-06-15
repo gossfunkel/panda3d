@@ -2,11 +2,14 @@
 
 MaAudioSound::
 MaAudioSound(MaAudioManager *manager,
-             PT(ma_data_source) data_src,
+             DataSource *data_src,
+             Filename file_name,
              bool positional,
              int mode) :
   AudioSound(positional),
-  _movie(nullptr), // TODO I think this needs a null MovieAudio object, not a ptr
+  _movie(MovieAudio()),
+  // TODO should we just load a MovieAudio with the filename?
+  // _movie(MovieAudio(file_name)),
   _sd(nullptr),
   _playing_loops(0),
   _playing_rate(0.0),
@@ -56,18 +59,11 @@ MaAudioSound(MaAudioManager *manager,
     }
   }
 
-  // TODO make conditional on length
-  ma_resource_manager_data_source data_src;
-  //int flags = (loop_sound) ? MA_RESOURCE_MANAGER_DATA_SOURCE_FLAG_LOOPING : 0;
-  int flags = MA_RESOURCE_MANAGER_DATA_SOURCE_FLAG_STREAM; // decode in 1s pages
-  //int flags = MA_RESOURCE_MANAGER_DATA_SOURCE_FLAG_DECODE; // decode to ram
-  //int flags = MA_RESOURCE_MANAGER_DATA_SOURCE_FLAG_ASYNC; load to ram later
-  check_ma(ma_resource_manager_data_source_init(manager->get_resource_mgr(),
-        file_name.get_fullpath(), flags, &data_src));
-
   // TODO do we get access from friend class? should we do this in the AudioManager get_sound method?
-  check_ma(ma_sound_init_from_data_source(&manager->_audio_engine, &data_src, flags,
-        &manager->_all_sounds_grp), , "
+  check_ma(ma_sound_init_from_data_source(&manager->_audio_engine,
+                                          &data_src->data_src, flags,
+                                          &manager->_all_sounds_grp),
+                                          , "Failed to initialise AudioSound");
   _comment = std::move(_sd->_comment);
   release_sound_data(false);
 }
