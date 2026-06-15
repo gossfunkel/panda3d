@@ -26,8 +26,13 @@
 class EXPCL_MA_AUDIO MaAudioSound final : public AudioSound {
   friend class MaAudioManager;
 
-  MaAudioSound(MaAudioManager* manager,
+  MaAudioSound(MaAudioManager *manager,
                DataSource *data_src,
+               Filename &file_name,
+               bool positional,
+               int mode);
+  MaAudioSound(MaAudioManager *manager,
+               MovieAudio *movie,
                bool positional,
                int mode);
   MaAudioSound(const MaAudioSound &copy_sound);
@@ -48,7 +53,7 @@ class EXPCL_MA_AUDIO MaAudioSound final : public AudioSound {
   //PT(MovieAudio) _movie;
   MaAudioManager::DataSource *_data_src;
 
-  PT(MaAudioManager) _manager;
+  MaAudioManager *_manager;
 
   ma_resource_manager_data_source _data_src;
 
