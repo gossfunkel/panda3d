@@ -31,17 +31,9 @@ class EXPCL_MA_AUDIO MaAudioSound final : public AudioSound {
                Filename &file_name,
                bool positional,
                int mode);
-  MaAudioSound(MaAudioManager *manager,
-               MovieAudio *movie,
-               bool positional,
-               int mode);
   MaAudioSound(const MaAudioSound &copy_sound);
-  INLINE void   set_calibrated_clock(double rtc, double t, double playrate);
-  INLINE double get_calibrated_clock(double rtc) const;
-  void          correct_calibrated_clock(double rtc, double t);
   void          cache_time(double rtc);
   void cleanup();
-  void restart_stalled_audio();
   int  read_stream_data(int bytelen, unsigned char *data);
   INLINE bool require_sound_data();
   INLINE void release_sound_data(bool force);
@@ -53,8 +45,6 @@ class EXPCL_MA_AUDIO MaAudioSound final : public AudioSound {
   MaAudioManager::DataSource *_data_src;
 
   MaAudioManager *_manager;
-
-  ma_resource_manager_data_source _data_src;
 
   PN_stdfloat _volume; // 0..1.0
   PN_stdfloat _balance; // -1..1

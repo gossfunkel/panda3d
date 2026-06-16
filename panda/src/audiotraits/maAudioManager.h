@@ -112,7 +112,8 @@ ma_result ma_movie_audio_init(
 }
 
 void ma_movie_audio_uninit(ma_movie_audio *p_ma_MovieAudio) {
-  // TODO uninitialise/free MovieAudio here
+  // TODO is this all we need to do to free the MovieAudio?
+  delete p_ma_MovieAudio;
 
   // You must uninitialize the base data source.
   ma_data_source_uninit(&p_ma_MovieAudio->base);

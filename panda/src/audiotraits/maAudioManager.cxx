@@ -355,7 +355,11 @@ void MaAudioManager::stop_all_sounds() {
  * Must be called every frame. Do housework on buffers and playing sounds
  */
 void MaAudioManager::update() {
-  // TODO
+  double const realtime_clock = TrueClock::get_global_ptr()->get_short_time();
+  for (auto audio_sound_it : _sounds_playing) {
+    // TODO do we need to use this clock method? is this atomic?
+    audio_sound_it.cache_time(realtime_clock);
+  }
 }
 
 /* MiniAudio uses y-up by default, this function compensates for any

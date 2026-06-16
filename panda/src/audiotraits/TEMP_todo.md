@@ -3,18 +3,14 @@ MiniAudio library files:
 - might need to change the ma implementation file to a .cxx/.cpp
 
 MaAudioManager:
-- cache: playing sounds and expiring sounds
 - inline error checking function (fn ptr as parameter)
 - remaining virtual methods: update, speaker_setup, get/set concurrent_sound_limit
 - distance attenuation?
 
 MaAudioSound:
 - all property methods (active, volume, time, length, play rate, balance, loop count/pos)
-- play and stop methods
-- fix/finish copy constructor
+- play and stop methods (buffering and updates, cache)
 - 3d audio properties
-- Filename
-- TypeHandle
 
 ## Cacheing sounds
 Load new sound with source file:
