@@ -137,7 +137,6 @@ get_sound(const Filename &file_name, bool positional, int mode) {
     } else if (data_src_it->cached) {
       data_src_it->active_sounds++;
     }
-    // TODO this constructor
     _all_sounds.emplace_back(MaAudioSound(
           this,
           &(*data_src_it),
@@ -156,12 +155,12 @@ get_sound(const Filename &file_name, bool positional, int mode) {
  * benefit from MiniAudio's resource management.
  */
 PT(AudioSound) MaAudioManager::
-get_sound(MovieAudio *source, bool positional, int mode) {
+get_sound(MovieAudio &source, bool positional, int mode) {
   auto data_src_it = _data_sources.find(source.get_filename());
   if (data_src_it == _data_sources.end()) {
     ma_movie_audio new_ma_ma;
     DataSource *new_src = _data_sources.emplace_back(DataSource(
-        file_name,
+        source.get_filename(),
         false,
         1,
         0,
@@ -181,10 +180,11 @@ get_sound(MovieAudio *source, bool positional, int mode) {
       //int flags = (loop_sound) ? MA_RESOURCE_MANAGER_DATA_SOURCE_FLAG_LOOPING : 0;
       int flags = MA_RESOURCE_MANAGER_DATA_SOURCE_FLAG_STREAM; // decode in 1s pages
       //int flags = MA_RESOURCE_MANAGER_DATA_SOURCE_FLAG_DECODE; // decode to ram
-      //int flags = MA_RESOURCE_MANAGER_DATA_SOURCE_FLAG_ASYNC; load to ram later
-      check_ma(ma_movie_audio_init(*resource_mgr, source->filename.get_basename(),
-                          flags, &data_src_it->data_src), [](return NULL),
-                          "Failed to initialise MovieAudio DataSource");
+      //int flags = MA_RESOURCE_MANAGER_DATA_SOURCE_FLAG_ASYNC; // load to ram later
+      check_ma(ma_movie_audio_init(*resource_mgr,
+                        source.get_filename().get_basename(),
+                        flags, &data_src_it->data_src),
+                [](return NULL), "Failed to initialise MovieAudio DataSource");
       _cached_sources.emplace(file_name, &(*data_src_it));
       data_src_it->cached = true;
       new_src->active_sounds = 1;
@@ -196,7 +196,7 @@ get_sound(MovieAudio *source, bool positional, int mode) {
     _all_sounds.emplace_back(MaAudioSound(
           this,
           &(*data_src_it),
-          source->filename,
+          source.get_filename(),
           positional,
           mode
     ));

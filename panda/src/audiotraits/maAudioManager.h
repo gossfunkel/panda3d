@@ -30,7 +30,7 @@ class MaAudioSound;
 
 typedef struct ma_movie_audio {
     ma_data_source_base base;
-    MovieAudio *movie_audio;
+    MovieAudioCursor *cursor;
 };
 
 static ma_result ma_movie_audio_read(
@@ -38,16 +38,25 @@ static ma_result ma_movie_audio_read(
     void* pFramesOut,
     ma_uint64 frameCount,
     ma_uint64* pFramesRead) {
-  // TODO Read data here.
-  // Output in the same format returned by
+  // TODO Ensure output is in the same format returned by
   // ma_movie_audio_get_data_format().
+  pFramesRead = pDataSource->cursor.read_samples(
+      frameCount, (int16_t *)pFramesOut);
+  if (pFramesRead == frameCount)
+    return MA_SUCCESS;
+  else return MA_FAILURE;
 }
 
 static ma_result ma_movie_audio_seek(
     ma_data_source* pDataSource,
     ma_uint64 frameIndex) {
-  // Seek to a specific PCM frame here.
-  // Return MA_NOT_IMPLEMENTED if seeking is not supported.
+  if (!pDataSource->cursor.can_seek_fast())
+    return MA_NOT_IMPLEMENTED;
+
+  pDataSource->cursor.seek((double)frameIndex);
+  if ((ma_uint64)pDataSource->cursor.tell() == frameIndex)
+    return MA_SUCCESS;
+  else return MA_FAILURE;
 }
 
 static ma_result ma_movie_audio_get_data_format(
@@ -58,22 +67,23 @@ static ma_result ma_movie_audio_get_data_format(
     ma_channel* pChannelMap,
     size_t channelMapCap) {
   // Return the format of the data here.
+  // TODO how to get format? match typehandle?
+  *pChannels = pDataSource->cursor.audio_channels();
+  *pSampleRate = pDataSource->cursor.audio_rate();
 }
 
 static ma_result ma_movie_audio_get_cursor(
     ma_data_source* pDataSource,
     ma_uint64* pCursor) {
-  // TODO Retrieve the current position of the cursor here.
-  // Return MA_NOT_IMPLEMENTED and set *pCursor to 0 if there is no
-  // notion of a cursor.
+  *pCursor = (ma_uint64)pDataSource->cursor.tell();
+  return MA_SUCCESS;
 }
 
 static ma_result ma_movie_audio_get_length(
     ma_data_source* pDataSource,
     ma_uint64* pLength) {
-  // TODO Retrieve the length in PCM frames here.
-  // Return MA_NOT_IMPLEMENTED and set *pLength to 0 if there is no
-  // notion of a length, or if the length is unknown.
+  *pLength = (ma_uint64)pDataSource->cursor.length();
+  return MA_SUCCESS;
 }
 
 static ma_data_source_vtable g_ma_movie_audio_vtable = {
@@ -85,7 +95,7 @@ static ma_data_source_vtable g_ma_movie_audio_vtable = {
 };
 
 ma_result ma_movie_audio_init(
-    MovieAudio *movie_audio,
+    MovieAudio &movie_audio,
     ma_movie_audio* p_ma_MovieAudio) {
   ma_result result;
   ma_data_source_config baseConfig;
@@ -96,8 +106,7 @@ ma_result ma_movie_audio_init(
   result = ma_data_source_init(&baseConfig, &p_ma_MovieAudio->base);
   if (result != MA_SUCCESS) return result;
 
-  // TODO ensure this is properly initialised
-  p_ma_MovieAudio->movie_audio = movie_audio;
+  p_ma_MovieAudio->cursor = movie_audio.open();
 
   return MA_SUCCESS;
 }
@@ -182,7 +191,7 @@ public:
   virtual bool is_valid();
 
   virtual PT(AudioSound) get_sound(const Filename &file_name, bool positional = false, int mode=SM_heuristic);
-  virtual PT(AudioSound) get_sound(MovieAudio *source, bool positional = false, int mode=SM_heuristic);
+  virtual PT(AudioSound) get_sound(MovieAudio &source, bool positional = false, int mode=SM_heuristic);
 
   virtual void uncache_sound(const Filename &file_name);
   virtual void clear_cache();
