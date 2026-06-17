@@ -110,6 +110,7 @@ MaAudioSound(const MaAudioSound &copy_sound) :
   }
 
   // TODO save comments somewhere now we removed SoundDatas
+  // cursor has a get_raw_comment method that returns a vector_string
   release_sound_data(false);
 }
 

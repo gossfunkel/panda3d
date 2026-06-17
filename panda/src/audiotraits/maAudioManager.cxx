@@ -54,6 +54,8 @@ MaAudioManager() {
       "." << std::endl;
 
     resource_mgr_conf = ma_resource_manager_config_init();
+    // TODO we need to make a custom ma_decoding_backend_vtable for
+    //  vorbis etc and set it on the config
     resource_mgr_conf.decodedFormat     = _device.playback.format;
     resource_mgr_conf.decodedChannels   = _device.playback.channels;
     resource_mgr_conf.decodedSampleRate = _device.sampleRate;
@@ -174,6 +176,7 @@ get_sound(MovieAudio &source, bool positional, int mode) {
       _num_sources_cached++;
     }
   } else { // source file is already loaded to _data_sources
+    // TODO we should still make a new cursor here
     data_src_it->refcount++;
     if (!data_src_it->cached && _num_sources_cached < _cache_limit) {
       // TODO make conditional on length

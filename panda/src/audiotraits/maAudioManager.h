@@ -40,6 +40,8 @@ static ma_result ma_movie_audio_read(
     ma_uint64* pFramesRead) {
   // TODO Ensure output is in the same format returned by
   // ma_movie_audio_get_data_format().
+  // returns interleaved channels in a 16b signed int format (ma_format_s16).
+  // pFramesOut must be at least frameCount * channels big
   pFramesRead = pDataSource->cursor.read_samples(
       frameCount, (int16_t *)pFramesOut);
   if (pFramesRead == frameCount)
