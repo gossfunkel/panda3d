@@ -111,45 +111,23 @@ MaAudioManager() {
  */
 PT(AudioSound) MaAudioManager::
 get_sound(const Filename &file_name, bool positional, int mode) {
-  auto data_src_it = _data_sources.find(file_name);
-  if (data_src_it == _data_sources.end()) {
-    // make new DataSource
-    // TODO replace with ma_sound_init_from_file()
-    DataSource *new_src = _data_sources.emplace_back(DataSource(
-        file_name,
-        false,
-        1,
-        0,
-        data_src
-    ));
-    if (_num_sources_cached < _cache_limit) {
-      ma_resource_manager_data_source_init(&new_src->data_src);
-      _cache_order.emplace_back(new_src);
-      new_src->cached = true;
-      new_src->active_sounds = 1;
-      _num_sources_cached++;
-    }
-  } else { // source file is already loaded to _data_sources
-    data_src_it->refcount++;
-    if (!data_src_it->cached && _num_sources_cached < _cache_limit) {
-      ma_resource_manager_data_source_init(&data_src_it->data_src);
-      _cached_sources.emplace(file_name, &(*data_src_it));
-      data_src_it->cached = true;
-      new_src->active_sounds = 1;
-      _num_sources_cached++;
-    } else if (data_src_it->cached) {
-      data_src_it->active_sounds++;
-    }
-    _all_sounds.emplace_back(MaAudioSound(
-          this,
-          &(*data_src_it),
-          file_name,
-          positional,
-          mode
-    ));
-  }
-  PT(AudioSound) new_sound =
-    (AudioSound *)(MaAudioSound *)_all_sounds.back();
+  std::string src_fn = file_name.get_basename();
+  PT(ma_sound) ma_sound_ptr = new ma_sound();
+  // TODO make conditional on length
+  //int flags = (loop_sound) ? MA_RESOURCE_MANAGER_DATA_SOURCE_FLAG_LOOPING : 0;
+  int flags = MA_RESOURCE_MANAGER_DATA_SOURCE_FLAG_STREAM; // decode in 1s pages
+  //int flags = MA_RESOURCE_MANAGER_DATA_SOURCE_FLAG_DECODE; // decode to ram
+  //int flags = MA_RESOURCE_MANAGER_DATA_SOURCE_FLAG_ASYNC; // load to ram later
+  ma_sound_init_from_file(
+      &_engine, src_fn, flags, &_all_sounds_grp, , ma_sound_ptr
+  );
+  PT(MaAudioSound) = _all_sounds.emplace_back(MaAudioSound(
+        this,
+        ma_sound_ptr,
+        src_fn,
+        positional,
+        mode
+  )});
   return new_sound;
 }
 
@@ -159,61 +137,7 @@ get_sound(const Filename &file_name, bool positional, int mode) {
  */
 PT(AudioSound) MaAudioManager::
 get_sound(MovieAudio &source, bool positional, int mode) {
-  auto data_src_it = _data_sources.find(source.get_filename());
-  if (data_src_it == _data_sources.end()) {
-    // FIXME where to allocate this?
-    ma_movie_audio new_ma_ma;
-    DataSource *new_src = _data_sources.emplace_back(DataSource(
-        source.get_filename(),
-        false,
-        1,
-        0,
-        new_ma_ma;
-    ));
-    if (_num_sources_cached < _cache_limit) {
-      ma_movie_audio_init(source, &new_src->data_src);
-      _cache_order.emplace_back(new_src);
-      new_src->cached = true;
-      new_src->active_sounds = 1;
-      _num_sources_cached++;
-    }
-  } else { // source file is already loaded to _data_sources
-    // TODO we should still make a new cursor here
-    data_src_it->refcount++;
-    if (!data_src_it->cached && _num_sources_cached < _cache_limit) {
-      // TODO make conditional on length
-      //int flags = (loop_sound) ? MA_RESOURCE_MANAGER_DATA_SOURCE_FLAG_LOOPING : 0;
-      int flags = MA_RESOURCE_MANAGER_DATA_SOURCE_FLAG_STREAM; // decode in 1s pages
-      //int flags = MA_RESOURCE_MANAGER_DATA_SOURCE_FLAG_DECODE; // decode to ram
-      //int flags = MA_RESOURCE_MANAGER_DATA_SOURCE_FLAG_ASYNC; // load to ram later
-      check_ma(ma_movie_audio_init(*resource_mgr,
-                        source.get_filename().get_basename(),
-                        flags, &data_src_it->data_src),
-                [](return NULL), "Failed to initialise MovieAudio DataSource");
-      _cached_sources.emplace(file_name, &(*data_src_it));
-      data_src_it->cached = true;
-      new_src->active_sounds = 1;
-      _num_sources_cached++;
-    } else if (data_src_it->cached) {
-      data_src_it->active_sounds++;
-    }
-    // FIXME where to allocate this?
-    ma_sound new_ma_sound;
-    // TODO initialise properly
-    ma_sound_init_from_data_source(_engine, data_src_it, flags,
-        _all_sounds_grp, &new_ma_sound);
-    // TODO this constructor
-    _all_sounds.emplace_back(MaAudioSound(
-          this,
-          &(*data_src_it),
-          source.get_filename(),
-          positional,
-          mode
-    ));
-  }
-  PT(AudioSound) new_sound =
-    (AudioSound *)(MaAudioSound *)_all_sounds.back();
-  return new_sound;
+  return get_sound(source.get_filename(), positional, mode);
 }
 
 /*
@@ -222,28 +146,47 @@ get_sound(MovieAudio &source, bool positional, int mode) {
  */
 void MaAudioManager::uncache_sound(const Filename &file_name) {
   ReMutexHolder holder(_lock);
+
+  // should we use the miniaudio vfs?
+  // FIXME horrible control flow / code repetition
+
+  auto sound_it = _all_sounds.begin();
+  while (sound_it != _all_sounds.end()) {
+    if (sound_it.file_name == file_name) {
+      if (sound_it.get_active()) {
+        audio_error("Sound is active, cannot be uncached.");
+        return;
+      }
+      // TODO sound_it->sound.flag &= !MA_SOUND_FLAG_DECODE; ???
+      // not sure if to call this here or let destructor:
+      //  ma_sound_uninit(&sound_it->sound);
+      // we don't need to delete if we use PTs
+      _all_sounds.erase(sound_it);
+      // TODO should this uncache all sounds with this filename?
+      return;
+    }
+  }
+
   Filename path = file_name;
-
-  // TODO use the miniaudio vfs?
-
-  auto data_src = _cached_sources.find(path);
-  if (data_src == _cached_sources.end()) {
-    VirtualFileSystem *vfs = VirtualFileSystem::get_global_ptr();
-    vfs->resolve_filename(path, get_model_path());
-    data_src    = _cached_sources.find(path);
+  VirtualFileSystem *vfs = VirtualFileSystem::get_global_ptr();
+  vfs->resolve_filename(path, get_model_path());
+  sound_it = _all_sounds.begin();
+  while (sound_it != _all_sounds.end()) {
+    if (sound_it.file_name == path) {
+      if (sound_it.get_active()) {
+        audio_error("Sound is active, cannot be uncached.");
+        return;
+      }
+      // TODO sound_it->sound.flag &= !MA_SOUND_FLAG_DECODE; ???
+      // not sure if to call this here or let destructor:
+      //  ma_sound_uninit(&sound_it->sound);
+      // we don't need to delete if we use PTs
+      _all_sounds.erase(sound_it);
+      // TODO should this uncache all sounds with this filename?
+      return;
+    }
   }
-  if (data_src == _cached_sources.end()) return;
-
-  if (data_src->active_sounds) {
-    audio_error("Sound is active, cannot be uncached.");
-    return;
-  }
-  ma_data_source_uninit(&(*data_src));
-  _cached_sources.erase(path);
-  if (!data_src->refcount) {
-    _data_sources.erase(path);
-    delete data_src;
-  }
+  audio_error("Sound not found in cache!");
 }
 
 /*

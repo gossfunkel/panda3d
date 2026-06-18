@@ -27,7 +27,7 @@ class EXPCL_MA_AUDIO MaAudioSound final : public AudioSound {
   friend class MaAudioManager;
 
   MaAudioSound(MaAudioManager *manager,
-               DataSource *data_src,
+               ma_data_source *data_src,
                Filename &file_name,
                bool positional,
                int mode);

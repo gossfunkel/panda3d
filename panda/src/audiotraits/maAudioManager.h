@@ -144,32 +144,8 @@ class EXPCL_MA_AUDIO MaAudioManager final : public AudioManager {
   typedef pset<MaAudioManager *> Managers;
   static Managers *_managers;
 
-  /*
-   * On loading any sound, a source is found or made for the given
-   * filename. Although MiniAudio handles redundant loads, this struct
-   * avoids tracking which sounds use which sources when we limit the
-   * cache with the Panda3D API.
-   */
-  typedef struct DataSource {
-    Filename file_name;
-    bool cached;
-    unsigned int refcount;
-    unsigned int active_sounds;
-    ma_resource_manager_data_source data_src;
-  } DataSource;
-
-  // source data handles
-  phash_map<std::string, DataSource> _data_sources;
-  unsigned int _num_sources_cached;
-  // track age of cached sources via ordered list for when cache is full
-  // TODO ordered queue? hashmap has faster random removal for unloading
-  //  sounds out of order. I don't like how clunky this is.
-  phash_map<std::string, DataSource *> _cached_sources;
-  // This holds pointers to ma_data_sources available to uncache - these are
-  //  held for a limited time after stopping in case of re-use
-  pdeque<DataSource *> _expiring_sources;
-  // This is where AudioSounds are stored in memory
-  pdeque<MaAudioSound> _all_sounds;
+  // loaded sounds are stored here
+  std::vector<MaAudioSound>_all_sounds;
   // MiniAudio node containing all sounds
   ma_sound _all_sounds_grp;
   // This array contains pointers to playing sounds
