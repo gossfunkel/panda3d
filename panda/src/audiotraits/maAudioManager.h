@@ -161,8 +161,9 @@ class EXPCL_MA_AUDIO MaAudioManager final : public AudioManager {
   // source data handles
   phash_map<std::string, DataSource> _data_sources;
   unsigned int _num_sources_cached;
-  // track age of cached sources for when cache is full with order
-  // TODO ordered list?
+  // track age of cached sources via ordered list for when cache is full
+  // TODO ordered queue? hashmap has faster random removal for unloading
+  //  sounds out of order. I don't like how clunky this is.
   phash_map<std::string, DataSource *> _cached_sources;
   // This holds pointers to ma_data_sources available to uncache - these are
   //  held for a limited time after stopping in case of re-use

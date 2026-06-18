@@ -34,9 +34,6 @@ class EXPCL_MA_AUDIO MaAudioSound final : public AudioSound {
   MaAudioSound(const MaAudioSound &copy_sound);
   void          cache_time(double rtc);
   void cleanup();
-  int  read_stream_data(int bytelen, unsigned char *data);
-  INLINE bool require_sound_data();
-  INLINE void release_sound_data(bool force);
 
   INLINE bool is_valid() const;
   INLINE bool is_playing() const;

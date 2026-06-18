@@ -1,3 +1,18 @@
+# notes from MiniAudio header
+- resource manager uses refcounts to keep sources in memory until all sounds `uninit()`ed.
+- implements a BST with a hashmap like I was going to do with `MaAudioManager::_data_sources`.
+- MiniAudio uses a fixed-size MPMC job queue, optionally multithreaded. If threads > 1, uses a spinlock.
+- streams loop over the source in 2s chunks (two 'pages'), reading PCM frames to a buffer. Better for large files (e.g. soundtracks)
+- both streams and buffered/async sounds use the job queue.
+- engine wraps a node graph (as well as the resource manager). Multiple features of nodes (like loading fx, mixing, setting start and stop times) could be useful, but could incur locking on the audio thread. Node chains are linked lists.
+- wav, mp3, and flac decoding built in. vorbis decoder extensibility described (requires vtable override).
+- rich format, data, and channel conversion/mapping options; see also the `ma_format` enum.
+- `ma_audio_buffer` API for interfacing with `MovieAudioCursor`s?
+- disable pitch and doppler by default until set as non-default value for the first time for performance improvement
+- set engine & resource manager sample rate to match first sound and leave unchanged to prevent conversions as sounds are added until a sound is added that doesn't have a matching rate; then disable engine rate.
+- TODO double check response on mackron discord
+
+# general notes
 MiniAudio library files:
 - might need to make an empty header for interrogate?
 - might need to change the ma implementation file to a .cxx/.cpp
