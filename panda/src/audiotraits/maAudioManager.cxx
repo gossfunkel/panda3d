@@ -111,20 +111,9 @@ MaAudioManager() {
  */
 PT(AudioSound) MaAudioManager::
 get_sound(const Filename &file_name, bool positional, int mode) {
-  std::string src_fn = file_name.get_basename();
-  PT(ma_sound) ma_sound_ptr = new ma_sound();
-  // TODO make conditional on length
-  //int flags = (loop_sound) ? MA_RESOURCE_MANAGER_DATA_SOURCE_FLAG_LOOPING : 0;
-  int flags = MA_RESOURCE_MANAGER_DATA_SOURCE_FLAG_STREAM; // decode in 1s pages
-  //int flags = MA_RESOURCE_MANAGER_DATA_SOURCE_FLAG_DECODE; // decode to ram
-  //int flags = MA_RESOURCE_MANAGER_DATA_SOURCE_FLAG_ASYNC; // load to ram later
-  ma_sound_init_from_file(
-      &_engine, src_fn, flags, &_all_sounds_grp, , ma_sound_ptr
-  );
   PT(MaAudioSound) = _all_sounds.emplace_back(MaAudioSound(
         this,
-        ma_sound_ptr,
-        src_fn,
+        file_name,
         positional,
         mode
   )});
@@ -132,8 +121,9 @@ get_sound(const Filename &file_name, bool positional, int mode) {
 }
 
 /*
- * Construct a new sound using a MovieAudio source. Note: this will not
- * benefit from MiniAudio's resource management.
+ * Construct a new sound using a MovieAudio source.
+ * Note: this only uses the MovieAudio for its filename; does not use
+ * a MovieAudioCursor.
  */
 PT(AudioSound) MaAudioManager::
 get_sound(MovieAudio &source, bool positional, int mode) {
@@ -190,35 +180,22 @@ void MaAudioManager::uncache_sound(const Filename &file_name) {
 }
 
 /*
- * Garbage collects data sources
+ * Garbage collects inactive sounds with no other pointers.
  */
 void MaAudioManager::clear_cache() {
-  ReMutexHolder holder(_lock);
+  //ReMutexHolder holder(_lock);
 
-  for (auto data_src_p_it : _cached_sources) {
-    if (!(*data_src_p_it)->active_sounds) {
-      _cached_sources.erase((*data_src_p_it)->file_name.get_basename());
-    }
-  }
-  for (auto data_src_it : _data_sources) {
-    if (!data_src_it->refcount) {
-      if (data_src_it->cached)
-        _cached_sources.erase(data_src_it->file_name.get_basename());
-      _data_sources.erase(data_src_it->file_name.get_basename());
-      delete data_src_it;
-    }
-  }
+  for (auto sound_it : _all_sounds)
+    if (!sound_it.get_active()) _all_sounds.erase(sound_it);
 }
 
 void MaAudioManager::set_cache_limit(unsigned int count) {
   ReMutexHolder holder(_lock);
   _cache_limit = count;
-  while (_num_sources_cached > count) {
-    _cached_sources.front()->cached = false;
-    // TODO hashmap doesn't have this
-    _cached_sources.pop_front();
-    _num_sources_cached--;
-  }
+  // TODO set MiniAudio resource manager cache limit? is this possible?
+  clear_cache();
+  while (_all_sounds.size() > count) _all_sounds.pop_back();
+
 }
 
 unsigned int MaAudioManager::get_cache_limit() const {
@@ -305,7 +282,8 @@ void MaAudioManager::stop_all_sounds() {
 }
 
 /*
- * Must be called every frame. Do housework on buffers and playing sounds
+ * Must be called every frame(?)
+ * Do housework on any buffers and playing sounds
  */
 void MaAudioManager::update() {
   // TODO

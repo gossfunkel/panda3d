@@ -38,9 +38,10 @@ class EXPCL_MA_AUDIO MaAudioSound final : public AudioSound {
   INLINE bool is_playing() const;
   INLINE bool has_sound_data() const;
 
-  MaAudioManager::DataSource *_data_src;
 
   MaAudioManager *_manager;
+  ma_sound    _ma_sound;
+  int         _ma_flags;
 
   PN_stdfloat _volume; // 0..1.0
   PN_stdfloat _balance; // -1..1
@@ -62,11 +63,6 @@ class EXPCL_MA_AUDIO MaAudioSound final : public AudioSound {
 
   // The start_time field affects the next call to play.
   double _start_time;
-
-  // The current_time field is updated every frame during the AudioManager
-  //  update.  Updates need to be atomic as get_time() can be called in the
-  //  cull thread.
-  PN_stdfloat  _current_time;
 
   // This is the string that throw_event() will throw when the sound finishes
   //  playing.  It is not triggered when the sound is stopped with stop().

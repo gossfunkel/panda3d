@@ -2,12 +2,10 @@
 
 MaAudioSound::
 MaAudioSound(MaAudioManager *manager,
-             ma_data_source *data_src,
              Filename &file_name,
              bool positional,
              int mode) :
   AudioSound(positional),
-  _data_source(data_src),
   _playing_loops(0),
   _playing_rate(0.0),
   _loops_completed(0),
@@ -35,6 +33,7 @@ MaAudioSound(MaAudioManager *manager,
   _velocity = ma_vec3f(0.0f, 0.0f, 0.0f);
   _direction = ma_vec3f(0.0f, 0.0f, 0.0f);
 
+  // protect against user accessing engine from multiple threads
   //ReMutexHolder holder(MaAudioManager::_lock);
 
   if (!require_sound_data()) {
@@ -42,22 +41,29 @@ MaAudioSound(MaAudioManager *manager,
     return;
   }
 
-  // TODO we removed _sd, so need to get length from source
-  _length = _sd->_length;
+  std::string src_fn = file_name.get_basename();
+  // larger files (e.g. soundtracks/music) should be set to stream mode
+  _ma_flags = (mode == StreamMode{SM_stream})
+    ? MA_RESOURCE_MANAGER_DATA_SOURCE_FLAG_STREAM // decode in 1s pages
+    : MA_RESOURCE_MANAGER_DATA_SOURCE_FLAG_ASYNC; // load to ram later
+  _ma_flags |= (loop_sound)
+    ? MA_RESOURCE_MANAGER_DATA_SOURCE_FLAG_LOOPING : 0;
+  //_ma_flags |= MA_RESOURCE_MANAGER_DATA_SOURCE_FLAG_DECODE; // decode to ram
+  check_ma(ma_sound_init_from_file(
+      &manager->_engine, src_fn, _ma_flags, &manager->_all_sounds_grp,
+      NULL, _ma_sound
+  ), "Failed to initialise AudioSound");
+
+  // we removed _sd, so need to get length from source (FIXME?)
+  _length = _ma_sound->rangeEndInPCMFrames - _ma_sound->rangeBegInPCMFrames;
 
   if (positional) {
-    if (_sd->_channels != 1) {
+    // FIXME get sound channels properly
+    if (_ma_sound->_channels != 1) {
       audio_warning("stereo sound " << file_name << " will not be spatialized");
     }
   }
 
-  // TODO do we get access from friend class? should we do this in the AudioManager get_sound method?
-  check_ma(ma_sound_init_from_data_source(&manager->_audio_engine,
-                                          &data_src->data_src, flags,
-                                          &manager->_all_sounds_grp),
-                                          , "Failed to initialise AudioSound");
-  // TODO save comments somewhere now we removed SoundDatas
-  release_sound_data(false);
 }
 
 
@@ -67,7 +73,6 @@ MaAudioSound(MaAudioManager *manager,
 MaAudioSound::
 MaAudioSound(const MaAudioSound &copy_sound) :
   AudioSound(copy_sound.is_positional()),
-  _data_source(copy_sound._data_source),
   _playing_loops(copy_sound._playing_loops),
   _playing_rate(copy_sound._playing_rate),
   _loops_completed(copy_sound._loops_completed),
@@ -89,24 +94,31 @@ MaAudioSound(const MaAudioSound &copy_sound) :
   _paused(copy_sound._paused),
   _cone_inner_angle(copy_sound._cone_inner_angle),
   _cone_outer_angle(copy_sound._cone_outer_angle),
-  _cone_outer_gain(copy_sound._cone_outer_gain)
+  _cone_outer_gain(copy_sound._cone_outer_gain),
+  _location(copy_sound._location);
+  _velocity(copy_sound._velocity);
+  _direction(copy_sound._direction);
 {
-  _location = copy_sound._location;
-  _velocity = copy_sound._velocity;
-  _direction = copy_sound._direction;
 
   //ReMutexHolder holder(MaAudioManager::_lock);
 
-  _length = _sd->_length;
   if (positional) {
-    if (_sd->_channels != 1) {
-      audio_warning("copied stereo sound " << _movie->get_filename() << " will not be spatialized");
+    if (_ma_sound->_channels != 1) {
+      audio_warning("copied stereo sound " << _basename << " will not be spatialized");
     }
   }
 
-  // TODO save comments somewhere now we removed SoundDatas
-  // cursor has a get_raw_comment method that returns a vector_string
-  release_sound_data(false);
+  std::string src_fn = file_name.get_basename();
+  _ma_flags = (mode == StreamMode{SM_stream})
+    ? MA_RESOURCE_MANAGER_DATA_SOURCE_FLAG_STREAM // decode in 1s pages
+    : MA_RESOURCE_MANAGER_DATA_SOURCE_FLAG_ASYNC; // load to ram later
+  _ma_flags |= (loop_sound)
+    ? MA_RESOURCE_MANAGER_DATA_SOURCE_FLAG_LOOPING : 0;
+  //_ma_flags |= MA_RESOURCE_MANAGER_DATA_SOURCE_FLAG_DECODE; // decode to ram
+  check_ma(ma_sound_init_from_file(
+      &_manager->_engine, src_fn, _ma_flags, &_manager->_all_sounds_grp,
+      NULL, _ma_sound
+  ), "Failed to initialise copied AudioSound");
 }
 
 MaAudioSound::
@@ -116,5 +128,6 @@ MaAudioSound::
 
 void MaAudioSound::
 cleanup() {
-  ma_resource_manager_data_source_uninit(&data_src);
+  // TODO ensure sound is stopped?
+  ma_sound_uninit(&_ma_sound);
 }
