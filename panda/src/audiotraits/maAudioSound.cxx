@@ -2,7 +2,7 @@
 
 MaAudioSound::
 MaAudioSound(MaAudioManager *manager,
-             MaAudioManager::DataSource *data_src,
+             ma_data_source *data_src,
              Filename &file_name,
              bool positional,
              int mode) :
@@ -96,11 +96,6 @@ MaAudioSound(const MaAudioSound &copy_sound) :
   _direction = copy_sound._direction;
 
   //ReMutexHolder holder(MaAudioManager::_lock);
-
-  if (!require_sound_data()) {
-    cleanup();
-    return;
-  }
 
   _length = _sd->_length;
   if (positional) {

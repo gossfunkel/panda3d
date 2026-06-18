@@ -114,6 +114,7 @@ get_sound(const Filename &file_name, bool positional, int mode) {
   auto data_src_it = _data_sources.find(file_name);
   if (data_src_it == _data_sources.end()) {
     // make new DataSource
+    // TODO replace with ma_sound_init_from_file()
     DataSource *new_src = _data_sources.emplace_back(DataSource(
         file_name,
         false,
@@ -160,6 +161,7 @@ PT(AudioSound) MaAudioManager::
 get_sound(MovieAudio &source, bool positional, int mode) {
   auto data_src_it = _data_sources.find(source.get_filename());
   if (data_src_it == _data_sources.end()) {
+    // FIXME where to allocate this?
     ma_movie_audio new_ma_ma;
     DataSource *new_src = _data_sources.emplace_back(DataSource(
         source.get_filename(),
@@ -195,6 +197,11 @@ get_sound(MovieAudio &source, bool positional, int mode) {
     } else if (data_src_it->cached) {
       data_src_it->active_sounds++;
     }
+    // FIXME where to allocate this?
+    ma_sound new_ma_sound;
+    // TODO initialise properly
+    ma_sound_init_from_data_source(_engine, data_src_it, flags,
+        _all_sounds_grp, &new_ma_sound);
     // TODO this constructor
     _all_sounds.emplace_back(MaAudioSound(
           this,
@@ -358,11 +365,9 @@ void MaAudioManager::stop_all_sounds() {
  * Must be called every frame. Do housework on buffers and playing sounds
  */
 void MaAudioManager::update() {
-  double const realtime_clock = TrueClock::get_global_ptr()->get_short_time();
-  for (auto audio_sound_it : _sounds_playing) {
-    // TODO do we need to use this clock method? is this atomic?
-    audio_sound_it.cache_time(realtime_clock);
-  }
+  // TODO
+  // iterate through _cached_sources until an expired sound is found?
+  // bump up list if sound is active, remove otherwise
 }
 
 /* MiniAudio uses y-up by default, this function compensates for any

@@ -32,7 +32,6 @@ class EXPCL_MA_AUDIO MaAudioSound final : public AudioSound {
                bool positional,
                int mode);
   MaAudioSound(const MaAudioSound &copy_sound);
-  void          cache_time(double rtc);
   void cleanup();
 
   INLINE bool is_valid() const;

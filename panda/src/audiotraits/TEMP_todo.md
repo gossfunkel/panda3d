@@ -1,5 +1,9 @@
 # notes from MiniAudio header
-- resource manager uses refcounts to keep sources in memory until all sounds `uninit()`ed.
+- resource manager uses refcounts to keep sources in memory until all sounds `uninit()`ed. Expiring sounds: what if we just keep a reference to a sound? checking this list seems more expensive than just sometimes reloading a sound, honestly. I think we should ditch it.
+- resource manager handles data sources itself; `init()`ing a sound with a source skips the manager.
+- `ma_sound_init_ex` offers most flexibility; `ma_sound` has a config with a `pFileName` and `pDataSource`.
+- `ma_sound_init_from_file_internal` mallocs out a data source on the heap.
+- buffered sounds (i.e. sounds not streamed) can be cloned with `ma_sound_init_copy`.
 - implements a BST with a hashmap like I was going to do with `MaAudioManager::_data_sources`.
 - MiniAudio uses a fixed-size MPMC job queue, optionally multithreaded. If threads > 1, uses a spinlock.
 - streams loop over the source in 2s chunks (two 'pages'), reading PCM frames to a buffer. Better for large files (e.g. soundtracks)
@@ -10,7 +14,7 @@
 - `ma_audio_buffer` API for interfacing with `MovieAudioCursor`s?
 - disable pitch and doppler by default until set as non-default value for the first time for performance improvement
 - set engine & resource manager sample rate to match first sound and leave unchanged to prevent conversions as sounds are added until a sound is added that doesn't have a matching rate; then disable engine rate.
-- TODO double check response on mackron discord
+- `ma_data_source` is a *very* open API (it's just a `typedef void`)!
 
 # general notes
 MiniAudio library files:
@@ -26,6 +30,14 @@ MaAudioSound:
 - all property methods (active, volume, time, length, play rate, balance, loop count/pos)
 - play and stop methods (buffering and updates, cache)
 - 3d audio properties
+
+Reference counting:
+Since MiniAudio handles its own refcounts and garbage collection of data
+sources, our options for manually keeping 'expiring sources' loaded are
+limited. We could:
+1) ditch the expiring sources feature
+1) override or sidestep the high-level MiniAudio API (resource management, nodes, engine)
+1) hide the `ma_sound`s and `ma_data_source`s behind getters which dispense them based on a cache status. The getter would access a list of cached sounds with open references (i.e. `init()`ed `ma_data_source` objects) which is trimmed by the update method. Update pops the oldest member with no other refs, getter never pops and only refreshes counts.
 
 ## Cacheing sounds
 Load new sound with source file:

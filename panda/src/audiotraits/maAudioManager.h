@@ -170,6 +170,8 @@ class EXPCL_MA_AUDIO MaAudioManager final : public AudioManager {
   pdeque<DataSource *> _expiring_sources;
   // This is where AudioSounds are stored in memory
   pdeque<MaAudioSound> _all_sounds;
+  // MiniAudio node containing all sounds
+  ma_sound _all_sounds_grp;
   // This array contains pointers to playing sounds
   std::array<MaAudioSound *, _concurrent_sound_limit> _sounds_playing;
 
