@@ -31,7 +31,7 @@ AudioManager *Create_MaAudioManager() {
 
 MaAudioManager::
 MaAudioManager() {
-  ReMutexHolder holder(_lock);
+  //ReMutexHolder holder(_lock);
 
   audio_cat.init();
 
@@ -94,16 +94,15 @@ MaAudioManager() {
 
   _num_sources_cached = 0;
 
-  // TODO flags for global sound group
+  // TODO default flags for global sound group - ASYNC?
   int sg_flags = 0;
   ma_sound_group_init(&_audio_engine, sg_flags, nullptr, &_all_sounds_grp);
 
   // we'll do this when p3d is ready for it, or remove the noAutoStart line
   ma_engine_start(&_audio_engine);
 
-  if (audio_cat.is_debug()) {
+  if (audio_cat.is_debug())
     audio_cat.debug() << "MA ... " << var << std::endl;
-  }
 }
 
 /**
@@ -111,12 +110,14 @@ MaAudioManager() {
  */
 PT(AudioSound) MaAudioManager::
 get_sound(const Filename &file_name, bool positional, int mode) {
-  PT(MaAudioSound) = _all_sounds.emplace_back(MaAudioSound(
+  PT(MaAudioSound) new_sound = _all_sounds.emplace_back(
+      MaAudioSound(
         this,
         file_name,
         positional,
         mode
-  )});
+      )
+    );
   return new_sound;
 }
 
@@ -226,6 +227,7 @@ PN_stdfloat MaAudioManager::get_volume() const {
  * Gets a pointer to the MiniAudio resource manager we use
  */
 PT(ma_resource_manager) MaAudioManager::get_resource_manager() {
+  // thread safety?
   return PT(_resource_mgr);
 }
 
@@ -233,7 +235,7 @@ PT(ma_resource_manager) MaAudioManager::get_resource_manager() {
  * Turn on/off via active flag. Warning: not implemented.
  */
 void MaAudioManager::set_active(bool flag) {
-  ReMutexHolder holder(_lock);
+  //ReMutexHolder holder(_lock);
   if (_active!=flag) {
     _active=flag;
     for (auto i : _all_sounds) {

@@ -14,11 +14,11 @@
 #ifndef MINIAUDIOMANAGER_H
 #define MINIAUDIOMANAGER_H
 
+#include "vector"
 #include "array"
 #include "pandabase.h"
 
 #include "audioManager.h"
-#include "pmap.h"
 #include "pset.h"
 #include "movieAudioCursor.h"
 #include "reMutex.h"
@@ -28,104 +28,11 @@
 
 class MaAudioSound;
 
-typedef struct ma_movie_audio {
-    ma_data_source_base base;
-    MovieAudioCursor *cursor;
-};
-
-static ma_result ma_movie_audio_read(
-    ma_data_source* pDataSource,
-    void* pFramesOut,
-    ma_uint64 frameCount,
-    ma_uint64* pFramesRead) {
-  // TODO Ensure output is in the same format returned by
-  // ma_movie_audio_get_data_format().
-  // returns interleaved channels in a 16b signed int format (ma_format_s16).
-  // pFramesOut must be at least frameCount * channels big
-  pFramesRead = pDataSource->cursor.read_samples(
-      frameCount, (int16_t *)pFramesOut);
-  if (pFramesRead == frameCount)
-    return MA_SUCCESS;
-  else return MA_FAILURE;
-}
-
-static ma_result ma_movie_audio_seek(
-    ma_data_source* pDataSource,
-    ma_uint64 frameIndex) {
-  if (!pDataSource->cursor.can_seek_fast())
-    return MA_NOT_IMPLEMENTED;
-
-  pDataSource->cursor.seek((double)frameIndex);
-  if ((ma_uint64)pDataSource->cursor.tell() == frameIndex)
-    return MA_SUCCESS;
-  else return MA_FAILURE;
-}
-
-static ma_result ma_movie_audio_get_data_format(
-    ma_data_source* pDataSource,
-    ma_format* pFormat,
-    ma_uint32* pChannels,
-    ma_uint32* pSampleRate,
-    ma_channel* pChannelMap,
-    size_t channelMapCap) {
-  // Return the format of the data here.
-  // TODO how to get format? match typehandle?
-  *pChannels = pDataSource->cursor.audio_channels();
-  *pSampleRate = pDataSource->cursor.audio_rate();
-}
-
-static ma_result ma_movie_audio_get_cursor(
-    ma_data_source* pDataSource,
-    ma_uint64* pCursor) {
-  *pCursor = (ma_uint64)pDataSource->cursor.tell();
-  return MA_SUCCESS;
-}
-
-static ma_result ma_movie_audio_get_length(
-    ma_data_source* pDataSource,
-    ma_uint64* pLength) {
-  *pLength = (ma_uint64)pDataSource->cursor.length();
-  return MA_SUCCESS;
-}
-
-static ma_data_source_vtable g_ma_movie_audio_vtable = {
-  my_data_source_read,
-  my_data_source_seek,
-  my_data_source_get_data_format,
-  my_data_source_get_cursor,
-  my_data_source_get_length
-};
-
-ma_result ma_movie_audio_init(
-    MovieAudio &movie_audio,
-    ma_movie_audio* p_ma_MovieAudio) {
-  ma_result result;
-  ma_data_source_config baseConfig;
-
-  baseConfig = ma_data_source_config_init();
-  baseConfig.vtable = &g_ma_movie_audio_vtable;
-
-  result = ma_data_source_init(&baseConfig, &p_ma_MovieAudio->base);
-  if (result != MA_SUCCESS) return result;
-
-  p_ma_MovieAudio->cursor = movie_audio.open();
-
-  return MA_SUCCESS;
-}
-
-void ma_movie_audio_uninit(ma_movie_audio *p_ma_MovieAudio) {
-  // TODO is this all we need to do to free the MovieAudio?
-  delete p_ma_MovieAudio;
-
-  // You must uninitialize the base data source.
-  ma_data_source_uninit(&p_ma_MovieAudio->base);
-}
-
 class EXPCL_MA_AUDIO MaAudioManager final : public AudioManager {
   friend class MaAudioSound;
   PT(ma_resource_manager) get_resource_manager();
   // protects access to audio manager fields in multithreaded user applications
-  static ReMutex _lock;
+  //static ReMutex _lock;
 
   ma_device _device;
   int _active_managers;
@@ -138,7 +45,7 @@ class EXPCL_MA_AUDIO MaAudioManager final : public AudioManager {
 
   ma_resource_manager_config _resource_mgr_conf;
   ma_resource_manager _resource_mgr;
-  ma_engine _audio_engine;
+  ma_engine _engine;
   unsigned int _concurrent_sound_limit;
 
   typedef pset<MaAudioManager *> Managers;
