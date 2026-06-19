@@ -78,8 +78,8 @@ public:
 
   // This is the string that throw_event() will throw when the sound finishes
   // playing.  It is not triggered when the sound is stopped with stop().
-  void set_finished_event(std::string event);
-  const std::string& get_finished_event() const;
+  void set_finished_event(const std::string &event);
+  const std::string &get_finished_event() const;
 
   const std::string &get_name() const;
 

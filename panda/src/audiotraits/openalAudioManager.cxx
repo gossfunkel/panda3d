@@ -215,9 +215,9 @@ OpenALAudioManager::
 ~OpenALAudioManager() {
   ReMutexHolder holder(_lock);
   nassertv(_managers != nullptr);
-  Managers::iterator m_it = _managers->find(this);
-  nassertv(m_it != _managers->end());
-  _managers->erase(m_it);
+  Managers::iterator mi = _managers->find(this);
+  nassertv(mi != _managers->end());
+  _managers->erase(mi);
   cleanup();
 }
 
@@ -586,8 +586,7 @@ uncache_sound(const Filename &file_name) {
 void OpenALAudioManager::
 clear_cache() {
   ReMutexHolder holder(_lock);
-  for (auto sc_it : _sample_cache)
-    uncache_sound(sc_it->file_name.get_basename());
+  discard_excess_cache(0);
 }
 
 /**
