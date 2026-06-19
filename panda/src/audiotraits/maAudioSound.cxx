@@ -131,17 +131,37 @@ make_copy() const {
   return copy_sound;
 }
 
+void loop_cb(void *loop_ctr, ma_sound *sound_ptr) {
+}
+
 void MaAudioSound::
 play() {
   _paused = false;
   if (is_active()) return;
   set_active(true);
 
+  if (get_loop()) {
+    _loopctr.loops = 0;
+    _loopctr.loop_count = get_loop_count();
+    // if loop count isn't 0, we manually loop
+    if (loopctr.loop_count)
+      ma_sound_set_end_callback(
+          &_ma_sound,
+          [](void *loop_ctr, ma_sound *sound_ptr){
+            if (++loop_ctr->loops < loop_ctr->loop_count)
+              ma_sound_start(sound_ptr);
+          },
+          (void *)&_loopctr;
+        );
+    else // otherwise, we let miniaudio loop it forever
+      ma_sound_set_looping(&_ma_sound, true);
+  }
+
   if (_manager->_num_concurrent_sounds <
       _manager->_concurrent_sound_limit) {
     ++_manager->_num_concurrent_sounds;
     _manager->_active_sounds.emplace_back(&this);
-    _ma_sound_start(&_ma_sound);
+    ma_sound_start(&_ma_sound);
   } else
     audio_error("Maximum concurrently playing sounds reached, cannot play sound");
 }
@@ -151,6 +171,8 @@ stop() {
   _paused = false;
   if (!is_active()) return;
   set_active(false);
+  if (ma_sound_is_looping(&_ma_sound))
+    ma_sound_set_looping(&_ma_sound, false);
   if (ma_sound_is_playing(&_ma_sound))
     ma_sound_stop(&_ma_sound);
 
