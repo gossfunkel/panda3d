@@ -55,8 +55,10 @@ class EXPCL_MA_AUDIO MaAudioManager final : public AudioManager {
   std::vector<MaAudioSound>_all_sounds;
   // MiniAudio node containing all sounds
   ma_sound _all_sounds_grp;
-  // This array contains pointers to playing sounds
-  std::array<MaAudioSound *, _concurrent_sound_limit> _sounds_playing;
+  // This array contains pointers to active sounds
+  std::array<MaAudioSound *, _concurrent_sound_limit> _active_sounds;
+  // Counter for active sounds (TODO atomic? thread-safe accessors?)
+  unsigned int _num_concurrent_sounds;
 
   PN_stdfloat _distance_factor;
   PN_stdfloat _doppler_factor;

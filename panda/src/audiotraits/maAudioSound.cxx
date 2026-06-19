@@ -63,7 +63,6 @@ MaAudioSound(MaAudioManager *manager,
       audio_warning("stereo sound " << file_name << " will not be spatialized");
     }
   }
-
 }
 
 
@@ -119,6 +118,50 @@ MaAudioSound(const MaAudioSound &copy_sound) :
       &_manager->_engine, src_fn, _ma_flags, &_manager->_all_sounds_grp,
       NULL, _ma_sound
   ), "Failed to initialise copied AudioSound");
+}
+
+PT(AudioSound) MaAudioSound::
+make_copy() const {
+  PT(AudioSound) copy_sound = new MaAudioSound(*this);
+
+  // throw errors if the copied-to node doesn't match the copied-from
+  nassertr(copy_sound->is_valid() == this->is_valid(), nullptr);
+  nassertr(copy_sound->has_sound_data() == this->has_sound_data(), nullptr);
+
+  return copy_sound;
+}
+
+void MaAudioSound::
+play() {
+  _paused = false;
+  if (is_active()) return;
+  set_active(true);
+
+  if (_manager->_num_concurrent_sounds <
+      _manager->_concurrent_sound_limit) {
+    ++_manager->_num_concurrent_sounds;
+    _manager->_active_sounds.emplace_back(&this);
+    _ma_sound_start(&_ma_sound);
+  } else
+    audio_error("Maximum concurrently playing sounds reached, cannot play sound");
+}
+
+void MaAudioSound::
+stop() {
+  _paused = false;
+  if (!is_active()) return;
+  set_active(false);
+  if (ma_sound_is_playing(&_ma_sound))
+    ma_sound_stop(&_ma_sound);
+
+  auto as_it = _manager->_active_sounds.begin();
+  while (&(*as_it) != &this) {
+    if (as_it == _manager->_active_sounds.end()) {
+      audio_error("Stopped sound not found in active sounds array");
+      return;
+    }
+    as_it = as_it.next();
+  }
 }
 
 MaAudioSound::

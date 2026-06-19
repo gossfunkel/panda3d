@@ -80,7 +80,7 @@ MaAudioManager() {
   audio_engine_conf.pResourceManager = &_resource_mgr;
   audio_engine_conf.noAutoStart = MA_TRUE;
   check_ma(
-    ma_engine_init(&audio_engine_conf, &_audio_engine),
+    ma_engine_init(&audio_engine_conf, &_engine),
     ma_device_uninit(&_device),
     "Failed to initialise MiniAudio engine."
   );
@@ -96,10 +96,10 @@ MaAudioManager() {
 
   // TODO default flags for global sound group - ASYNC?
   int sg_flags = 0;
-  ma_sound_group_init(&_audio_engine, sg_flags, nullptr, &_all_sounds_grp);
+  ma_sound_group_init(&_engine, sg_flags, nullptr, &_all_sounds_grp);
 
   // we'll do this when p3d is ready for it, or remove the noAutoStart line
-  ma_engine_start(&_audio_engine);
+  ma_engine_start(&_engine);
 
   if (audio_cat.is_debug())
     audio_cat.debug() << "MA ... " << var << std::endl;
@@ -132,8 +132,7 @@ get_sound(MovieAudio &source, bool positional, int mode) {
 }
 
 /*
- * Deletes a cached source from the expiration cache, if not in use
- * by an active AudioSound.
+ * Deletes a reference to a sound if not active.
  */
 void MaAudioManager::uncache_sound(const Filename &file_name) {
   ReMutexHolder holder(_lock);
@@ -210,7 +209,7 @@ void MaAudioManager::set_volume(PN_stdfloat volume) {
   ReMutexHolder holder(_lock);
   if (_volume != volume) {
     _volume = volume;
-    check_ma(ma_engine_set_volume(&_audio_engine, volume), ,
+    check_ma(ma_engine_set_volume(&_engine, volume), ,
         "Failed to set MiniAudio engine global volume.");
   }
 }
@@ -219,7 +218,7 @@ void MaAudioManager::set_volume(PN_stdfloat volume) {
  * Gets the global volume (gain) setting on our MiniAudio engine
  */
 PN_stdfloat MaAudioManager::get_volume() const {
-  _volume = ma_engine_get_volume(&_audio_engine);
+  _volume = ma_engine_get_volume(&_engine);
   return _volume;
 }
 
@@ -311,40 +310,40 @@ audio_3d_set_listener_attributes(
     l_vel = {vx, vy, vz};
     l_fwd = {fx, fy, fz};
     l_up = {ux, uy, uz};
-    ma_engine_listener_set_position(&_audio_engine, 0, px, py, pz);
-    ma_engine_listener_set_velocity(&_audio_engine, 0, vx, vy, vz);
-    ma_engine_listener_set_direction(&_audio_engine, 0, fx, fy, fz);
-    ma_engine_listener_set_world_up(&_audio_engine, 0, ux, uy, uz);
+    ma_engine_listener_set_position(&_engine, 0, px, py, pz);
+    ma_engine_listener_set_velocity(&_engine, 0, vx, vy, vz);
+    ma_engine_listener_set_direction(&_engine, 0, fx, fy, fz);
+    ma_engine_listener_set_world_up(&_engine, 0, ux, uy, uz);
     break;
   case CS_zup_right:
     l_pos = {px, pz, -py};
     l_vel = {vx, vz, -vy};
     l_fwd = {fx, fz, -fy};
     l_up = {ux, uz, -uy};
-    ma_engine_listener_set_position(&_audio_engine, 0, px, -pz, py);
-    ma_engine_listener_set_velocity(&_audio_engine, 0, vx, -vz, vy);
-    ma_engine_listener_set_direction(&_audio_engine, 0, fx, -fz, fy);
-    ma_engine_listener_set_world_up(&_audio_engine, 0, ux, -uz, uy);
+    ma_engine_listener_set_position(&_engine, 0, px, -pz, py);
+    ma_engine_listener_set_velocity(&_engine, 0, vx, -vz, vy);
+    ma_engine_listener_set_direction(&_engine, 0, fx, -fz, fy);
+    ma_engine_listener_set_world_up(&_engine, 0, ux, -uz, uy);
     break;
   case CS_yup_left:
     l_pos = {px, py, -pz};
     l_vel = {vx, vy, -vz};
     l_fwd = {fx, fy, -fz};
     l_up = {ux, uy, -uz};
-    ma_engine_listener_set_position(&_audio_engine, 0, px, py, -pz);
-    ma_engine_listener_set_velocity(&_audio_engine, 0, vx, vy, -vz);
-    ma_engine_listener_set_direction(&_audio_engine, 0, fx, fy, -fz);
-    ma_engine_listener_set_world_up(&_audio_engine, 0, ux, uy, -uz);
+    ma_engine_listener_set_position(&_engine, 0, px, py, -pz);
+    ma_engine_listener_set_velocity(&_engine, 0, vx, vy, -vz);
+    ma_engine_listener_set_direction(&_engine, 0, fx, fy, -fz);
+    ma_engine_listener_set_world_up(&_engine, 0, ux, uy, -uz);
     break;
   case CS_zup_left:
     l_pos = {px, pz, py};
     l_vel = {vx, vz, vy};
     l_fwd = {fx, fz, fy};
     l_up = {ux, uz, uy};
-    ma_engine_listener_set_position(&_audio_engine, 0, px, pz, py);
-    ma_engine_listener_set_velocity(&_audio_engine, 0, vx, vz, vy);
-    ma_engine_listener_set_direction(&_audio_engine, 0, fx, fz, fy);
-    ma_engine_listener_set_world_up(&_audio_engine, 0, ux, uz, uy);
+    ma_engine_listener_set_position(&_engine, 0, px, pz, py);
+    ma_engine_listener_set_velocity(&_engine, 0, vx, vz, vy);
+    ma_engine_listener_set_direction(&_engine, 0, fx, fz, fy);
+    ma_engine_listener_set_world_up(&_engine, 0, ux, uz, uy);
     break;
   default:
     nassert_raise("Invalid coordinate system given to MiniAudio.");
@@ -357,10 +356,10 @@ audio_3d_get_listener_attributes(
     PN_stdfloat *vx, PN_stdfloat *vy, PN_stdfloat *vz, //vel
     PN_stdfloat *fx, PN_stdfloat *fy, PN_stdfloat *fz, //fwd
     PN_stdfloat *ux, PN_stdfloat *uy, PN_stdfloat *uz) { //up
-  l_pos = ma_engine_listener_get_position(&_audio_engine, 0);
-  l_vel = ma_engine_listener_get_velocity(&_audio_engine, 0);
-  l_fwd = ma_engine_listener_get_direction(&_audio_engine, 0);
-  l_up = ma_engine_listener_get_world_up(&_audio_engine, 0);
+  l_pos = ma_engine_listener_get_position(&_engine, 0);
+  l_vel = ma_engine_listener_get_velocity(&_engine, 0);
+  l_fwd = ma_engine_listener_get_direction(&_engine, 0);
+  l_up = ma_engine_listener_get_world_up(&_engine, 0);
   CoordinateSystem cs = get_default_coordinate_system();
   switch (cs) {
   case CS_yup_right:
@@ -461,7 +460,8 @@ is_valid() {
 
 /*
  * Stop and remove all playing sounds, remove all sources, and uninitialise
- *  the audio engine, device, and resource manager
+ *  the audio engine, device, and resource manager.
+ * Warning: invalidates all pointers to sounds!
  */
 void MaAudioManager::
 cleanup() {
@@ -470,16 +470,8 @@ cleanup() {
     _all_sounds.erase(sound_it);
     delete sound_it;
   }
-  for (auto source_it : _data_sources) {
-    if (source_it->movie_audio == nullptr)
-      ma_resource_manager_data_source_uninit(source_it->data_src);
-    else
-      ma_movie_audio_uninit(source_it->data_src);
-    _data_sources.erase(source_it);
-    delete source_it;
-  }
 
   ma_device_uninit(&_device);
-  ma_engine_uninit(&_audio_engine);
+  ma_engine_uninit(&_engine);
   ma_resource_manager_uninit(&_resource_mgr);
 }

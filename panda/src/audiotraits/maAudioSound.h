@@ -35,8 +35,8 @@ class EXPCL_MA_AUDIO MaAudioSound final : public AudioSound {
   void cleanup();
 
   INLINE bool is_valid() const;
-  INLINE bool is_playing() const;
-  INLINE bool has_sound_data() const;
+  //INLINE bool is_playing() const;
+  //INLINE bool has_sound_data() const;
 
 
   MaAudioManager *_manager;
