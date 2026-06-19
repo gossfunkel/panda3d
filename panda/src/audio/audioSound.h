@@ -28,7 +28,7 @@ class EXPCL_PANDA_AUDIO AudioSound : public TypedReferenceCount {
 PUBLISHED:
   virtual ~AudioSound();
 
-  // Construct a near-identical copy of this object on the heap and 
+  // Construct a near-identical copy of this object on the heap and
   // return a pointer to the new copy. Currently only implemented for OpenAL.
   [[nodiscard]] virtual AudioSound *make_copy() const;
 
