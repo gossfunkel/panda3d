@@ -147,7 +147,7 @@ play() {
     if (loopctr.loop_count)
       ma_sound_set_end_callback(
           &_ma_sound,
-          [](void *loop_ctr, ma_sound *sound_ptr){
+          [&](void *loop_ctr, ma_sound *sound_ptr){
             if (++loop_ctr->loops < loop_ctr->loop_count)
               ma_sound_start(sound_ptr);
           },
