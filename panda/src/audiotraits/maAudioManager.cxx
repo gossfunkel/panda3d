@@ -26,13 +26,13 @@ bool MaAudioManager::_ma_active = false;
  */
 AudioManager *Create_MaAudioManager() {
   audio_debug("Create_MaAudioManager()");
+  //ReMutexHolder holder(_lock);
   return new MaAudioManager;
 }
 
 MaAudioManager::
 MaAudioManager() {
   //ReMutexHolder holder(_lock);
-
   audio_cat.init();
 
   if (_managers == nullptr) {
@@ -114,6 +114,7 @@ get_sound(const Filename &file_name, bool positional, int mode) {
     audio_error("Cache limit reached; cannot get new sound");
     return _null_sound;
   }
+  //ReMutexHolder holder(_lock);
   PT(MaAudioSound) new_sound = _all_sounds.emplace_back(
       MaAudioSound(
         this,
@@ -139,7 +140,7 @@ get_sound(MovieAudio &source, bool positional, int mode) {
  * Deletes a reference to a sound if not active.
  */
 void MaAudioManager::uncache_sound(const Filename &file_name) {
-  ReMutexHolder holder(_lock);
+  //ReMutexHolder holder(_lock);
 
   // should we use the miniaudio vfs?
   // FIXME horrible control flow / code repetition
@@ -195,12 +196,12 @@ void MaAudioManager::clear_cache() {
 }
 
 void MaAudioManager::set_cache_limit(unsigned int count) {
-  ReMutexHolder holder(_lock);
+  //ReMutexHolder holder(_lock);
   _cache_limit = count;
-  //clear_cache();
 
-  audio_cat.debug() << "Trimming audio cache for new limit."
-                    << std::endl;
+  audio_cat.debug() << "Trimming audio cache for new limit of "
+                    << count << "." << std::endl;
+  clear_cache();
   while (_all_sounds.size() > count) _all_sounds.pop_back();
 
 }
@@ -213,7 +214,7 @@ unsigned int MaAudioManager::get_cache_limit() const {
  * Sets global volume (gain) setting on our MiniAudio engine
  */
 void MaAudioManager::set_volume(PN_stdfloat volume) {
-  ReMutexHolder holder(_lock);
+  //ReMutexHolder holder(_lock);
   if (_volume != volume) {
     _volume = volume;
     check_ma(ma_engine_set_volume(&_engine, volume), ,
@@ -234,7 +235,6 @@ PN_stdfloat MaAudioManager::get_volume() const {
  */
 ma_resource_manager *MaAudioManager::
 get_resource_manager() {
-  // thread safety?
   return &_resource_mgr;
 }
 
@@ -265,7 +265,7 @@ bool MaAudioManager::get_active() const {
 
 void MaAudioManager::
 set_concurent_sound_limit(unsigned int) {
-  ReMutexHolder holder(_lock);
+  //ReMutexHolder holder(_lock);
   _concurrent_sound_limit = limit;
   reduce_sounds_playing_to(_concurrent_sound_limit);
 }
@@ -275,7 +275,7 @@ unsigned int MaAudioManager::get_concurrent_sound_limit() const {
 }
 
 void MaAudioManager::reduce_sounds_playing_to(unsigned int count) {
-  ReMutexHolder holder(_lock);
+  //ReMutexHolder holder(_lock);
   // give all sounds that have finished playing a chance to stop first
   update();
 
@@ -295,6 +295,7 @@ void MaAudioManager::stop_all_sounds() {
  * Do housework on any buffers and playing sounds
  */
 void MaAudioManager::update() {
+  //ReMutexHolder holder(_lock);
   for (auto sound_it : _all_sounds)
     if (!sound_it->active) _all_sounds.erase(sound_it);
 }
@@ -310,6 +311,7 @@ audio_3d_set_listener_attributes(
     PN_stdfloat vx, PN_stdfloat vy, PN_stdfloat vz, //vel
     PN_stdfloat fx, PN_stdfloat fy, PN_stdfloat fz, //fwd
     PN_stdfloat ux, PN_stdfloat uy, PN_stdfloat uz) { //up
+  //ReMutexHolder holder(_lock);
   CoordinateSystem cs = get_default_coordinate_system();
   switch (cs) {
   case CS_yup_right:
@@ -403,6 +405,7 @@ audio_3d_get_listener_attributes(
  */
 void MaAudioManager::
 audio_3d_set_distance_factor(PN_stdfloat factor) {
+  //ReMutexHolder holder(_lock);
   return;
 }
 
@@ -416,6 +419,7 @@ audio_3d_get_distance_factor() const {
 
 void MaAudioManager::
 audio_3d_set_doppler_factor(PN_stdfloat factor) {
+  //ReMutexHolder holder(_lock);
   ma_sound_group_set_doppler_factor(&_all_sounds_grp, factor);
 }
 
@@ -426,6 +430,7 @@ audio_3d_get_doppler_factor() const {
 
 void MaAudioManager::
 audio_3d_set_drop_off_factor(PN_stdfloat factor) {
+  //ReMutexHolder holder(_lock);
   ma_sound_group_set_rolloff(&_all_sounds_grp, factor);
 }
 
@@ -441,7 +446,7 @@ audio_3d_get_drop_off_factor() const {
 void MaAudioManager::
 shutdown() {
   audio_cat.debug() << "Shutting down Audio Managers." << std::endl;
-  ReMutexHolder holder(_lock);
+  //ReMutexHolder holder(_lock);
   if (_managers != nullptr)
     for (Managers::iterator man_it : _managers)
       man_it->cleanup();
@@ -450,7 +455,7 @@ shutdown() {
 }
 
 ~MaAudioManager() {
-  ReMutexHolder holder(_lock);
+  //ReMutexHolder holder(_lock);
   nassertv(_managers != nullptr);
   Managers::iterator man_it = _managers->find(this);
   nassertv(man_it != _managers->end());
@@ -474,6 +479,7 @@ is_valid() {
 void MaAudioManager::
 cleanup() {
   audio_cat.debug() << "Cleaning up Audio Manager..." << std::endl;
+  //ReMutexHolder holder(_lock);
   for (auto sound_it : _all_sounds) {
     sound_it->stop();
     _all_sounds.erase(sound_it);
