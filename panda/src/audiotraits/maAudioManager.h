@@ -19,7 +19,7 @@
 #include "pandabase.h"
 
 #include "audioManager.h"
-#include "pset.h"
+#include "pdeque.h"
 #include "movieAudioCursor.h"
 #include "reMutex.h"
 #include "vector_string.h"
@@ -52,7 +52,7 @@ class EXPCL_MA_AUDIO MaAudioManager final : public AudioManager {
   static Managers *_managers;
 
   // loaded sounds are stored here
-  std::vector<MaAudioSound>_all_sounds;
+  pdeque<MaAudioSound>_all_sounds;
   // MiniAudio node containing all sounds
   ma_sound _all_sounds_grp;
   // This array contains pointers to active sounds

@@ -63,6 +63,8 @@ MaAudioSound(MaAudioManager *manager,
       audio_warning("stereo sound " << file_name << " will not be spatialized");
     }
   }
+
+  ma_sound_set_end_callback(&_ma_sound, stop, nullptr);
 }
 
 
@@ -118,6 +120,8 @@ MaAudioSound(const MaAudioSound &copy_sound) :
       &_manager->_engine, src_fn, _ma_flags, &_manager->_all_sounds_grp,
       NULL, _ma_sound
   ), "Failed to initialise copied AudioSound");
+
+  ma_sound_set_end_callback(&_ma_sound, stop, nullptr);
 }
 
 PT(AudioSound) MaAudioSound::
@@ -141,17 +145,18 @@ play() {
   set_active(true);
 
   if (get_loop()) {
-    _loopctr.loops = 0;
-    _loopctr.loop_count = get_loop_count();
+    _loops_completed = 0;
     // if loop count isn't 0, we manually loop
-    if (loopctr.loop_count)
+    if (_loop_count)
       ma_sound_set_end_callback(
           &_ma_sound,
-          [&](void *loop_ctr, ma_sound *sound_ptr){
-            if (++loop_ctr->loops < loop_ctr->loop_count)
+          [&](void *sound, ma_sound *sound_ptr){
+            if (++sound->_loops_completed < sound->_loop_count)
               ma_sound_start(sound_ptr);
+            else
+              sound->stop();
           },
-          (void *)&_loopctr;
+          (void *)&this;
         );
     else // otherwise, we let miniaudio loop it forever
       ma_sound_set_looping(&_ma_sound, true);
@@ -193,6 +198,6 @@ MaAudioSound::
 
 void MaAudioSound::
 cleanup() {
-  // TODO ensure sound is stopped?
+  stop();
   ma_sound_uninit(&_ma_sound);
 }

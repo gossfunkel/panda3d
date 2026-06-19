@@ -110,6 +110,10 @@ MaAudioManager() {
  */
 PT(AudioSound) MaAudioManager::
 get_sound(const Filename &file_name, bool positional, int mode) {
+  if (_all_sounds.size() >= _cache_limit) {
+    audio_error("Cache limit reached; cannot get new sound");
+    return _null_sound;
+  }
   PT(MaAudioSound) new_sound = _all_sounds.emplace_back(
       MaAudioSound(
         this,
@@ -184,6 +188,7 @@ void MaAudioManager::uncache_sound(const Filename &file_name) {
  */
 void MaAudioManager::clear_cache() {
   //ReMutexHolder holder(_lock);
+  audio_cat.debug() << "Clearing audio cache..." << std::endl;
 
   for (auto sound_it : _all_sounds)
     if (!sound_it.get_active()) _all_sounds.erase(sound_it);
@@ -192,8 +197,10 @@ void MaAudioManager::clear_cache() {
 void MaAudioManager::set_cache_limit(unsigned int count) {
   ReMutexHolder holder(_lock);
   _cache_limit = count;
-  // TODO set MiniAudio resource manager cache limit? is this possible?
-  clear_cache();
+  //clear_cache();
+
+  audio_cat.debug() << "Trimming audio cache for new limit."
+                    << std::endl;
   while (_all_sounds.size() > count) _all_sounds.pop_back();
 
 }
@@ -225,20 +232,29 @@ PN_stdfloat MaAudioManager::get_volume() const {
 /*
  * Gets a pointer to the MiniAudio resource manager we use
  */
-PT(ma_resource_manager) MaAudioManager::get_resource_manager() {
+ma_resource_manager *MaAudioManager::
+get_resource_manager() {
   // thread safety?
-  return PT(_resource_mgr);
+  return &_resource_mgr;
 }
 
 /**
- * Turn on/off via active flag. Warning: not implemented.
+ * Turn on/off active flag, stopping all if false. Caution!
+ *  This method may cause undefined behaviour; use others.
  */
 void MaAudioManager::set_active(bool flag) {
   //ReMutexHolder holder(_lock);
   if (_active!=flag) {
     _active=flag;
-    for (auto i : _all_sounds) {
-      (**i).set_active(_active);
+    if (!flag) {
+      audio_cat.debug() << "Stopping all sounds." << std::endl;
+      for (auto sound_it : _all_sounds)
+        sound_it->stop();
+    } else {
+      audio_cat.debug() << "Setting all cached sounds active!" << std::endl;
+
+      for (auto sound_it : _all_sounds)
+        sound_it->set_active(_active);
     }
   }
 }
@@ -263,22 +279,14 @@ void MaAudioManager::reduce_sounds_playing_to(unsigned int count) {
   // give all sounds that have finished playing a chance to stop first
   update();
 
-  // TODO use _all_sounds_grp?
-  int limit = _sounds_playing.size() - count;
-  while (limit-- > 0) {
-    auto sound_it = _sounds_playing.begin();
-    nassertv(sound_it != _sounds_playing.end());
-    /* Stop should be called while holding a PT the sound- we have to make a
-     * temporary one here so the refcount doesn't go to 0 and recurse, with
-     * the destructor calling stop() and stop() calling the destructor.
-     */
-    // TODO shouldn't the AudioSound destructor just check if it's stopped?
-    PT(MaAudioSound) pt_sound = &(*sound_it);
-    pt_sound->stop();
-  }
+  audio_cat.debug() << "Reducing playing sounds to " << count
+                    << "." << std::endl;
+  for (int limit = _sounds_playing.size() - count; limit > 0; --limit)
+    _sounds_playing.pop_front();
 }
 
 void MaAudioManager::stop_all_sounds() {
+  audio_cat.debug() << "Stopping all sounds." << std::endl;
   reduce_sounds_playing_to(0);
 }
 
@@ -287,9 +295,8 @@ void MaAudioManager::stop_all_sounds() {
  * Do housework on any buffers and playing sounds
  */
 void MaAudioManager::update() {
-  // TODO
-  // iterate through _cached_sources until an expired sound is found?
-  // bump up list if sound is active, remove otherwise
+  for (auto sound_it : _all_sounds)
+    if (!sound_it->active) _all_sounds.erase(sound_it);
 }
 
 /* MiniAudio uses y-up by default, this function compensates for any
@@ -433,6 +440,7 @@ audio_3d_get_drop_off_factor() const {
  */
 void MaAudioManager::
 shutdown() {
+  audio_cat.debug() << "Shutting down Audio Managers." << std::endl;
   ReMutexHolder holder(_lock);
   if (_managers != nullptr)
     for (Managers::iterator man_it : _managers)
@@ -465,6 +473,7 @@ is_valid() {
  */
 void MaAudioManager::
 cleanup() {
+  audio_cat.debug() << "Cleaning up Audio Manager..." << std::endl;
   for (auto sound_it : _all_sounds) {
     sound_it->stop();
     _all_sounds.erase(sound_it);
