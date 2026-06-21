@@ -22,7 +22,7 @@ MiniAudio library files:
 - might need to change the ma implementation file to a .cxx/.cpp
 
 MaAudioManager:
-- inline error checking function (fn ptr as parameter)
+- should we invalidate user pointers or let them keep alive with a PT? heap allocation of AudioSounds
 - remaining virtual methods: speaker_setup
 - distance attenuation?
 
@@ -48,6 +48,12 @@ the `_cache_size` has been reached, since they cannot be stored in the array.
 We should instead return a null sound, to allow applications to hit the limit
 without crashing, and we should provide debug output to indicate to developers
 when they're maxing out their cache.
+
+Storing the AudioSounds in the _all_sounds list and removing them when
+cleaning the cache means that users can't keep sounds alive by keeping a PT().
+I think I might switch this in-place approach for heap allocation and garbage
+collection to give user flexibility around the cache, and prevent invalidation
+of pointers.
 
 #### Other tools to note / concepts involved
 - `nassertv` - assert a condition

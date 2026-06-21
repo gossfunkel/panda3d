@@ -17,10 +17,6 @@ using std::string;
 int MaAudioManager::_active_managers = 0;
 bool MaAudioManager::_ma_active = false;
 
-// TODO replace this with an inline function, takes callback fn ptr, returns status
-#define check_ma(result, failcond, outstr) if ((result) != MA_SUCCESS) {  \
-  (failcond); audio_error(outstr); return nullptr; }
-
 /**
  * Factory Function
  */
@@ -45,7 +41,7 @@ MaAudioManager() {
     //config.dataCallback
     //config.pUserData
 
-    check_ma(ma_device_init(NULL, &device_config, &_device), ,
+    check_ma(ma_device_init(NULL, &device_config, &_device),
              "Failed to initialise MiniAudio device.");
 
     ma_device_start(&_device);
@@ -68,7 +64,7 @@ MaAudioManager() {
     //resource_mgr_conf.pVFS = VirtualFileSystem::get_global_pointer();
     check_ma(
       ma_resource_manager_init(&resource_mgr_conf, &_resource_mgr),
-      ma_device_uninit(&_device),
+      &ma_device_uninit, &(&_device),
       "Failed to initialise MiniAudio resource manager."
     );
   }
@@ -81,7 +77,7 @@ MaAudioManager() {
   audio_engine_conf.noAutoStart = MA_TRUE;
   check_ma(
     ma_engine_init(&audio_engine_conf, &_engine),
-    ma_device_uninit(&_device),
+    &ma_device_uninit, &(&_device),
     "Failed to initialise MiniAudio engine."
   );
 
@@ -153,11 +149,8 @@ void MaAudioManager::uncache_sound(const Filename &file_name) {
         return;
       }
       // TODO sound_it->sound.flag &= !MA_SOUND_FLAG_DECODE; ???
-      // not sure if to call this here or let destructor:
-      //  ma_sound_uninit(&sound_it->sound);
-      // we don't need to delete if we use PTs
       _all_sounds.erase(sound_it);
-      // TODO should this uncache all sounds with this filename?
+      // TODO should this uncache all/any sounds with this filename?
       return;
     }
   }
@@ -173,9 +166,6 @@ void MaAudioManager::uncache_sound(const Filename &file_name) {
         return;
       }
       // TODO sound_it->sound.flag &= !MA_SOUND_FLAG_DECODE; ???
-      // not sure if to call this here or let destructor:
-      //  ma_sound_uninit(&sound_it->sound);
-      // we don't need to delete if we use PTs
       _all_sounds.erase(sound_it);
       // TODO should this uncache all sounds with this filename?
       return;
@@ -186,6 +176,7 @@ void MaAudioManager::uncache_sound(const Filename &file_name) {
 
 /*
  * Garbage collects inactive sounds with no other pointers.
+ * Caution: invalidates pointers to sound!
  */
 void MaAudioManager::clear_cache() {
   //ReMutexHolder holder(_lock);
@@ -217,7 +208,7 @@ void MaAudioManager::set_volume(PN_stdfloat volume) {
   //ReMutexHolder holder(_lock);
   if (_volume != volume) {
     _volume = volume;
-    check_ma(ma_engine_set_volume(&_engine, volume), ,
+    check_ma(ma_engine_set_volume(&_engine, volume),
         "Failed to set MiniAudio engine global volume.");
   }
 }
