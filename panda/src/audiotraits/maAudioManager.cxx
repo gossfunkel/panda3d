@@ -117,10 +117,10 @@ get_sound(const Filename &file_name, bool positional, int mode) {
     }
   } else cached_it->second++;
 
-  PT(MaAudioSound) new_sound =
+  PT(AudioSound) new_sound =
     new MaAudioSound(this, file_name, positional, mode);
   new_sound->_manager_it =
-    _all_sounds.emplace_back((weakref)new_sound);
+    _all_sounds.emplace_back((WPT(AudioSound)(*new_sound)));
   return new_sound;
 }
 
@@ -145,16 +145,17 @@ void MaAudioManager::uncache_sound(const Filename &file_name) {
   VirtualFileSystem *vfs = VirtualFileSystem::get_global_ptr();
   vfs->resolve_filename(path, get_model_path());
   auto sound_it = _all_sounds.begin();
-  while (sound_it != _all_sounds.end()) {
-    if (sound_it.file_name == file_name ||
-        sound_it.file_name == path) {
-      sound_it.uncache();
-      // TODO what about doing:
-      // sound_it->sound.flag &= !MA_SOUND_FLAG_DECODE;
-      // TODO should this uncache all/any sounds with this filename?
-      //return;
-    }
-  }
+  while (sound_it != _all_sounds.end())
+    if (auto s_ptr = sound_it->lock()) {
+      if (s_ptr.file_name == file_name ||
+          s_ptr.file_name == path)
+        s_ptr.uncache();
+        // TODO what about doing:
+        // sound_it->sound.flag &= !MA_SOUND_FLAG_DECODE;
+        // TODO should this uncache all/any sounds with this filename?
+        //return;
+    } else // pointer has expired
+      _all_sounds.erase(sound_it);
 }
 
 /*
@@ -164,8 +165,10 @@ void MaAudioManager::clear_cache() {
   //ReMutexHolder holder(_lock);
   audio_cat.debug() << "Clearing audio cache..." << std::endl;
 
-  for (auto sound_it : _all_sounds)
-    sound_it.uncache();
+  for (auto sound_it : _all_sounds) {
+    if (auto s_ptr = sound_it->lock()) s_ptr->uncache();
+    else _all_sounds.erase(sound_it);
+  }
 }
 
 /*
@@ -184,12 +187,15 @@ void MaAudioManager::set_cache_limit(unsigned int count) {
   // MiniAudio until we have reached the new cache limit
   for (auto sound_it = _all_sounds.begin();
        _cache_counts.size() > count; sound_it.next()) {
-    if (sound_it == _all_sounds.end()) {
-      audio_error("Could not uncache sounds to reduce cache size to new limit");
-      return;
-    }
-    sound_it.stop();
-    sound_it.uncache();
+    if (auto s_ptr = sound_it->lock()) {
+      if (s_ptr == _all_sounds.end()) {
+        audio_error("Could not uncache sounds to reduce cache size to new limit");
+        return;
+      }
+      s_ptr.stop();
+      s_ptr.uncache();
+    } else // pointer has expired
+      _all_sounds.erase(sound_it);
   }
 }
 
@@ -268,11 +274,14 @@ void MaAudioManager::reduce_sounds_playing_to(unsigned int count) {
                     << "." << std::endl;
   for (auto sound_it = _all_sounds.begin();
        _num_concurrent_sounds > count; sound_it.next()) {
-    if (sound_it == _all_sounds.end() {
-      audio_error("Could not stop sounds to reduce concurrent sound limit");
-      return;
-    }
-    sound_it.stop();
+    if (auto s_ptr = sound_it->lock()) {
+      if (s_ptr == _all_sounds.end() {
+        audio_error("Could not stop sounds to reduce concurrent sound limit");
+        return;
+      }
+      s_ptr.stop();
+    } else // pointer has expired
+      _all_sounds.erase(sound_it);
   }
 }
 
@@ -470,9 +479,11 @@ cleanup() {
   audio_cat.debug() << "Cleaning up Audio Manager..." << std::endl;
   //ReMutexHolder holder(_lock);
   for (auto sound_it : _all_sounds) {
-    sound_it->stop();
-    _all_sounds.erase(sound_it);
-    delete sound_it;
+    if (auto s_ptr = sound_it->lock()) {
+      s_ptr->stop();
+      _all_sounds.erase(s_ptr);
+      delete s_ptr;
+    } else _all_sounds.erase(sound_it);
   }
 
   ma_device_uninit(&_device);
