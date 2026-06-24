@@ -34,13 +34,6 @@ class EXPCL_MA_AUDIO MaAudioSound final : public AudioSound {
   void cleanup();
 
   INLINE bool is_valid() const;
-  //INLINE bool is_playing() const;
-  //INLINE bool has_sound_data() const;
-
-  struct loopcounter {
-    unsigned int loops;
-    unsigned int loop_count;
-  } _loopctr;
 
   MaAudioManager *_manager;
   ma_sound    _ma_sound;
@@ -97,6 +90,8 @@ public:
 
   void play();
   void stop();
+
+  void uncache();
 
   // loop: false = play once; true = play forever.  inits to false.
   void set_loop(bool loop=true);
