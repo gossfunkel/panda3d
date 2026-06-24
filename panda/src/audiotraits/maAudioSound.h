@@ -15,9 +15,8 @@
 
 #include "pandabase.h"
 
+#include "string"
 #include "audioSound.h"
-#include "movieAudioCursor.h"
-#include "trueClock.h"
 #include "maAudioManager.h"
 #include "vector_string.h"
 
