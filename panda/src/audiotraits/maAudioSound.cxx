@@ -74,7 +74,7 @@ MaAudioSound(const MaAudioSound &copy_sound) :
   AudioSound(copy_sound.is_positional()),
   _playing_loops(copy_sound._playing_loops),
   _playing_rate(copy_sound._playing_rate),
-  _loops_completed(copy_sound._loops_completed),
+  _loops_completed(0),
   _manager(copy_sound._manager),
   _volume(copy_sound._volume),
   _balance(copy_sound._balance),
@@ -107,13 +107,8 @@ MaAudioSound(const MaAudioSound &copy_sound) :
     }
   }
 
-  check_ma(ma_sound_init_from_file(
-      &_manager->_engine, src_fn, _ma_flags, &_manager->_all_sounds_grp,
-      NULL, _ma_sound
-  ), "Failed to initialise copied AudioSound");
+  cache();
 
-  if (copy_sound.get_loop()) {
-    _loops_completed = 0;
   set_loop(copy_sound.get_loop());
 }
 
@@ -172,8 +167,8 @@ uncache() {
   return (ma_sound_uninit(&_ma_sound) == MA_SUCCESS);
 }
 
-void loop_cb(void *loop_ctr, ma_sound *sound_ptr) {
-  stop();
+void loop_cb(void *ma_audio_sound, ma_sound *sound_ptr) {
+  ma_audio_sound->stop();
 }
 
 void MaAudioSound::
