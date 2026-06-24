@@ -265,5 +265,6 @@ status() const {
 void MaAudioSound::
 cleanup() {
   stop();
+  _manager->_all_sounds.erase(_manager_it);
   ma_sound_uninit(&_ma_sound);
 }

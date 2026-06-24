@@ -93,6 +93,8 @@ public:
 
   void uncache();
 
+  pdeque<weakref>::iterator _manager_it;
+
   // loop: false = play once; true = play forever.  inits to false.
   void set_loop(bool loop=true);
   bool get_loop() const;

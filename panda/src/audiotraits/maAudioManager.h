@@ -14,8 +14,9 @@
 #ifndef MINIAUDIOMANAGER_H
 #define MINIAUDIOMANAGER_H
 
-#include "vector"
-#include "array"
+#include <vector>
+#include <array>
+#include <memory>
 #include "pandabase.h"
 
 #include "audioManager.h"
@@ -53,8 +54,8 @@ class EXPCL_MA_AUDIO MaAudioManager final : public AudioManager {
   static Managers *_managers;
 
   // loaded sounds are stored here
-  // FIXME AudioSounds are PTs, we can't keep a deque of them!
-  pdeque<MaAudioSound>_all_sounds;
+  typedef std::weak_ptr<MaAudioSound> weakref;
+  pdeque<weakref>_all_sounds;
   // refcounting of sounds in cache
   pmap<Filename, int>_cache_counts;
   // MiniAudio node containing all sounds

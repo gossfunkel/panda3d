@@ -117,14 +117,10 @@ get_sound(const Filename &file_name, bool positional, int mode) {
     }
   } else cached_it->second++;
 
-  PT(MaAudioSound) new_sound = _all_sounds.emplace_back(
-      MaAudioSound(
-        this,
-        file_name,
-        positional,
-        mode
-      )
-    );
+  PT(MaAudioSound) new_sound =
+    new MaAudioSound(this, file_name, positional, mode);
+  new_sound->_manager_it =
+    _all_sounds.emplace_back((weakref)new_sound);
   return new_sound;
 }
 
