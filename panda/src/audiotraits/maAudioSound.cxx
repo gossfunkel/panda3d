@@ -36,11 +36,6 @@ MaAudioSound(MaAudioManager *manager,
   // protect against user accessing engine from multiple threads
   //ReMutexHolder holder(MaAudioManager::_lock);
 
-  if (!require_sound_data()) {
-    cleanup();
-    return;
-  }
-
   std::string src_fn = file_name.get_basename();
   // larger files (e.g. soundtracks/music) should be set to stream mode
   _ma_flags = (mode == StreamMode{SM_stream})
@@ -52,14 +47,14 @@ MaAudioSound(MaAudioManager *manager,
 
   if (positional) {
     // FIXME get sound channels properly
-    if (_ma_sound->_channels != 1) {
-      audio_warning("stereo sound " << file_name << " will not be spatialized");
-    }
+    if (_ma_sound->_channels != 1)
+      audio_warning("stereo sound " << file_name
+                    << " will not be spatialized");
   }
 
   cache();
 
-  ma_sound_get_length_in_seconds(&_ma_sound, &_length);
+  length();
 }
 
 
@@ -105,7 +100,6 @@ MaAudioSound(const MaAudioSound &copy_sound) :
   }
 
   cache();
-
   set_loop(copy_sound.get_loop());
 }
 
@@ -115,7 +109,7 @@ PT(AudioSound) MaAudioSound::make_copy() const {
   nassertr(copy_sound->is_valid() == this->is_valid(), nullptr);
 
   return copy_sound;
-}
+}`
 
 /*
  * Loads the sound to MiniAudio, if not already loaded.
@@ -124,32 +118,18 @@ PT(AudioSound) MaAudioSound::make_copy() const {
 void MaAudioSound::
 cache() {
   if (_ma_sound == nullptr) {
-    auto cache_it = _manager->_cache_counts.find(get_name());
+    auto cache_it = _manager->_cache_counts.find(_basename);
     if (cache_it == _manager->_cache_counts.end())
-      _manager->_cache_counts.emplace({get_name(), 1});
+      _manager->_cache_counts.emplace({_basename, 1});
     else cache_it->second++;
 
-    std::string src_filename = get_name().get_basename();
     check_ma(
       ma_sound_init_from_file(
-        &manager->_engine, src_filename, _ma_flags,
+        &manager->_engine, _basename, _ma_flags,
         &_manager->_all_sounds_grp,
         NULL, &_ma_sound),
       "Failed to initialise AudioSound");
-    if (loop_count > 1)
-      ma_sound_set_end_callback(
-        &_ma_sound,
-        [&](void *sound, ma_sound *sound_ptr){
-          if (++sound->_loops_completed < sound->_loop_count)
-            ma_sound_start(sound_ptr);
-          else
-            sound->stop();
-        },
-        (void *)&this;
-      );
-    else
-      ma_sound_set_end_callback(&_ma_sound, loop_cb, nullptr);
-  }
+    set_loop(_loop);
 }
 
 /*
@@ -160,7 +140,7 @@ uncache() {
   if (ma_sound_is_playing(&_ma_sound)) return false;
   set_active(false);
   if (_ma_sound == nullptr) return true;
-  auto cache_it = _manager->_cache_counts.find(get_name());
+  auto cache_it = _manager->_cache_counts.find(_basename);
   if (cache_it != _manager->_cache_counts.end()) {
     if (--cache_it->second <= 0)
       _manager->_cache_counts.erase(cache_it);
@@ -170,6 +150,7 @@ uncache() {
 
 void loop_cb(void *ma_audio_sound, ma_sound *sound_ptr) {
   ma_audio_sound->stop();
+  ma_sudio_sound->finished();
 }
 
 void MaAudioSound::
@@ -182,7 +163,7 @@ play() {
     audio_error("Maximum concurrently-playing sounds reached; cannot play sound");
     return;
   }
-  ++_manager->_num_concurrent_sounds;
+  _manager->_num_concurrent_sounds++;
   cache();
 
   _manager->_active_sounds.emplace_back(&this);
@@ -191,10 +172,11 @@ play() {
 
 void MaAudioSound::
 stop() {
+  if (!is_valid()) return;
   _paused = false;
   if (!is_active()) return;
   set_active(false);
-  --_manager->_num_concurrent_sounds;
+  _manager->_num_concurrent_sounds--;
 
   if (ma_sound_is_looping(&_ma_sound))
     ma_sound_set_looping(&_ma_sound, false);
@@ -207,9 +189,11 @@ stop() {
  */
 void MaAudioSound::
 set_loop(bool loop) {
-  if (loop && !_loop) {
+  if (loop) {
     // if loop count isn't 0, we manually loop
     if (!_loop && _loop_count && !ma_sound_is_looping(&_ma_sound))
+      ma_sound_set_start_time_in_milliseconds(
+          &_ma_sound, (ma_uint64)(_loop_start/1000.));
       ma_sound_set_end_callback(
           &_ma_sound,
           [&](void *sound, ma_sound *sound_ptr){
@@ -217,16 +201,17 @@ set_loop(bool loop) {
               // TODO play from _loop_start
               ma_sound_start(sound_ptr);
             } else {
-              // FIXME sound is not supposed to call stop() when
-              //  ending of its own volition (see finished_event)
               sound->stop();
+              sound->finished();
+              ma_sound_set_start_time_in_milliseconds(
+                  &_ma_sound, (ma_uint64)(_start_time/1000.));
             }
           },
           (void *)&this;
         );
     else // otherwise, we let miniaudio loop it forever
       ma_sound_set_looping(&_ma_sound, true);
-  } else if (!loop && _loop) {
+  } else {
     if (_loop && _loop_count && !ma_sound_is_looping(&_ma_sound))
       ma_sound_set_end_callback(&_ma_sound, loop_cb, nullptr);
     else if (ma_sound_is_looping(&_ma_sound))
@@ -250,7 +235,10 @@ PN_stdfloat MaAudioSound::get_loop_count() const {
 }
 
 void MaAudioSound::set_loop_start(PN_stdfloat loop_start) {
-  // TODO loop start
+  _loop_start = loop_start;
+  if (get_loop() && get_active())
+    ma_sound_set_start_time_in_milliseconds(
+        &_ma_sound, (ma_uint64)(loop_start/1000.));
 }
 
 PN_stdfloat MaAudioSound::get_loop_start() {
@@ -306,14 +294,32 @@ bool MaAudioSound::get_active() const {
   return _active;
 }
 
-// TODO get/set_finished_event()
+void MaAudioSound::
+set_finished_event(std::string event) {
+  _finished_event = std::move(event);
+}
 
-// TODO length()
+const std::string &MaAudioSound::
+get_finished_event() const {
+  return _finished_event;
+}
 
-// TODO get_name()
+PN_stdfloat MaAudioSound::length() const {
+  ma_sound_get_length_in_seconds(&_ma_sound, &_length);
+  return _length;
+}
 
-// TODO get/set_3d_attribs
-//      get/set_3d_dir
+const std::string &get_name() const {
+  return _basename;
+}
+
+void set_3d_attributes(
+      PN_stdfloat px, PN_stdfloat py, PN_stdfloat pz,
+      PN_stdfloat vx, PN_stdfloat vy, PN_stdfloat vz) {
+  // TODO get/set_3d_attribs
+}
+
+// TODO get/set_3d_dir
 //      get/set_3d_min_dist
 //      get/set_3d_max_dist
 //      get/set_3d_drop_off
