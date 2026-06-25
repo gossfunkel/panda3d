@@ -80,11 +80,11 @@ class EXPCL_MA_AUDIO MaAudioSound final : public AudioSound {
    *  factor applied to the volume setting to define the volume in the
    *  zone outside of the outer cone.
    */
-  PN_stdfloat _cone_inner_angle;
-  PN_stdfloat _cone_outer_angle;
-  PN_stdfloat _cone_outer_gain;
+  PN_stdfloat     _cone_inner_angle;
+  PN_stdfloat     _cone_outer_angle;
+  PN_stdfloat     _cone_outer_gain;
 
-  vector_string _comment;
+  vector_string   _comment;
 
 public:
   ~MaAudioSound();
@@ -107,6 +107,9 @@ public:
   // loop_start: 0 = beginning.  expressed in seconds.  inits to 0.
   void set_loop_start(PN_stdfloat loop_start=0);
   PN_stdfloat get_loop_start() const;
+
+  // increment the _loops_completed counter and check if limit reached
+  bool loop_completed();
 
   // 0 = beginning; length() = end.  inits to 0.0.
   void set_time(PN_stdfloat time=0.0);

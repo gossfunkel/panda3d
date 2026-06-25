@@ -41,8 +41,6 @@ MaAudioSound(MaAudioManager *manager,
   _ma_flags = (mode == StreamMode{SM_stream})
     ? MA_RESOURCE_MANAGER_DATA_SOURCE_FLAG_STREAM // decode in 1s pages
     : MA_RESOURCE_MANAGER_DATA_SOURCE_FLAG_ASYNC; // load to ram later
-  //_ma_flags |= (loop_sound)
-  //  ? MA_RESOURCE_MANAGER_DATA_SOURCE_FLAG_LOOPING : 0;
   //_ma_flags |= MA_RESOURCE_MANAGER_DATA_SOURCE_FLAG_DECODE; // decode to ram
 
   if (positional) {
@@ -100,7 +98,6 @@ MaAudioSound(const MaAudioSound &copy_sound) :
   }
 
   cache();
-  set_loop(copy_sound.get_loop());
 }
 
 PT(AudioSound) MaAudioSound::make_copy() const {
@@ -123,6 +120,8 @@ cache() {
       _manager->_cache_counts.emplace({_basename, 1});
     else cache_it->second++;
 
+    _ma_flags |=
+      (_loop) MA_RESOURCE_MANAGER_DATA_SOURCE_FLAG_LOOPING : 0;
     check_ma(
       ma_sound_init_from_file(
         &manager->_engine, _basename, _ma_flags,
@@ -148,11 +147,6 @@ uncache() {
   return (ma_sound_uninit(&_ma_sound) == MA_SUCCESS);
 }
 
-void loop_cb(void *ma_audio_sound, ma_sound *sound_ptr) {
-  ma_audio_sound->stop();
-  ma_sudio_sound->finished();
-}
-
 void MaAudioSound::
 play() {
   _paused = false;
@@ -164,6 +158,7 @@ play() {
     return;
   }
   _manager->_num_concurrent_sounds++;
+  if (_loop_count != 1) _loop = true;
   cache();
 
   _manager->_active_sounds.emplace_back(&this);
@@ -178,44 +173,67 @@ stop() {
   set_active(false);
   _manager->_num_concurrent_sounds--;
 
-  if (ma_sound_is_looping(&_ma_sound))
-    ma_sound_set_looping(&_ma_sound, false);
-  if (ma_sound_is_playing(&_ma_sound))
-    ma_sound_stop(&_ma_sound);
+  set_loop(false);
 }
 
 /*
- * Sets looping on or off for a sound.
+ * Used by callback for MiniAudio to allow our loop controls.
+ * Increments loops_completed counter and checks if it has reached
+ * the _loop_count. If so, it stops and finishes the sound. Returns
+ * true if the loop_count has been reached, and false otherwise.
+ */
+bool MaAudioSound::loop_completed() {
+  if (++_loops_completed >= _loop_count) {
+    _loops_completed = 0;
+    stop();
+    finish();
+    return true;
+  }
+  return false;
+}
+
+/*
+ * Sets looping on or off for a sound using MiniAudio's looping for
+ * infinite loops, or an anonymous callback function to count loops.
+ * The callback uses the loop_completed method to update and check
+ * the local variables.
  */
 void MaAudioSound::
 set_loop(bool loop) {
-  if (loop) {
+  if (loop) { // enable looping
     // if loop count isn't 0, we manually loop
-    if (!_loop && _loop_count && !ma_sound_is_looping(&_ma_sound))
+    if (_loop_count && !ma_sound_is_looping(&_ma_sound)) {
       ma_sound_set_start_time_in_milliseconds(
           &_ma_sound, (ma_uint64)(_loop_start/1000.));
+      // here we create an anonymous function to restart the sound
+      //  from the _loop_start every time it ends until _loop_count
+      //  loops have been executed. loop_completed() cleans up at end
       ma_sound_set_end_callback(
           &_ma_sound,
-          [&](void *sound, ma_sound *sound_ptr){
-            if (++sound->_loops_completed < sound->_loop_count) {
-              // TODO play from _loop_start
-              ma_sound_start(sound_ptr);
-            } else {
-              sound->stop();
-              sound->finished();
+          [&](void *audio_sound, ma_sound *ma_sound_ptr){
+            if (!audio_sound->loop_completed()) {
               ma_sound_set_start_time_in_milliseconds(
-                  &_ma_sound, (ma_uint64)(_start_time/1000.));
+                ma_sound_ptr,
+                (ma_uint64)(audio_sound->get_start_time()/1000.));
+              ma_sound_start(ma_sound_ptr);
             }
           },
-          (void *)&this;
+          (void *)&this
         );
-    else // otherwise, we let miniaudio loop it forever
+    } else { // otherwise, we let miniaudio loop it forever
       ma_sound_set_looping(&_ma_sound, true);
-  } else {
-    if (_loop && _loop_count && !ma_sound_is_looping(&_ma_sound))
-      ma_sound_set_end_callback(&_ma_sound, loop_cb, nullptr);
-    else if (ma_sound_is_looping(&_ma_sound))
-      ma_sound_set_looping(&_ma_sound, false);
+    }
+  } else { // disable looping
+    ma_sound_set_looping(&_ma_sound, false);
+    ma_sound_set_end_callback(
+      &_ma_sound,
+      [&](void *audio_sound, ma_sound *sound_ptr){
+          audio_sound->stop();
+          audio_sound->finished();
+      },
+      (void *)&this
+    );
+    _ma_flags |= 0;
   }
   _loop = loop;
 }
