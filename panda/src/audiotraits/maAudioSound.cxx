@@ -208,33 +208,26 @@ set_loop(bool loop) {
       // here we create an anonymous function to restart the sound
       //  from the _loop_start every time it ends until _loop_count
       //  loops have been executed. loop_completed() cleans up at end
-      ma_sound_set_end_callback(
-          &_ma_sound,
-          [&](void *data, ma_sound *ma_sound_ptr){
-            if (!this->loop_completed()) {
-              ma_sound_set_start_time_in_milliseconds(
-                ma_sound_ptr,
-                (ma_uint64)(this->get_start_time()/1000.));
-              ma_sound_start(ma_sound_ptr);
-            }
-          },
-          nullptr
-        );
+      _end_cb = [&](void *data, ma_sound *ma_sound_ptr) noexcept {
+        if (!loop_completed()) {
+          ma_sound_set_start_time_in_milliseconds(
+            ma_sound_ptr,
+            (ma_uint64)(_start_time()/1000.));
+          ma_sound_start(ma_sound_ptr);
+        }
+      };
     } else { // otherwise, we let miniaudio loop it forever
       ma_sound_set_looping(&_ma_sound, true);
     }
   } else { // disable looping
     ma_sound_set_looping(&_ma_sound, false);
-    ma_sound_set_end_callback(
-      &_ma_sound,
-      [&](void *data, ma_sound *sound_ptr){
-          this->stop();
-          this->finished();
-      },
-      nullptr
-    );
+    _end_cb = [&](void *data, ma_sound *sound_ptr) noexcept {
+      stop();
+      finished();
+    };
     _ma_flags |= 0;
   }
+  ma_sound_set_end_callback(&_ma_sound, _end_cb, nullptr);
   _loop = loop;
 }
 

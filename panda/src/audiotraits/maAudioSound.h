@@ -56,6 +56,9 @@ class EXPCL_MA_AUDIO MaAudioSound final : public AudioSound {
   PN_stdfloat     _loop_start;
   int             _loops_completed;
 
+  // MiniAudio callback at end of play
+  auto _end_cb;
+
   int             _desired_mode;
 
   // The start_time field affects the next call to play.
