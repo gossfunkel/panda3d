@@ -36,41 +36,41 @@ class EXPCL_MA_AUDIO MaAudioSound final : public AudioSound {
   INLINE bool is_valid() const;
 
   MaAudioManager *_manager;
-  ma_sound    _ma_sound;
-  int         _ma_flags;
+  ma_sound        _ma_sound;
+  int             _ma_flags;
 
-  PN_stdfloat _volume; // 0..1.0
-  PN_stdfloat _balance; // -1..1
-  PN_stdfloat _play_rate; // 0..1.0
+  PN_stdfloat     _volume; // 0..1.0
+  PN_stdfloat     _balance; // -1..1
+  PN_stdfloat     _play_rate; // 0..1.0
 
-  ma_vec3f    _location;
-  ma_vec3f    _velocity;
+  ma_vec3f        _location;
+  ma_vec3f        _velocity;
 
-  PN_stdfloat _min_dist;
-  PN_stdfloat _max_dist;
-  PN_stdfloat _drop_off_factor;
+  PN_stdfloat     _min_dist;
+  PN_stdfloat     _max_dist;
+  PN_stdfloat     _drop_off_factor;
 
-  double      _length;
-  int         _loop_count;
-  PN_stdfloat _loop_start;
-  int         _loops_completed;
+  double          _length;
+  int             _loop_count;
+  PN_stdfloat     _loop_start;
+  int             _loops_completed;
 
-  int         _desired_mode;
+  int             _desired_mode;
 
   // The start_time field affects the next call to play.
-  double _start_time;
+  double          _start_time;
 
   // This is the string that throw_event() will throw when the sound finishes
   //  playing.  It is not triggered when the sound is stopped with stop().
-  std::string _finished_event;
+  std::string     _finished_event;
 
-  Filename _basename;
+  Filename        _basename;
 
   // _active is for things like a 'turn off sound effects' in a preferences
   //  panel.  _active is not about whether a sound is currently playing.  Use
   //  status() for info on whether the sound is playing.
-  bool _active;
-  bool _paused;
+  bool            _active;
+  bool            _paused;
 
   /* These settings are used to define a directional sound source. The
    *  inner angle defines a cone wherein the sound can be heard at normal

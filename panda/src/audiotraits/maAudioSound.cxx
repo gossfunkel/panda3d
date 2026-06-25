@@ -50,9 +50,6 @@ MaAudioSound(MaAudioManager *manager,
   //  ? MA_RESOURCE_MANAGER_DATA_SOURCE_FLAG_LOOPING : 0;
   //_ma_flags |= MA_RESOURCE_MANAGER_DATA_SOURCE_FLAG_DECODE; // decode to ram
 
-  // we removed _sd, so need to get length from source (FIXME?)
-  _length = _ma_sound->rangeEndInPCMFrames - _ma_sound->rangeBegInPCMFrames;
-
   if (positional) {
     // FIXME get sound channels properly
     if (_ma_sound->_channels != 1) {
@@ -61,8 +58,8 @@ MaAudioSound(MaAudioManager *manager,
   }
 
   cache();
-  //if (loop_sound) _loops_completed = 0;
-  //set_loop(loop_sound);
+
+  ma_sound_get_length_in_seconds(&_ma_sound, &_length);
 }
 
 
@@ -87,7 +84,7 @@ MaAudioSound(const MaAudioSound &copy_sound) :
   _loop_start(copy_sound._loop_start),
   _desired_mode(copy_sound._desired_mode),
   _start_time(copy_sound._start_time),
-  _current_time(0.0),
+  _time(0.),
   _basename(copy_sound._basename),
   _active(copy_sound._active),
   _paused(copy_sound._paused),
@@ -121,6 +118,7 @@ PT(AudioSound) MaAudioSound::make_copy() const {
 }
 
 /*
+ * Loads the sound to MiniAudio, if not already loaded.
  * TODO can we inline these?
  */
 void MaAudioSound::
@@ -154,6 +152,9 @@ cache() {
   }
 }
 
+/*
+ * If the sound is stopped, remove from memory.
+ */
 bool MaAudioSound::
 uncache() {
   if (ma_sound_is_playing(&_ma_sound)) return false;
@@ -201,6 +202,9 @@ stop() {
     ma_sound_stop(&_ma_sound);
 }
 
+/*
+ * Sets looping on or off for a sound.
+ */
 void MaAudioSound::
 set_loop(bool loop) {
   if (loop && !_loop) {
@@ -209,10 +213,14 @@ set_loop(bool loop) {
       ma_sound_set_end_callback(
           &_ma_sound,
           [&](void *sound, ma_sound *sound_ptr){
-            if (++sound->_loops_completed < sound->_loop_count)
+            if (++sound->_loops_completed < sound->_loop_count) {
+              // TODO play from _loop_start
               ma_sound_start(sound_ptr);
-            else
+            } else {
+              // FIXME sound is not supposed to call stop() when
+              //  ending of its own volition (see finished_event)
               sound->stop();
+            }
           },
           (void *)&this;
         );
@@ -241,13 +249,79 @@ PN_stdfloat MaAudioSound::get_loop_count() const {
   return _loop_count;
 }
 
+void MaAudioSound::set_loop_start(PN_stdfloat loop_start) {
+  // TODO loop start
+}
+
+PN_stdfloat MaAudioSound::get_loop_start() {
+  return _loop_start;
+}
+
 void MaAudioSound::set_time(PN_stdfloat time) {
+  _time = time;
   ma_sound_seek_to_second(&_ma_sound, time);
 }
 
 PN_stdfloat MaAudioSound::get_time() const {
   ma_sound_get_time_in_seconds(&_ma_sound);
 }
+
+void MaAudioSound::set_volume(PN_stdfloat volume) {
+  _volume = volume;
+  ma_sound_set_volume(&_ma_sound, volume);
+}
+
+PN_stdfloat MaAudioSound::get_volume() const {
+  _volume = ma_sound_get_volume(&_ma_sound);
+  return _volume;
+}
+
+void MaAudioSound::set_balance(PN_stdfloat balance_right) {
+  _balance = balance_right;
+  ma_sound_set_pan(&_ma_sound, balance_right);
+}
+
+PN_stdfloat MaAudioSound::get_balance() const {
+  _balance = ma_sound_get_pan(&_ma_sound);
+  return _balance;
+}
+
+void MaAudioSound::set_play_rate(PN_stdfloat play_rate) {
+  _play_rate = play_rate;
+  ma_sound_set_pitch(&_ma_sound, play_rate);
+}
+
+PN_stdfloat MaAudioSound::get_play_rate() const {
+  _play_rate = ma_sound_get_pitch(&_ma_sound);
+  return _play_rate;
+}
+
+void MaAudioSound::set_active(bool active) {
+  _active = active;
+}
+
+bool MaAudioSound::get_active() const {
+  if (!ma_sound_is_playing(&_ma_sound))
+    _active = false;
+  return _active;
+}
+
+// TODO get/set_finished_event()
+
+// TODO length()
+
+// TODO get_name()
+
+// TODO get/set_3d_attribs
+//      get/set_3d_dir
+//      get/set_3d_min_dist
+//      get/set_3d_max_dist
+//      get/set_3d_drop_off
+//      get/set_cone_inner_ang
+//      get/set_cone_outer_ang
+//      get/set_cone_gain (outer)
+
+// TODO wallahi i am finished()
 
 MaAudioSound::
 ~MaAudioSound() {
