@@ -324,16 +324,51 @@ const std::string &get_name() const {
   return _basename;
 }
 
-void set_3d_attributes(
+void MaAudioSound::set_3d_attributes(
       PN_stdfloat px, PN_stdfloat py, PN_stdfloat pz,
       PN_stdfloat vx, PN_stdfloat vy, PN_stdfloat vz) {
-  // TODO get/set_3d_attribs
+  ma_sound_set_position(&_ma_sound, px, py, pz);
+  ma_sound_set_velocity(&_ma_sound, vx, vy, vz);
 }
 
-// TODO get/set_3d_dir
-//      get/set_3d_min_dist
-//      get/set_3d_max_dist
-//      get/set_3d_drop_off
+void MaAudioSound::get_3d_attributes(
+      PN_stdfloat *px, PN_stdfloat *py, PN_stdfloat *pz,
+      PN_stdfloat *vx, PN_stdfloat *vy, PN_stdfloat *vz) {
+  ma_vec3f pos = ma_sound_get_position(&_ma_sound);
+  *px = pos.x;
+  *py = pos.y;
+  *pz = pos.z;
+  ma_vec3f vel = ma_sound_get_velocity(&_ma_sound);
+  *vx = vel.x;
+  *vy = vel.y;
+  *vz = vel.z;
+}
+
+void MaAudioSound::set_3d_direction(LVector3 d) {
+  ma_sound_set_direction(&_ma_sound, d.x, d.y, d.z);
+}
+
+LVector3 MaAudioSound::get_3d_direction() const {
+  return (LVector3)ma_sound_get_direction(&_ma_sound);
+}
+
+void MaAudioSound::set_3d_min_distance(PN_stdfloat dist) {
+  ma_sound_set_min_distance(&_ma_sound, dist);
+}
+
+PN_stdfloat MaAudioSound::get_3d_min_distance() const {
+  return ma_sound_get_min_distance(&_ma_sound);
+}
+
+void MaAudioSound::set_3d_max_distance(PN_stdfloat dist) {
+  ma_sound_set_max_distance(&_ma_sound, dist);
+}
+
+PN_stdfloat MaAudioSound::get_3d_max_distance() const {
+  return ma_sound_get_max_distance(&_ma_sound);
+}
+
+// TODO get/set_3d_drop_off
 //      get/set_cone_inner_ang
 //      get/set_cone_outer_ang
 //      get/set_cone_gain (outer)
