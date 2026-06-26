@@ -43,8 +43,9 @@ class EXPCL_MA_AUDIO MaAudioSound final : public AudioSound {
   PN_stdfloat     _balance; // -1..1
   PN_stdfloat     _play_rate; // 0..1.0
 
-  ma_vec3f        _location;
-  ma_vec3f        _velocity;
+  LVector3        _location;
+  LVector3        _velocity;
+  LVector3        _direction;
 
   PN_stdfloat     _min_dist;
   PN_stdfloat     _max_dist;
