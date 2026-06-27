@@ -1,3 +1,20 @@
+# TODO list:
+- implement streaming `MaAudioSound`s
+- get `ma_sound` channel number in `MaAudioSound` constructor
+- implement `speaker_setup()` (is this just for FMOD?)
+- set up any config or logging for MiniAudio
+- debug macro guard in `MaAudioSound`?
+- check over referencing and allocations
+- more error checking with `nassert`
+- distance attenuation factor?
+- benchmarks with and without the `ReMutex`es
+### inline functions:
+- is `check_ma()` worth it?
+- Can we inline the cache functions in MaAudioSound?
+### MiniAudio library files:
+- might need to make an empty header for interrogate?
+- might need to change the ma implementation file to a .cxx/.cpp
+
 # notes from MiniAudio header
 - resource manager uses refcounts to keep sources in memory until all sounds `uninit()`ed. Expiring sounds: what if we just keep a reference to a sound? checking this list seems more expensive than just sometimes reloading a sound, honestly. I think we should ditch it.
 - resource manager handles data sources itself; `init()`ing a sound with a source skips the manager.
@@ -15,19 +32,6 @@
 - disable pitch and doppler by default until set as non-default value for the first time for performance improvement
 - set engine & resource manager sample rate to match first sound and leave unchanged to prevent conversions as sounds are added until a sound is added that doesn't have a matching rate; then disable engine rate.
 - `ma_data_source` is a *very* open API (it's just a `typedef void`)!
-
-# general notes
-MiniAudio library files:
-- might need to make an empty header for interrogate?
-- might need to change the ma implementation file to a .cxx/.cpp
-
-MaAudioManager:
-- should we invalidate user pointers or let them keep alive with a PT? heap allocation of AudioSounds
-- remaining virtual methods: speaker_setup (is this for FMOD?)
-- can we add distance attenuation controls?
-
-MaAudioSound:
-- 3d audio properties
 
 ## General notes
 In the OpenAL implementation, each AudioSound is a 'client' of a SoundData
@@ -50,13 +54,13 @@ We should instead return a null sound, to allow applications to hit the limit
 without crashing, and we should provide debug output to indicate to developers
 when they're maxing out their cache.
 
-Giving users pointers to sounds means that our cache can invalidate pointers
-to users' sounds when clearing (e.g. per a user calling `set_cache_size` lower
-than the number of cached sounds, or calling `uncache_sound`).
-
-I think it might be worth using some kind of smart pointer to allow us to keep
-copies of all the PTs we dish out, without adding to the refcount. Would need
-to remove these references from the list on destruction to avoid dangling refs.
+Giving users pointers to sounds means that our cache could invalidate pointers
+to users' sounds when clearing (e.g. per a user calling `set_cache_size()`
+lower than the number of cached sounds, or calling `uncache_sound`). This is
+why `MaAudioSounds` now have a `cache` and `uncache` method in order to
+manually call `init()` and `uninit()` on their `ma_sound`s. This incurs a
+runtime cost to check if a sound is initialised at runtime, but it prevents
+Python objects from breaking after using `uncache_sound` in some situations.
 
 #### Other tools to note / concepts involved
 - `nassertv` - assert a condition

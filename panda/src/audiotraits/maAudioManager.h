@@ -22,9 +22,14 @@
 #include "audioManager.h"
 #include "pdeque.h"
 #include "pmap.h"
-#include "movieAudioCursor.h"
 #include "reMutex.h"
 #include "vector_string.h"
+#include "config_audio.h"
+#include "config_putil.h"
+#include "config_express.h"
+#include "config_openalAudio.h"
+#include "openalAudioManager.h"
+#include "openalAudioSound.h"
 
 #include "miniaudio.h"
 
@@ -50,8 +55,7 @@ class EXPCL_MA_AUDIO MaAudioManager final : public AudioManager {
   ma_engine _engine;
   unsigned int _concurrent_sound_limit;
 
-  typedef pset<MaAudioManager *> Managers;
-  static Managers *_managers;
+  static pset<MaAudioManager *> *_managers;
 
   // loaded sounds are stored here
   pdeque<WPT(AudioSound)> _all_sounds;

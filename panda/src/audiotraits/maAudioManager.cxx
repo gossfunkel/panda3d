@@ -15,6 +15,12 @@
 
 using std::string;
 
+TypeHandle MaAudioManager::_type_handle;
+
+// TODO debug macros?
+
+//ReMutex MaAudioManager::_lock;
+pset<MaAudioManager *> *MaAudioManager::_managers = nullptr;
 int MaAudioManager::_active_managers = 0;
 bool MaAudioManager::_ma_active = false;
 
@@ -32,43 +38,41 @@ MaAudioManager() {
   //ReMutexHolder holder(_lock);
   audio_cat.init();
 
-  if (_managers == nullptr) {
-    _managers = new Managers;
+  if (_managers == nullptr) _managers = new Managers;
 
-    ma_device_config device_config = ma_device_config_init(ma_device_type_playback);
-    config.playback.format = ma_format_f32;
-    config.playback.channels = 2;
-    config.samplerate = 48000;
-    //config.dataCallback
-    //config.pUserData
+  ma_device_config device_config = ma_device_config_init(ma_device_type_playback);
+  config.playback.format = ma_format_f32;
+  config.playback.channels = 2;
+  config.samplerate = 48000;
+  //config.dataCallback
+  //config.pUserData
 
-    check_ma(ma_device_init(NULL, &device_config, &_device),
-             "Failed to initialise MiniAudio device.");
+  check_ma(ma_device_init(NULL, &device_config, &_device),
+           "Failed to initialise MiniAudio device.");
 
-    ma_device_start(&_device);
+  ma_device_start(&_device);
 
-    audio_cat.info() << "Using MiniAudio device " << device.playback.name <<
-      "." << std::endl;
+  audio_cat.info() << "Using MiniAudio device " << device.playback.name <<
+    "." << std::endl;
 
-    resource_mgr_conf = ma_resource_manager_config_init();
-    // TODO we need to make a custom ma_decoding_backend_vtable for
-    //  vorbis etc and set it on the config
-    resource_mgr_conf.decodedFormat     = _device.playback.format;
-    resource_mgr_conf.decodedChannels   = _device.playback.channels;
-    resource_mgr_conf.decodedSampleRate = _device.sampleRate;
+  resource_mgr_conf = ma_resource_manager_config_init();
+  // TODO we need to make a custom ma_decoding_backend_vtable for
+  //  vorbis etc and set it on the config
+  resource_mgr_conf.decodedFormat     = _device.playback.format;
+  resource_mgr_conf.decodedChannels   = _device.playback.channels;
+  resource_mgr_conf.decodedSampleRate = _device.sampleRate;
 #ifdef HAVE_THREADS
-    resource_mgr_conf.jobThreadCount = 2;
+  resource_mgr_conf.jobThreadCount = 2;
 #endif
 
-    // this will probably be removed, but just in case, here's where we
-    //  can assign a custom VFS to the resource mgr
-    //resource_mgr_conf.pVFS = VirtualFileSystem::get_global_pointer();
-    check_ma(
-      ma_resource_manager_init(&resource_mgr_conf, &_resource_mgr),
-      &ma_device_uninit, &(&_device),
-      "Failed to initialise MiniAudio resource manager."
-    );
-  }
+  // here we could assign the p3d VFS to the resource mgr
+  //  this would get us access to minified files
+  //resource_mgr_conf.pVFS = VirtualFileSystem::get_global_pointer();
+  if (ma_resource_manager_init(&resource_mgr_conf, &_resource_mgr)
+      != MA_SUCCESS {
+    ma_device_uninit(&_device);
+    audio_error("Failed to initialise MiniAudio resource manager.");
+  )
 
   _managers->insert(this);
 
@@ -87,19 +91,23 @@ MaAudioManager() {
       0, 0, 0,
       1, 0, 0,
       0, 0, 1);
-  // TODO check these values set, if not, set _is_valid = false;
 
   _num_sources_cached = 0;
 
-  // TODO default flags for global sound group - ASYNC?
-  int sg_flags = 0;
+  // TODO default flags for global sound group:
+  //  0 loads without decoding at init time
+  //  DECODE decodes to memory at init time
+  //  ASYNC decodes and loads at play time
+  int sg_flags = MA_RESOURCE_MANAGER_DATA_SOURCE_FLAG_ASYNC;
   ma_sound_group_init(&_engine, sg_flags, nullptr, &_all_sounds_grp);
 
   // we'll do this when p3d is ready for it, or remove the noAutoStart line
   ma_engine_start(&_engine);
 
   if (audio_cat.is_debug())
-    audio_cat.debug() << "MA ... " << var << std::endl;
+    audio_cat.debug() << "MiniAudio version: " << ma_version_string()
+                      << std::endl;
+  // TODO miniaudio config? logging?
 }
 
 /**
@@ -151,9 +159,7 @@ void MaAudioManager::uncache_sound(const Filename &file_name) {
       if (s_ptr.file_name == file_name ||
           s_ptr.file_name == path)
         s_ptr.uncache();
-        // TODO what about doing:
-        // sound_it->sound.flag &= !MA_SOUND_FLAG_DECODE;
-        // TODO should this uncache all/any sounds with this filename?
+        // should this uncache all/any sounds with this filename?
         //return;
     } else // pointer has expired
       _all_sounds.erase(sound_it);

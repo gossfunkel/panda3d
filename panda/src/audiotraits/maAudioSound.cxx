@@ -12,6 +12,8 @@
  */
 #include "maAudioSound.h"
 
+TypeHandle MaAudioSound::_type_handle;
+
 MaAudioSound::
 MaAudioSound(MaAudioManager *manager,
              Filename &file_name,
@@ -136,8 +138,8 @@ cache() {
       _manager->_cache_counts.emplace({_basename, 1});
     else cache_it->second++;
 
-    _ma_flags |=
-      (_loop) MA_RESOURCE_MANAGER_DATA_SOURCE_FLAG_LOOPING : 0;
+    _ma_flags |= (_loop)
+      ? MA_RESOURCE_MANAGER_DATA_SOURCE_FLAG_LOOPING : 0;
     check_ma(
       ma_sound_init_from_file(
         &manager->_engine, _basename, _ma_flags,
@@ -156,6 +158,7 @@ uncache() {
   //ReMutexHolder holder(_lock);
   if (ma_sound_is_playing(&_ma_sound)) return false;
   set_active(false);
+  _ma_flags |= (!MA_SOUND_FLAG_ASYNC) | MA_SOUND_FLAG_DECODE;
   if (_ma_sound == nullptr) return true;
   auto cache_it = _manager->_cache_counts.find(_basename);
   if (cache_it != _manager->_cache_counts.end()) {
@@ -516,6 +519,14 @@ status() const {
   if (_ma_sound == nullptr) return AudioSound::BAD;
   if (ma_sound_is_playing(&_ma_sound)) return AudioSound::PLAYING;
   return AudioSound::READY;
+}
+
+/**
+ * Returns the comments attached to this audio file.
+ */
+const vector_string& OpenALAudioSound::
+get_raw_comment() const {
+  return _comment;
 }
 
 void MaAudioSound::
