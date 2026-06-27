@@ -23,18 +23,19 @@ MiniAudio library files:
 
 MaAudioManager:
 - should we invalidate user pointers or let them keep alive with a PT? heap allocation of AudioSounds
-- remaining virtual methods: speaker_setup
-- distance attenuation?
+- remaining virtual methods: speaker_setup (is this for FMOD?)
+- can we add distance attenuation controls?
 
 MaAudioSound:
 - 3d audio properties
 
 ## General notes
-The 'cache' generally refers to the cache of all loaded AudioSounds, but some
-methods (such as `uncache_sound`) refer to the expiration queue in the OpenAL
-implementation. We have both `_cache_size` and `_concurrent_sound_limit`, the
-former of which refers to AudioSounds in memory, the latter of which refers to
-active/playing sounds.
+In the OpenAL implementation, each AudioSound is a 'client' of a SoundData
+source. SoundDatas that have no clients are moved to an expiration queue. This
+queue is what `uncache_sound()`, `clear_cache()`, and the `cache_limit`
+methods act on, so this is our 'cache' in those cases. The
+`_concurrent_sound_limit` refers to active/playing sounds, not actual audio
+data cached in memory.
 
 I don't like `typedef`ing all the data structures in the OpenAL implementation;
 the MaAudioManager cache is significantly simplified. As we now use C++17, we
@@ -51,8 +52,11 @@ when they're maxing out their cache.
 
 Giving users pointers to sounds means that our cache can invalidate pointers
 to users' sounds when clearing (e.g. per a user calling `set_cache_size` lower
-than the number of cached sounds, or calling `uncache_sound`). Might have to
-make a wrapper object or something?
+than the number of cached sounds, or calling `uncache_sound`).
+
+I think it might be worth using some kind of smart pointer to allow us to keep
+copies of all the PTs we dish out, without adding to the refcount. Would need
+to remove these references from the list on destruction to avoid dangling refs.
 
 #### Other tools to note / concepts involved
 - `nassertv` - assert a condition

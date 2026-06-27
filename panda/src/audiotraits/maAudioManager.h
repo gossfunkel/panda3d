@@ -14,12 +14,13 @@
 #ifndef MINIAUDIOMANAGER_H
 #define MINIAUDIOMANAGER_H
 
-#include "vector"
-#include "array"
+#include <vector>
+#include <array>
 #include "pandabase.h"
 
 #include "audioManager.h"
 #include "pdeque.h"
+#include "pmap.h"
 #include "movieAudioCursor.h"
 #include "reMutex.h"
 #include "vector_string.h"
@@ -52,12 +53,12 @@ class EXPCL_MA_AUDIO MaAudioManager final : public AudioManager {
   static Managers *_managers;
 
   // loaded sounds are stored here
-  pdeque<MaAudioSound>_all_sounds;
+  pdeque<WPT(AudioSound)> _all_sounds;
+  // refcounting of sounds in cache
+  pmap<Filename, int>_cache_counts;
   // MiniAudio node containing all sounds
   ma_sound _all_sounds_grp;
-  // This array contains pointers to active sounds
-  std::array<MaAudioSound *, _concurrent_sound_limit> _active_sounds;
-  // Counter for active sounds (TODO atomic? thread-safe accessors?)
+  // Counter for playing sounds (TODO atomic? thread-safe accessors?)
   unsigned int _num_concurrent_sounds;
 
   PN_stdfloat _distance_factor;
