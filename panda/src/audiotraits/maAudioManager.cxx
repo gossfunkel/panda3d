@@ -6,8 +6,9 @@
  * license.  You should have received a copy of this license along
  * with this source code in a file named "LICENSE."
  *
- * @file config_maAudio.h
- * @author Katie & J0y
+ * @file maAudio.h
+ * @author Katie <katherineegoss@gmail.com> & J0y
+ * @date 2026-06-02
  */
 
 #include "maAudioManager.h"

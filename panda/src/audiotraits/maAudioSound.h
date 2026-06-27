@@ -7,7 +7,8 @@
  * with this source code in a file named "LICENSE."
  *
  * @file maAudioSound.h
- * @author Katie & J0y
+ * @author Katie <katherineegoss@gmail.com> & J0y
+ * @date 2026-06-02
  */
 
 #ifndef MAAUDIOSOUND_H
