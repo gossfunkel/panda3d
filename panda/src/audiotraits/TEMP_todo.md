@@ -1,12 +1,16 @@
 # TODO list:
+### features and functionality:
 - implement streaming `MaAudioSound`s
 - get `ma_sound` channel number in `MaAudioSound` constructor
 - implement `speaker_setup()` (is this just for FMOD?)
-- set up any config or logging for MiniAudio
+- distance attenuation factor?
+### debugging, logging, and testing:
 - debug macro guard in `MaAudioSound`?
 - check over referencing and allocations
+- set up any config or logging for MiniAudio
 - more error checking with `nassert`
-- distance attenuation factor?
+- write tests
+- run tests
 - benchmarks with and without the `ReMutex`es
 ### inline functions:
 - is `check_ma()` worth it?
