@@ -70,10 +70,10 @@ class EXPCL_MA_AUDIO MaAudioManager final : public AudioManager {
   PN_stdfloat _doppler_factor;
   PN_stdfloat _drop_off_factor;
 
-  ma_vec3 l_pos;
-  ma_vec3 l_vel;
-  ma_vec3 l_fwd;
-  ma_vec3 l_up;
+  LVector3 l_pos;
+  LVector3 l_vel;
+  LVector3 l_fwd;
+  LVector3 l_up;
 
 public:
   MaAudioManager();

@@ -20,9 +20,6 @@ MaAudioSound(MaAudioManager *manager,
              bool positional,
              int mode) :
   AudioSound(positional),
-  _playing_loops(0),
-  _playing_rate(0.0),
-  _loops_completed(0),
   _manager(manager),
   _volume(1.0f),
   _balance(0),
@@ -32,6 +29,7 @@ MaAudioSound(MaAudioManager *manager,
   _drop_off_factor(1.0f),
   _length(0.0),
   _loop_count(1),
+  _loops_completed(0),
   _loop_start(0),
   _desired_mode(mode),
   _start_time(0.0),
@@ -58,14 +56,18 @@ MaAudioSound(MaAudioManager *manager,
     : MA_RESOURCE_MANAGER_DATA_SOURCE_FLAG_ASYNC; // load to ram later
   //_ma_flags |= MA_RESOURCE_MANAGER_DATA_SOURCE_FLAG_DECODE; // decode to ram
 
-  if (positional) {
-    // FIXME get sound channels properly
-    if (_ma_sound->_channels != 1)
-      audio_warning("stereo sound " << file_name
-                    << " will not be spatialized");
-  }
-
   cache();
+
+  ma_format format;
+  ma_uint32 channels, sample_rate;
+  ma_sound_get_format(&_ma_sound, &format, &channels, &sample_rate, nullptr, 0);
+  if (positional) {
+    if (channels != 1)
+      audio_warning("Copied stereo sound \"" << _basename
+                    << "\" will not be spatialized");
+  }
+  if (sample_rate != _manager->_device.config.playback.sampleRate)
+    audio_error("Source sample rate mismatch with MiniAudio device sample rate");
 
   length();
 }
@@ -77,9 +79,6 @@ MaAudioSound(MaAudioManager *manager,
 MaAudioSound::
 MaAudioSound(const MaAudioSound &copy_sound) :
   AudioSound(copy_sound.is_positional()),
-  _playing_loops(copy_sound._playing_loops),
-  _playing_rate(copy_sound._playing_rate),
-  _loops_completed(0),
   _manager(copy_sound._manager),
   _volume(copy_sound._volume),
   _balance(copy_sound._balance),
@@ -89,6 +88,7 @@ MaAudioSound(const MaAudioSound &copy_sound) :
   _drop_off_factor(copy_sound._drop_off),
   _length(copy_sound._length),
   _loop_count(copy_sound._loop_count),
+  _loops_completed(0),
   _loop_start(copy_sound._loop_start),
   _desired_mode(copy_sound._desired_mode),
   _start_time(copy_sound._start_time),
@@ -106,14 +106,18 @@ MaAudioSound(const MaAudioSound &copy_sound) :
 
   //ReMutexHolder holder(MaAudioManager::_lock);
   //ReMutexHolder holder(_lock);
-
-  if (positional) {
-    if (_ma_sound->_channels != 1) {
-      audio_warning("copied stereo sound " << _basename << " will not be spatialized");
-    }
-  }
-
   cache();
+
+  ma_format format;
+  ma_uint32 channels, sample_rate;
+  ma_sound_get_format(&_ma_sound, &format, &channels, &sample_rate, nullptr, 0);
+  if (positional) {
+    if (channels != 1)
+      audio_warning("Copied stereo sound \"" << _basename
+                    << "\" will not be spatialized");
+  }
+  if (sample_rate != _manager->_device.config.playback.sampleRate)
+    audio_error("Source sample rate mismatch with MiniAudio device sample rate");
 }
 
 PT(AudioSound) MaAudioSound::make_copy() const {

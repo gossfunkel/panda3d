@@ -1,7 +1,6 @@
 # TODO list:
 ### features and functionality:
 - implement streaming `MaAudioSound`s
-- get `ma_sound` channel number in `MaAudioSound` constructor
 - implement `speaker_setup()` (is this just for FMOD?)
 - distance attenuation factor?
 ### debugging, logging, and testing:
