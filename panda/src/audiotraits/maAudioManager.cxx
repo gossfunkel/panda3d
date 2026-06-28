@@ -14,8 +14,6 @@
 #include "maAudioManager.h"
 #include "maAudioSound.h"
 
-using std::string;
-
 TypeHandle MaAudioManager::_type_handle;
 
 // TODO debug macros?
@@ -23,7 +21,7 @@ TypeHandle MaAudioManager::_type_handle;
 //ReMutex MaAudioManager::_lock;
 pset<MaAudioManager *> *MaAudioManager::_managers = nullptr;
 int MaAudioManager::_active_managers = 0;
-bool MaAudioManager::_ma_active = false;
+bool MaAudioManager::_active = false;
 
 /**
  * Factory Function
@@ -254,14 +252,6 @@ void MaAudioManager::set_volume(PN_stdfloat volume) {
 PN_stdfloat MaAudioManager::get_volume() const {
   _volume = ma_engine_get_volume(&_engine);
   return _volume;
-}
-
-/*
- * Gets a pointer to the MiniAudio resource manager we use
- */
-ma_resource_manager *MaAudioManager::
-get_resource_manager() {
-  return &_resource_mgr;
 }
 
 /**
