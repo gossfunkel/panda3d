@@ -1,6 +1,6 @@
 # TODO list:
 ### features and functionality:
-- implement streaming `MaAudioSound`s
+- implement streaming sounds in `MaAudioManager`; no cacheing?
 - implement `speaker_setup()` (is this just for FMOD?)
 - distance attenuation factor?
 ### debugging, logging, and testing:

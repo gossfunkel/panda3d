@@ -136,7 +136,8 @@ void MaAudioSound::
 cache() {
   //ReMutexHolder holder(MaAudioManager::_lock);
   //ReMutexHolder holder(_lock);
-  if (_ma_sound == nullptr) {
+  if (_ma_sound != nullptr) return;
+  if (_desired_mode != StreamMode{SM_stream}) {
     auto cache_it = _manager->_cache_counts.find(_basename);
     if (cache_it == _manager->_cache_counts.end())
       _manager->_cache_counts.emplace({_basename, 1});
@@ -144,13 +145,14 @@ cache() {
 
     _ma_flags |= (_loop)
       ? MA_RESOURCE_MANAGER_DATA_SOURCE_FLAG_LOOPING : 0;
-    check_ma(
-      ma_sound_init_from_file(
-        &manager->_engine, _basename, _ma_flags,
-        &_manager->_all_sounds_grp,
-        NULL, &_ma_sound),
-      "Failed to initialise AudioSound");
-    set_loop(_loop);
+  }
+  check_ma(
+    ma_sound_init_from_file(
+      &manager->_engine, _basename, _ma_flags,
+      &_manager->_all_sounds_grp,
+      NULL, &_ma_sound),
+    "Failed to initialise AudioSound");
+  set_loop(_loop);
 }
 
 /*
@@ -160,7 +162,8 @@ bool MaAudioSound::
 uncache() {
   //ReMutexHolder holder(MaAudioManager::_lock);
   //ReMutexHolder holder(_lock);
-  if (ma_sound_is_playing(&_ma_sound)) return false;
+  if (ma_sound_is_playing(&_ma_sound) ||
+      _desired_mode == StreamMode{SM_stream}) return false;
   set_active(false);
   _ma_flags |= (!MA_SOUND_FLAG_ASYNC) | MA_SOUND_FLAG_DECODE;
   if (_ma_sound == nullptr) return true;
