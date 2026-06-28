@@ -1,7 +1,7 @@
 # TODO list:
 ### features and functionality:
-- implement streaming sounds in `MaAudioManager`; no cacheing?
-- implement `speaker_setup()` (is this just for FMOD?)
+- implement streaming sounds in `MaAudioManager`; cache limiting?
+- implement `configure_filters` in both: MiniAudio uses nodes in the graph for fx
 - distance attenuation factor?
 ### debugging, logging, and testing:
 - debug macro guard in `MaAudioSound`?
