@@ -16,10 +16,8 @@
 
 #include "pandabase.h"
 
-#include "string"
 #include "audioSound.h"
 #include "maAudioManager.h"
-#include "vector_string.h"
 
 #include "miniaudio.h"
 

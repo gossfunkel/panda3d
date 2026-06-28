@@ -12,6 +12,7 @@
  */
 
 #include "maAudioManager.h"
+#include "maAudioSound.h"
 
 using std::string;
 
@@ -55,6 +56,7 @@ MaAudioManager() {
   audio_cat.info() << "Using MiniAudio device " << device.playback.name <<
     "." << std::endl;
 
+  // TODO share resource manager between MA engines
   resource_mgr_conf = ma_resource_manager_config_init();
   // TODO we need to make a custom ma_decoding_backend_vtable for
   //  vorbis etc and set it on the config
@@ -108,6 +110,19 @@ MaAudioManager() {
     audio_cat.debug() << "MiniAudio version: " << ma_version_string()
                       << std::endl;
   // TODO miniaudio config? logging?
+}
+
+int MaAudioManager::get_speaker_setup() {
+  return _device.playback.channels;
+}
+
+void MaAudioManager::set_speaker_setup(SpeakerModeCategory cat) {
+  audio_warning("MiniAudio does not support setting channel setup.\n"
+                << cat " channels not set.");
+}
+
+bool MaAudioManager::configure_filters(FilterProperties *config) {
+  // TODO create filter nodes per config
 }
 
 /**

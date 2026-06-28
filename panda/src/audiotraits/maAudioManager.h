@@ -15,8 +15,6 @@
 #ifndef MINIAUDIOMANAGER_H
 #define MINIAUDIOMANAGER_H
 
-#include <vector>
-#include <array>
 #include "pandabase.h"
 
 #include "audioManager.h"
@@ -29,8 +27,6 @@
 #include "config_putil.h"
 #include "config_express.h"
 #include "config_openalAudio.h"
-#include "openalAudioManager.h"
-#include "openalAudioSound.h"
 
 #include "miniaudio.h"
 
@@ -56,7 +52,7 @@ class EXPCL_MA_AUDIO MaAudioManager final : public AudioManager {
   ma_engine _engine;
   unsigned int _concurrent_sound_limit;
 
-  static pset<MaAudioManager *> *_managers;
+  static pset<MaAudioManager *> _managers;
 
   // loaded sounds are stored here
   pdeque<WPT(AudioSound)> _all_sounds;
@@ -64,7 +60,8 @@ class EXPCL_MA_AUDIO MaAudioManager final : public AudioManager {
   pmap<Filename, int>_cache_counts;
   // MiniAudio node containing all sounds
   ma_sound _all_sounds_grp;
-  // Counter for playing sounds (TODO atomic? thread-safe accessors?)
+  // Counter for playing sounds
+  // TODO if we don't use mutexes, this should be atomic
   unsigned int _num_concurrent_sounds;
 
   PN_stdfloat _distance_factor;

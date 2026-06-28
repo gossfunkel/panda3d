@@ -128,12 +128,12 @@ PT(AudioSound) MaAudioSound::make_copy() const {
   return copy_sound;
 }`
 
+// TODO can we inline these methods?
+
 /*
  * Loads the sound to MiniAudio, if not already loaded.
- * TODO can we inline these?
  */
-void MaAudioSound::
-cache() {
+void MaAudioSound::cache() {
   //ReMutexHolder holder(MaAudioManager::_lock);
   //ReMutexHolder holder(_lock);
   if (_ma_sound != nullptr) return;
@@ -158,8 +158,7 @@ cache() {
 /*
  * If the sound is stopped, remove from memory.
  */
-bool MaAudioSound::
-uncache() {
+bool MaAudioSound::uncache() {
   //ReMutexHolder holder(MaAudioManager::_lock);
   //ReMutexHolder holder(_lock);
   if (ma_sound_is_playing(&_ma_sound) ||
@@ -175,8 +174,7 @@ uncache() {
   return (ma_sound_uninit(&_ma_sound) == MA_SUCCESS);
 }
 
-void MaAudioSound::
-play() {
+void MaAudioSound::play() {
   //ReMutexHolder holder(MaAudioManager::_lock);
   //ReMutexHolder holder(_lock);
   _paused = false;
@@ -195,8 +193,7 @@ play() {
   ma_sound_start(&_ma_sound);
 }
 
-void MaAudioSound::
-stop() {
+void MaAudioSound::stop() {
   //ReMutexHolder holder(MaAudioManager::_lock);
   //ReMutexHolder holder(_lock);
   if (!is_valid()) return;
@@ -206,6 +203,10 @@ stop() {
   _manager->_num_concurrent_sounds--;
 
   set_loop(false);
+}
+
+bool MaAudioSound::configure_filters(FilterProperties *config) {
+  // TODO set up nodes for filters in *config
 }
 
 /*
