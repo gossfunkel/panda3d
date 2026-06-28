@@ -35,33 +35,37 @@ class MaAudioSound;
 class EXPCL_MA_AUDIO MaAudioManager final : public AudioManager {
   friend class MaAudioSound;
   PT(ma_resource_manager) get_resource_manager();
-  // protects access to audio manager fields in multithreaded user applications
+  // TODO benchmarks with and without mutexes
   //static ReMutex _lock;
 
-  ma_device _device;
   int _active_managers;
-  bool _ma_active;
+  bool _active;
   bool _is_valid;
   int _cache_limit;
   PN_stdfloat _volume;
   PN_stdfloat _play_rate;
-  bool _cleanup_required;
 
+  // MiniAudio high-level interface objects
+  ma_device _device;
   ma_resource_manager_config _resource_mgr_conf;
   ma_resource_manager _resource_mgr;
   ma_engine _engine;
-  unsigned int _concurrent_sound_limit;
 
+  // TODO if we don't use mutexes, these should probably all
+  //  be made atomic/thread-safe in some other way (smart queues)
+
+  // set of all managers
   static pset<MaAudioManager *> _managers;
 
-  // loaded sounds are stored here
+  // deque of cached AudioSounds in this manager
   pdeque<WPT(AudioSound)> _all_sounds;
-  // refcounting of sounds in cache
+  // counting number of sounds referencing cached sources
   pmap<Filename, int>_cache_counts;
   // MiniAudio node containing all sounds
   ma_sound _all_sounds_grp;
+  // maximum playing sounds
+  unsigned int _concurrent_sound_limit;
   // Counter for playing sounds
-  // TODO if we don't use mutexes, this should be atomic
   unsigned int _num_concurrent_sounds;
 
   PN_stdfloat _distance_factor;

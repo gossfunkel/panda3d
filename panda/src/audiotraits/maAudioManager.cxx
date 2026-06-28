@@ -126,25 +126,34 @@ bool MaAudioManager::configure_filters(FilterProperties *config) {
 }
 
 /**
- * Creates a MaAudioSound object, constructing a source if it's new.
+ * Creates a MaAudioSound object, and adds it to the cache.
+ * Note: if mode is set to SM_stream, the AudioSound will not be
+ * kept in the manager's cache, so will not be culled if stop()
+ * (and the MaAudioSound destructor) are not called.
+ * MiniAudio buffers streaming sounds in one second 'pages', so
+ * take care not to fill the user's memory with streaming sounds.
  */
 PT(AudioSound) MaAudioManager::
 get_sound(const Filename &file_name, bool positional, int mode) {
   //ReMutexHolder holder(_lock);
-  auto cached_it = _cache_counts.find(file_name);
-  if (cached_it == _cache_counts.end()) {
-    if (_cache_counts.size() >= _cache_limit) {
-      audio_error("Cache limit reached; cannot load new sound file");
-      return _null_sound;.
-    } else {
-      _cached_it.emplace({file_name, 1});
-    }
-  } else cached_it->second++;
+  if (mode != StreamMode{SM_stream}) {
+    auto cached_it = _cache_counts.find(file_name);
+    if (cached_it == _cache_counts.end()) {
+      if (_cache_counts.size() >= _cache_limit) {
+        audio_error("Cache limit reached; cannot load new sound file");
+        return _null_sound;.
+      } else {
+        _cached_it.emplace({file_name, 1});
+      }
+    } else cached_it->second++;
+  }
 
   PT(AudioSound) new_sound =
     new MaAudioSound(this, file_name, positional, mode);
-  new_sound->_manager_it =
-    _all_sounds.emplace_back((WPT(AudioSound)(*new_sound)));
+
+  if (mode != StreamMode{SM_stream})
+    new_sound->_manager_it =
+      _all_sounds.emplace_back((WPT(AudioSound)(*new_sound)));
   return new_sound;
 }
 
@@ -196,7 +205,9 @@ void MaAudioManager::clear_cache() {
 /*
  * Modify the number of files to allow caching to memory.
  * Destructively stops and unloads sounds if cache is shrunk.
- * TODO handle streams differently
+ * Caution: sounds with SM_stream mode are not kept in the cache.
+ * MiniAudio buffers streaming sounds in one second 'pages', so
+ * take care not to fill the user's memory with streaming sounds.
  */
 void MaAudioManager::set_cache_limit(unsigned int count) {
   //ReMutexHolder holder(_lock);

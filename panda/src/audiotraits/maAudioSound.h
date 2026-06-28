@@ -97,6 +97,7 @@ public:
 
   void uncache();
 
+  // iterator holding the manager's reference to the sound
   pdeque<WPT(AudioSound)>::iterator _manager_it;
 
   // loop: false = play once; true = play forever.  inits to false.

@@ -2,6 +2,7 @@
 ### features and functionality:
 - implement streaming sounds in `MaAudioManager`; cache limiting?
 - implement `configure_filters` in both: MiniAudio uses nodes in the graph for fx
+- additional decoding vtables (vorbis)
 - distance attenuation factor?
 ### debugging, logging, and testing:
 - debug macro guard in `MaAudioSound`?
