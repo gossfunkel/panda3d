@@ -52,6 +52,7 @@ class EXPCL_MA_AUDIO MaAudioManager final : public AudioManager {
 
   // TODO if we don't use mutexes, these should probably all
   //  be made atomic/thread-safe in some other way (smart queues)
+  //patomic<type> var;
 
   // set of all managers
   static pset<MaAudioManager *> _managers;

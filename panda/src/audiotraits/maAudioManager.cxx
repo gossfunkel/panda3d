@@ -120,7 +120,19 @@ void MaAudioManager::set_speaker_setup(SpeakerModeCategory cat) {
 }
 
 bool MaAudioManager::configure_filters(FilterProperties *config) {
-  // TODO create filter nodes per config
+  // TODO delete existing fx node
+  const FilterProperties::ConfigVector &conf = config->get_config();
+  // TODO make an equivalent to
+  //  FMOD::DSP::make_dsp(FilterProperties::ConfigVector)
+  //  and call here to construct a ma_node with the fx applied
+  // ConfigVector is a typedef of pvector<FilterConfig>
+  //struct FilterConfig {
+  //  FilterType  _type;
+  //  PN_stdfloat       _a,_b,_c,_d;
+  //  PN_stdfloat       _e,_f,_g,_h;
+  //  PN_stdfloat       _i,_j,_k,_l;
+  //  PN_stdfloat       _m,_n;
+  //};
 }
 
 /**
@@ -157,8 +169,10 @@ get_sound(const Filename &file_name, bool positional, int mode) {
 
 /*
  * Construct a new sound using a MovieAudio source.
- * Note: this only uses the MovieAudio for its filename; does not use
- * a MovieAudioCursor.
+ * Note: this only uses the MovieAudio for its filename; it does not
+ * use a MovieAudioCursor for decoding. MiniAudio manages decoding in
+ * a performant manner already, so we use its reference counting and
+ * cache implementation, which works similarly to ours.
  */
 PT(AudioSound) MaAudioManager::
 get_sound(MovieAudio &source, bool positional, int mode) {

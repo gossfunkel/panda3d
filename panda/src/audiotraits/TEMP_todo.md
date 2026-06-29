@@ -1,11 +1,13 @@
 # TODO list:
 ### features and functionality:
-- implement `configure_filters` in both: MiniAudio uses nodes in the graph for fx
+- exhaustively go through the supported DSP effects in FilterConfig and implement a 'parser' to read the config and construct a MiniAudio node with equivalent effects applied.
 - additional decoding vtables (vorbis)
 - distance attenuation factor?
+- fade in/out support?
+- resampling support?
 ### debugging, logging, and testing:
 - debug macro guard in `MaAudioSound`?
-- check over referencing and allocations
+- check over miniaudio.h 6.2.3. Data Streams
 - set up any config or logging for MiniAudio
 - more error checking with `nassert`
 - write tests

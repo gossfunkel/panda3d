@@ -15,35 +15,32 @@
 TypeHandle MaAudioSound::_type_handle;
 
 MaAudioSound::
-MaAudioSound(MaAudioManager *manager,
-             Filename &file_name,
-             bool positional,
-             int mode) :
-  AudioSound(positional),
-  _manager(manager),
-  _volume(1.0f),
-  _balance(0),
-  _play_rate(1.0),
-  _min_dist(1.0f),
-  _max_dist(1000000000.0f),
-  _drop_off_factor(1.0f),
-  _length(0.0),
-  _loop_count(1),
-  _loops_completed(0),
-  _loop_start(0),
-  _desired_mode(mode),
-  _start_time(0.0),
-  _current_time(0.0),
-  _basename(file_name.get_basename()),
-  _active(manager->get_active()),
-  _paused(false),
-  _cone_inner_angle(360.0f),
-  _cone_outer_angle(360.0f),
-  _cone_outer_gain(0.0f)
-{
-  _location = ma_vec3f(0.0f, 0.0f, 0.0f);
-  _velocity = ma_vec3f(0.0f, 0.0f, 0.0f);
-  _direction = ma_vec3f(0.0f, 0.0f, 0.0f);
+MaAudioSound(MaAudioManager *manager, Filename &file_name,
+             bool positional, int mode) :
+    AudioSound(positional),
+    _manager(manager),
+    _volume(1.0f),
+    _balance(0),
+    _play_rate(1.0),
+    _min_dist(1.0f),
+    _max_dist(1000000000.0f),
+    _drop_off_factor(1.0f),
+    _length(0.0),
+    _loop_count(1),
+    _loop_start(0),
+    _loops_completed(0),
+    _desired_mode(mode),
+    _start_time(0.0),
+    _current_time(0.0),
+    _basename(file_name.get_basename()),
+    _active(manager->get_active()),
+    _paused(false),
+    _cone_inner_angle(360.0f),
+    _cone_outer_angle(360.0f),
+    _cone_outer_gain(0.0f),
+    _location(0.0f, 0.0f, 0.0f),
+    _velocity(0.0f, 0.0f, 0.0f),
+    _direction(0.0f, 0.0f, 0.0f) {
 
   // protect against user accessing engine from multiple threads
   //ReMutexHolder holder(MaAudioManager::_lock);
@@ -78,32 +75,31 @@ MaAudioSound(MaAudioManager *manager,
  */
 MaAudioSound::
 MaAudioSound(const MaAudioSound &copy_sound) :
-  AudioSound(copy_sound.is_positional()),
-  _manager(copy_sound._manager),
-  _volume(copy_sound._volume),
-  _balance(copy_sound._balance),
-  _play_rate(copy_sound._play_rate),
-  _min_dist(copy_sound._min_dist),
-  _max_dist(copy_sound._max_dist),
-  _drop_off_factor(copy_sound._drop_off),
-  _length(copy_sound._length),
-  _loop_count(copy_sound._loop_count),
-  _loops_completed(0),
-  _loop_start(copy_sound._loop_start),
-  _desired_mode(copy_sound._desired_mode),
-  _start_time(copy_sound._start_time),
-  _time(0.),
-  _basename(copy_sound._basename),
-  _active(copy_sound._active),
-  _paused(copy_sound._paused),
-  _cone_inner_angle(copy_sound._cone_inner_angle),
-  _cone_outer_angle(copy_sound._cone_outer_angle),
-  _cone_outer_gain(copy_sound._cone_outer_gain),
-  _location(copy_sound._location),
-  _velocity(copy_sound._velocity),
-  _direction(copy_sound._direction),
-  _ma_flags(copy_sound._ma_flags) {
-
+    _positional(copy_sound.is_positional()),
+    _manager(copy_sound._manager),
+    _volume(copy_sound._volume),
+    _balance(copy_sound._balance),
+    _play_rate(copy_sound._play_rate),
+    _min_dist(copy_sound._min_dist),
+    _max_dist(copy_sound._max_dist),
+    _drop_off_factor(copy_sound._drop_off),
+    _length(copy_sound._length),
+    _loop_count(copy_sound._loop_count),
+    _loops_completed(0),
+    _loop_start(copy_sound._loop_start),
+    _desired_mode(copy_sound._desired_mode),
+    _start_time(copy_sound._start_time),
+    _time(0.),
+    _basename(copy_sound._basename),
+    _active(copy_sound._active),
+    _paused(copy_sound._paused),
+    _cone_inner_angle(copy_sound._cone_inner_angle),
+    _cone_outer_angle(copy_sound._cone_outer_angle),
+    _cone_outer_gain(copy_sound._cone_outer_gain),
+    _location(copy_sound._location),
+    _velocity(copy_sound._velocity),
+    _direction(copy_sound._direction),
+    _ma_flags(copy_sound._ma_flags) {
   //ReMutexHolder holder(MaAudioManager::_lock);
   //ReMutexHolder holder(_lock);
   cache();
@@ -146,12 +142,14 @@ void MaAudioSound::cache() {
     _ma_flags |= (_loop)
       ? MA_RESOURCE_MANAGER_DATA_SOURCE_FLAG_LOOPING : 0;
   }
-  check_ma(
-    ma_sound_init_from_file(
+  if (ma_sound_init_from_file(
       &manager->_engine, _basename, _ma_flags,
       &_manager->_all_sounds_grp,
-      NULL, &_ma_sound),
-    "Failed to initialise AudioSound");
+      NULL, &_ma_sound) != MA_SUCCESS) {
+    audio_error("Failed to initialise AudioSound");
+    _valid = false;
+    return;
+  }
   set_loop(_loop);
 }
 
@@ -206,7 +204,11 @@ void MaAudioSound::stop() {
 }
 
 bool MaAudioSound::configure_filters(FilterProperties *config) {
-  // TODO set up nodes for filters in *config
+  // TODO delete existing fx node
+  const FilterProperties::ConfigVector &conf = config->get_config();
+  // TODO make an equivalent to
+  //  FMOD::DSP::make_dsp(FilterProperties::ConfigVector)
+  //  and call here to construct a ma_node with the fx applied
 }
 
 /*
@@ -258,7 +260,7 @@ set_loop(bool loop) {
     _end_cb = [&](void *data, ma_sound *sound_ptr) noexcept {
       finished();
     };
-    _ma_flags |= 0;
+    _ma_flags |= !MA_SOUND_FLAG_LOOPING;
   }
   ma_sound_set_end_callback(&_ma_sound, _end_cb, nullptr);
   _loop = loop;

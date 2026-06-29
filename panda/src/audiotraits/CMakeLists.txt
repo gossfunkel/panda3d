@@ -1,6 +1,6 @@
 if(NOT HAVE_AUDIO)
   return()
-elseif(NOT HAVE_FMODEX AND NOT HAVE_OPENAL)
+elseif(NOT HAVE_FMODEX AND NOT HAVE_OPENAL AND NOT HAVE_MINIAUDIO)
   message(SEND_ERROR
     "You must have an audio backend for audio support! Turn off HAVE_AUDIO to ignore this.")
 endif()

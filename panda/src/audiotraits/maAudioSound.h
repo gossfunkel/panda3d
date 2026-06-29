@@ -32,11 +32,14 @@ class EXPCL_MA_AUDIO MaAudioSound final : public AudioSound {
   MaAudioSound(const MaAudioSound &copy_sound);
   void cleanup();
 
-  INLINE bool is_valid() const;
+  bool            _valid;
 
   MaAudioManager *_manager;
   ma_sound        _ma_sound;
   int             _ma_flags;
+
+  // iterator holding the manager's reference to the sound
+  pdeque<WPT(AudioSound)>::iterator _manager_it;
 
   PN_stdfloat     _volume; // 0..1.0
   PN_stdfloat     _balance; // -1..1
@@ -89,6 +92,8 @@ class EXPCL_MA_AUDIO MaAudioSound final : public AudioSound {
 
   vector_string   _comment;
 
+  INLINE bool is_valid() const;
+
 public:
   ~MaAudioSound();
 
@@ -96,9 +101,6 @@ public:
   void stop();
 
   void uncache();
-
-  // iterator holding the manager's reference to the sound
-  pdeque<WPT(AudioSound)>::iterator _manager_it;
 
   // loop: false = play once; true = play forever.  inits to false.
   void set_loop(bool loop=true);
@@ -178,8 +180,8 @@ public:
   PN_stdfloat get_3d_cone_outer_gain() const;
 
   // Construct a near-identical copy of this object on the heap and return
-  //  a pointer to the new copy
-  virtual AudioSound *make_copy() const;
+  //  a refcounted pointer to the new copy
+  virtual PT(AudioSound) make_copy() const;
 
   AudioSound::SoundStatus status() const;
 
