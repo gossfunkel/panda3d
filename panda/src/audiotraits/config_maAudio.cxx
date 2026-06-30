@@ -29,6 +29,11 @@ ConfigureFn(config_maAudio) {
   init_libMiniAudio();
 }
 
+ConfigVariableBool disable_miniaudio
+("disable_miniaudio", 0,
+ PRC_DESC("Disable the MiniAudio backend. If OpenAL or FMOD are not enabled, "
+   "the audio engine will be disabled."));
+
 ConfigVariableString ma_device
 ("ma-device", "",
  PRC_DESC("Specify the MiniAudio device string for audio playback (no quotes). If this "
