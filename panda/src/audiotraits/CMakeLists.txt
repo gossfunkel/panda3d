@@ -8,18 +8,23 @@ endif()
 if(HAVE_MINIAUDIO)
   set(P3MA_HEADERS
     config_maAudio.h
+    maAudioManager.I
     maAudioManager.h
+    maAudioSound.I
     maAudioSound.h
   )
 
   set(P3MA_SOURCES
-    config_maAudio.cxx maAudioManager.cxx maAudioSound.cxx
+    config_maAudio.cxx
+    maAudioManager.cxx
+    maAudioSound.cxx
   )
 
   composite_sources(p3ma_audio P3MA_SOURCES)
-  add_library(p3ma_audio ${MODULE_TYPE} ${P3MA_HEADERS} ${P3MA_SOURCES})
+  add_library(miniaudio STATIC miniaudio.h miniaudio.cxx)
+  add_library(p3ma_audio STATIC ${P3MA_HEADERS} ${P3MA_SOURCES})
   set_target_properties(p3ma_audio PROPERTIES DEFINE_SYMBOL BUILDING_MA_AUDIO)
-  target_link_libraries(p3ma_audio panda PKG::MINIAUDIO)
+  target_link_libraries(p3ma_audio panda ${MA_LIB})
 
   install(TARGETS p3ma_audio
     EXPORT MINIAUDIO COMPONENT MINIAUDIO

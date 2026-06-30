@@ -2,9 +2,6 @@
 ### features and functionality:
 - exhaustively go through the supported DSP effects in FilterConfig and implement a 'parser' to read the config and construct a MiniAudio node with equivalent effects applied.
 - additional decoding vtables (vorbis)
-- distance attenuation factor?
-- fade in/out support?
-- resampling support?
 ### debugging, logging, and testing:
 - debug macro guard in `MaAudioSound`?
 - check over miniaudio.h 6.2.3. Data Streams
@@ -13,12 +10,13 @@
 - write tests
 - run tests
 - benchmarks with and without the `ReMutex`es
-### inline functions:
-- is `check_ma()` worth it?
-- Can we inline the cache functions in MaAudioSound?
 ### MiniAudio library files:
 - might need to make an empty header for interrogate?
-- might need to change the ma implementation file to a .cxx/.cpp
+
+# For a second PR (P3MiniAudio expanded):
+- custom distance attenuation factor fx node
+- fade in/out support?
+- resampling support?
 
 # notes from MiniAudio header
 - resource manager uses refcounts to keep sources in memory until all sounds `uninit()`ed. Expiring sounds: what if we just keep a reference to a sound? checking this list seems more expensive than just sometimes reloading a sound, honestly. I think we should ditch it.

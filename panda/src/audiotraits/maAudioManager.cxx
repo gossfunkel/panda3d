@@ -120,11 +120,45 @@ void MaAudioManager::set_speaker_setup(SpeakerModeCategory cat) {
 }
 
 bool MaAudioManager::configure_filters(FilterProperties *config) {
-  // TODO delete existing fx node
   const FilterProperties::ConfigVector &conf = config->get_config();
-  // TODO make an equivalent to
-  //  FMOD::DSP::make_dsp(FilterProperties::ConfigVector)
-  //  and call here to construct a ma_node with the fx applied
+  PT(ma_node) new_fxnode = make_fxnode(conf);
+  // TODO remove old node, attach new node to graph, overwrite _global_fx
+}
+
+/*
+ * Parse config settings and return pointer to equivalent miniaudio node.
+ * TODO is it safe to have these automatically garbage collected?
+ */
+PT(ma_node) MaAudioManager::
+make_fxnode(const FilterProperties::Filterconfig &conf) {
+  ma_node fx_node;
+  switch (conf._type) {
+    case FilterProperties::FT_lowpass:
+      break;
+    case FilterProperties::FT_highpass:
+      break;
+    case FilterProperties::FT_echo:
+      break;
+    case FilterProperties::FT_flange:
+      break;
+    case FilterProperties::FT_distort:
+      break;
+    case FilterProperties::FT_normalize:
+      break;
+    case FilterProperties::FT_parameq:
+      break;
+    case FilterProperties::FT_pitchshift:
+      break;
+    case FilterProperties::FT_chorus:
+      break;
+    case FilterProperties::FT_sfxreverb:
+      break;
+    case FilterProperties::FT_compress:
+      break;
+    default:
+      audio_error("Malformed filter config passed to MiniAudio Manager.");
+      return nullptr;
+  }
   // ConfigVector is a typedef of pvector<FilterConfig>
   //struct FilterConfig {
   //  FilterType  _type;
@@ -133,6 +167,7 @@ bool MaAudioManager::configure_filters(FilterProperties *config) {
   //  PN_stdfloat       _i,_j,_k,_l;
   //  PN_stdfloat       _m,_n;
   //};
+
 }
 
 /**
