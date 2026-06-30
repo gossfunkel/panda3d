@@ -39,23 +39,6 @@ ConfigVariableString ma_device
  PRC_DESC("Specify the MiniAudio device string for audio playback (no quotes). If this "
           "is not specified, the MiniAudio default device is used."));
 
-ConfigVariableInt ma_buffer_delete_retries
-("ma-buffer-delete-retries", 5,
- PRC_DESC("If deleting a buffer fails due to still being in use, the "
-          "MiniAudio sound plugin will wait a moment and retry deletion, "
-          "with an exponentially-increasing delay for each try.  This number "
-          "specifies how many repeat tries (not counting the initial try) "
-          "should be made before giving up and raising an error."));
-
-ConfigVariableDouble ma_buffer_delete_delay
-("ma-buffer-delete-delay", 0.001,
- PRC_DESC("If deleting a buffer fails due to still being in use, the "
-          "MiniAudio sound plugin will wait a moment and retry deletion, "
-          "with an exponentially-increasing delay for each try.  This number "
-          "specifies how long, in seconds, the MiniAudio plugin will wait "
-          "after its first failed try.  The second try will be double this "
-          "delay, the third quadruple, and so on."));
-
 /**
  * Initializes the library.  This must be called at least once before any of
  * the functions or classes in this library can be used.  Normally it will be
