@@ -47,7 +47,7 @@ ALCcontext* OpenALAudioManager::_context = nullptr;
 // This is the list of all OpenALAudioManager objects in the world.  It must
 // be a pointer rather than a concrete object, so it won't be destructed at
 // exit time before we're done removing things from it.
-OpenALAudioManager::Managers *OpenALAudioManager::_managers = nullptr;
+pset<MaAudioManager *> *OpenALAudioManager::_managers = nullptr;
 
 OpenALAudioManager::SourceCache *OpenALAudioManager::_al_sources = nullptr;
 

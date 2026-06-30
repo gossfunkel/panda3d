@@ -6,16 +6,22 @@
  * license.  You should have received a copy of this license along
  * with this source code in a file named "LICENSE."
  *
- * @file config_maAudio.h
- * @author Katie & J0y
+ * @file maAudio.h
+ * @author Katie <katherineegoss@gmail.com> & J0y
+ * @date 2026-06-02
  */
 
 #include "maAudioManager.h"
+#include "maAudioSound.h"
 
-using std::string;
+TypeHandle MaAudioManager::_type_handle;
 
+// TODO debug macros?
+
+//ReMutex MaAudioManager::_lock;
+pset<MaAudioManager *> *MaAudioManager::_managers = nullptr;
 int MaAudioManager::_active_managers = 0;
-bool MaAudioManager::_ma_active = false;
+bool MaAudioManager::_active = false;
 
 /**
  * Factory Function
@@ -31,43 +37,42 @@ MaAudioManager() {
   //ReMutexHolder holder(_lock);
   audio_cat.init();
 
-  if (_managers == nullptr) {
-    _managers = new Managers;
+  if (_managers == nullptr) _managers = new Managers;
 
-    ma_device_config device_config = ma_device_config_init(ma_device_type_playback);
-    config.playback.format = ma_format_f32;
-    config.playback.channels = 2;
-    config.samplerate = 48000;
-    //config.dataCallback
-    //config.pUserData
+  ma_device_config device_config = ma_device_config_init(ma_device_type_playback);
+  config.playback.format = ma_format_f32;
+  config.playback.channels = 2;
+  config.samplerate = 48000;
+  //config.dataCallback
+  //config.pUserData
 
-    check_ma(ma_device_init(NULL, &device_config, &_device),
-             "Failed to initialise MiniAudio device.");
+  check_ma(ma_device_init(NULL, &device_config, &_device),
+           "Failed to initialise MiniAudio device.");
 
-    ma_device_start(&_device);
+  ma_device_start(&_device);
 
-    audio_cat.info() << "Using MiniAudio device " << device.playback.name <<
-      "." << std::endl;
+  audio_cat.info() << "Using MiniAudio device " << device.playback.name <<
+    "." << std::endl;
 
-    resource_mgr_conf = ma_resource_manager_config_init();
-    // TODO we need to make a custom ma_decoding_backend_vtable for
-    //  vorbis etc and set it on the config
-    resource_mgr_conf.decodedFormat     = _device.playback.format;
-    resource_mgr_conf.decodedChannels   = _device.playback.channels;
-    resource_mgr_conf.decodedSampleRate = _device.sampleRate;
+  // TODO share resource manager between MA engines
+  resource_mgr_conf = ma_resource_manager_config_init();
+  // TODO we need to make a custom ma_decoding_backend_vtable for
+  //  vorbis etc and set it on the config
+  resource_mgr_conf.decodedFormat     = _device.playback.format;
+  resource_mgr_conf.decodedChannels   = _device.playback.channels;
+  resource_mgr_conf.decodedSampleRate = _device.sampleRate;
 #ifdef HAVE_THREADS
-    resource_mgr_conf.jobThreadCount = 2;
+  resource_mgr_conf.jobThreadCount = 2;
 #endif
 
-    // this will probably be removed, but just in case, here's where we
-    //  can assign a custom VFS to the resource mgr
-    //resource_mgr_conf.pVFS = VirtualFileSystem::get_global_pointer();
-    check_ma(
-      ma_resource_manager_init(&resource_mgr_conf, &_resource_mgr),
-      &ma_device_uninit, &(&_device),
-      "Failed to initialise MiniAudio resource manager."
-    );
-  }
+  // here we could assign the p3d VFS to the resource mgr
+  //  this would get us access to minified files
+  //resource_mgr_conf.pVFS = VirtualFileSystem::get_global_pointer();
+  if (ma_resource_manager_init(&resource_mgr_conf, &_resource_mgr)
+      != MA_SUCCESS {
+    ma_device_uninit(&_device);
+    audio_error("Failed to initialise MiniAudio resource manager.");
+  )
 
   _managers->insert(this);
 
@@ -86,48 +91,88 @@ MaAudioManager() {
       0, 0, 0,
       1, 0, 0,
       0, 0, 1);
-  // TODO check these values set, if not, set _is_valid = false;
 
   _num_sources_cached = 0;
 
-  // TODO default flags for global sound group - ASYNC?
-  int sg_flags = 0;
+  // TODO default flags for global sound group:
+  //  0 loads without decoding at init time
+  //  DECODE decodes to memory at init time
+  //  ASYNC decodes and loads at play time
+  int sg_flags = MA_RESOURCE_MANAGER_DATA_SOURCE_FLAG_ASYNC;
   ma_sound_group_init(&_engine, sg_flags, nullptr, &_all_sounds_grp);
 
   // we'll do this when p3d is ready for it, or remove the noAutoStart line
   ma_engine_start(&_engine);
 
   if (audio_cat.is_debug())
-    audio_cat.debug() << "MA ... " << var << std::endl;
+    audio_cat.debug() << "MiniAudio version: " << ma_version_string()
+                      << std::endl;
+  // TODO miniaudio config? logging?
+}
+
+int MaAudioManager::get_speaker_setup() {
+  return _device.playback.channels;
+}
+
+void MaAudioManager::set_speaker_setup(SpeakerModeCategory cat) {
+  audio_warning("MiniAudio does not support setting channel setup.\n"
+                << cat " channels not set.");
+}
+
+bool MaAudioManager::configure_filters(FilterProperties *config) {
+  // TODO delete existing fx node
+  const FilterProperties::ConfigVector &conf = config->get_config();
+  // TODO make an equivalent to
+  //  FMOD::DSP::make_dsp(FilterProperties::ConfigVector)
+  //  and call here to construct a ma_node with the fx applied
+  // ConfigVector is a typedef of pvector<FilterConfig>
+  //struct FilterConfig {
+  //  FilterType  _type;
+  //  PN_stdfloat       _a,_b,_c,_d;
+  //  PN_stdfloat       _e,_f,_g,_h;
+  //  PN_stdfloat       _i,_j,_k,_l;
+  //  PN_stdfloat       _m,_n;
+  //};
 }
 
 /**
- * Creates a MaAudioSound object, constructing a source if it's new.
+ * Creates a MaAudioSound object, and adds it to the cache.
+ * Note: if mode is set to SM_stream, the AudioSound will not be
+ * kept in the manager's cache, so will not be culled if stop()
+ * (and the MaAudioSound destructor) are not called.
+ * MiniAudio buffers streaming sounds in one second 'pages', so
+ * take care not to fill the user's memory with streaming sounds.
  */
 PT(AudioSound) MaAudioManager::
 get_sound(const Filename &file_name, bool positional, int mode) {
   //ReMutexHolder holder(_lock);
-  auto cached_it = _cache_counts.find(file_name);
-  if (cached_it == _cache_counts.end()) {
-    if (_cache_counts.size() >= _cache_limit) {
-      audio_error("Cache limit reached; cannot load new sound file");
-      return _null_sound;.
-    } else {
-      _cached_it.emplace({file_name, 1});
-    }
-  } else cached_it->second++;
+  if (mode != StreamMode{SM_stream}) {
+    auto cached_it = _cache_counts.find(file_name);
+    if (cached_it == _cache_counts.end()) {
+      if (_cache_counts.size() >= _cache_limit) {
+        audio_error("Cache limit reached; cannot load new sound file");
+        return _null_sound;.
+      } else {
+        _cached_it.emplace({file_name, 1});
+      }
+    } else cached_it->second++;
+  }
 
   PT(AudioSound) new_sound =
     new MaAudioSound(this, file_name, positional, mode);
-  new_sound->_manager_it =
-    _all_sounds.emplace_back((WPT(AudioSound)(*new_sound)));
+
+  if (mode != StreamMode{SM_stream})
+    new_sound->_manager_it =
+      _all_sounds.emplace_back((WPT(AudioSound)(*new_sound)));
   return new_sound;
 }
 
 /*
  * Construct a new sound using a MovieAudio source.
- * Note: this only uses the MovieAudio for its filename; does not use
- * a MovieAudioCursor.
+ * Note: this only uses the MovieAudio for its filename; it does not
+ * use a MovieAudioCursor for decoding. MiniAudio manages decoding in
+ * a performant manner already, so we use its reference counting and
+ * cache implementation, which works similarly to ours.
  */
 PT(AudioSound) MaAudioManager::
 get_sound(MovieAudio &source, bool positional, int mode) {
@@ -150,9 +195,7 @@ void MaAudioManager::uncache_sound(const Filename &file_name) {
       if (s_ptr.file_name == file_name ||
           s_ptr.file_name == path)
         s_ptr.uncache();
-        // TODO what about doing:
-        // sound_it->sound.flag &= !MA_SOUND_FLAG_DECODE;
-        // TODO should this uncache all/any sounds with this filename?
+        // should this uncache all/any sounds with this filename?
         //return;
     } else // pointer has expired
       _all_sounds.erase(sound_it);
@@ -174,7 +217,9 @@ void MaAudioManager::clear_cache() {
 /*
  * Modify the number of files to allow caching to memory.
  * Destructively stops and unloads sounds if cache is shrunk.
- * TODO handle streams differently
+ * Caution: sounds with SM_stream mode are not kept in the cache.
+ * MiniAudio buffers streaming sounds in one second 'pages', so
+ * take care not to fill the user's memory with streaming sounds.
  */
 void MaAudioManager::set_cache_limit(unsigned int count) {
   //ReMutexHolder holder(_lock);
@@ -221,14 +266,6 @@ void MaAudioManager::set_volume(PN_stdfloat volume) {
 PN_stdfloat MaAudioManager::get_volume() const {
   _volume = ma_engine_get_volume(&_engine);
   return _volume;
-}
-
-/*
- * Gets a pointer to the MiniAudio resource manager we use
- */
-ma_resource_manager *MaAudioManager::
-get_resource_manager() {
-  return &_resource_mgr;
 }
 
 /**

@@ -6,24 +6,27 @@
  * license.  You should have received a copy of this license along
  * with this source code in a file named "LICENSE."
  *
- * @file config_maAudio.h
- * @author Katie & J0y
+ * @file maAudioManager.h
+ * @author Katie <katherineegoss@gmail.com> & J0y
+ * @date 2026-06-02
  */
 
 
 #ifndef MINIAUDIOMANAGER_H
 #define MINIAUDIOMANAGER_H
 
-#include <vector>
-#include <array>
 #include "pandabase.h"
 
 #include "audioManager.h"
 #include "pdeque.h"
 #include "pmap.h"
-#include "movieAudioCursor.h"
-#include "reMutex.h"
+#include "pset.h"
+//#include "reMutex.h"
 #include "vector_string.h"
+#include "config_audio.h"
+#include "config_putil.h"
+#include "config_express.h"
+#include "config_openalAudio.h"
 
 #include "miniaudio.h"
 
@@ -31,44 +34,48 @@ class MaAudioSound;
 
 class EXPCL_MA_AUDIO MaAudioManager final : public AudioManager {
   friend class MaAudioSound;
-  PT(ma_resource_manager) get_resource_manager();
-  // protects access to audio manager fields in multithreaded user applications
+  // TODO benchmarks with and without mutexes
   //static ReMutex _lock;
 
-  ma_device _device;
   int _active_managers;
-  bool _ma_active;
+  bool _active;
   bool _is_valid;
   int _cache_limit;
   PN_stdfloat _volume;
   PN_stdfloat _play_rate;
-  bool _cleanup_required;
 
+  // MiniAudio high-level interface objects
+  ma_device _device;
   ma_resource_manager_config _resource_mgr_conf;
   ma_resource_manager _resource_mgr;
   ma_engine _engine;
-  unsigned int _concurrent_sound_limit;
 
-  typedef pset<MaAudioManager *> Managers;
-  static Managers *_managers;
+  // TODO if we don't use mutexes, these should probably all
+  //  be made atomic/thread-safe in some other way (smart queues)
+  //patomic<type> var;
 
-  // loaded sounds are stored here
+  // set of all managers
+  static pset<MaAudioManager *> _managers;
+
+  // deque of cached AudioSounds in this manager
   pdeque<WPT(AudioSound)> _all_sounds;
-  // refcounting of sounds in cache
+  // counting number of sounds referencing cached sources
   pmap<Filename, int>_cache_counts;
   // MiniAudio node containing all sounds
   ma_sound _all_sounds_grp;
-  // Counter for playing sounds (TODO atomic? thread-safe accessors?)
+  // maximum playing sounds
+  unsigned int _concurrent_sound_limit;
+  // Counter for playing sounds
   unsigned int _num_concurrent_sounds;
 
   PN_stdfloat _distance_factor;
   PN_stdfloat _doppler_factor;
   PN_stdfloat _drop_off_factor;
 
-  ma_vec3 l_pos;
-  ma_vec3 l_vel;
-  ma_vec3 l_fwd;
-  ma_vec3 l_up;
+  LVector3 l_pos;
+  LVector3 l_vel;
+  LVector3 l_fwd;
+  LVector3 l_up;
 
 public:
   MaAudioManager();

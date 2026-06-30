@@ -1,37 +1,46 @@
+/**
+ * PANDA 3D SOFTWARE
+ * Copyright (c) Carnegie Mellon University.  All rights reserved.
+ *
+ * All use of this software is subject to the terms of the revised BSD
+ * license.  You should have received a copy of this license along
+ * with this source code in a file named "LICENSE."
+ *
+ * @file maAudioSound.h
+ * @author Katie <katherineegoss@gmail.com>
+ * @date 2026-06-02
+ */
 #include "maAudioSound.h"
 
+TypeHandle MaAudioSound::_type_handle;
+
 MaAudioSound::
-MaAudioSound(MaAudioManager *manager,
-             Filename &file_name,
-             bool positional,
-             int mode) :
-  AudioSound(positional),
-  _playing_loops(0),
-  _playing_rate(0.0),
-  _loops_completed(0),
-  _manager(manager),
-  _volume(1.0f),
-  _balance(0),
-  _play_rate(1.0),
-  _min_dist(1.0f),
-  _max_dist(1000000000.0f),
-  _drop_off_factor(1.0f),
-  _length(0.0),
-  _loop_count(1),
-  _loop_start(0),
-  _desired_mode(mode),
-  _start_time(0.0),
-  _current_time(0.0),
-  _basename(file_name.get_basename()),
-  _active(manager->get_active()),
-  _paused(false),
-  _cone_inner_angle(360.0f),
-  _cone_outer_angle(360.0f),
-  _cone_outer_gain(0.0f)
-{
-  _location = ma_vec3f(0.0f, 0.0f, 0.0f);
-  _velocity = ma_vec3f(0.0f, 0.0f, 0.0f);
-  _direction = ma_vec3f(0.0f, 0.0f, 0.0f);
+MaAudioSound(MaAudioManager *manager, Filename &file_name,
+             bool positional, int mode) :
+    AudioSound(positional),
+    _manager(manager),
+    _volume(1.0f),
+    _balance(0),
+    _play_rate(1.0),
+    _min_dist(1.0f),
+    _max_dist(1000000000.0f),
+    _drop_off_factor(1.0f),
+    _length(0.0),
+    _loop_count(1),
+    _loop_start(0),
+    _loops_completed(0),
+    _desired_mode(mode),
+    _start_time(0.0),
+    _current_time(0.0),
+    _basename(file_name.get_basename()),
+    _active(manager->get_active()),
+    _paused(false),
+    _cone_inner_angle(360.0f),
+    _cone_outer_angle(360.0f),
+    _cone_outer_gain(0.0f),
+    _location(0.0f, 0.0f, 0.0f),
+    _velocity(0.0f, 0.0f, 0.0f),
+    _direction(0.0f, 0.0f, 0.0f) {
 
   // protect against user accessing engine from multiple threads
   //ReMutexHolder holder(MaAudioManager::_lock);
@@ -44,14 +53,18 @@ MaAudioSound(MaAudioManager *manager,
     : MA_RESOURCE_MANAGER_DATA_SOURCE_FLAG_ASYNC; // load to ram later
   //_ma_flags |= MA_RESOURCE_MANAGER_DATA_SOURCE_FLAG_DECODE; // decode to ram
 
-  if (positional) {
-    // FIXME get sound channels properly
-    if (_ma_sound->_channels != 1)
-      audio_warning("stereo sound " << file_name
-                    << " will not be spatialized");
-  }
-
   cache();
+
+  ma_format format;
+  ma_uint32 channels, sample_rate;
+  ma_sound_get_format(&_ma_sound, &format, &channels, &sample_rate, nullptr, 0);
+  if (positional) {
+    if (channels != 1)
+      audio_warning("Copied stereo sound \"" << _basename
+                    << "\" will not be spatialized");
+  }
+  if (sample_rate != _manager->_device.config.playback.sampleRate)
+    audio_error("Source sample rate mismatch with MiniAudio device sample rate");
 
   length();
 }
@@ -62,44 +75,45 @@ MaAudioSound(MaAudioManager *manager,
  */
 MaAudioSound::
 MaAudioSound(const MaAudioSound &copy_sound) :
-  AudioSound(copy_sound.is_positional()),
-  _playing_loops(copy_sound._playing_loops),
-  _playing_rate(copy_sound._playing_rate),
-  _loops_completed(0),
-  _manager(copy_sound._manager),
-  _volume(copy_sound._volume),
-  _balance(copy_sound._balance),
-  _play_rate(copy_sound._play_rate),
-  _min_dist(copy_sound._min_dist),
-  _max_dist(copy_sound._max_dist),
-  _drop_off_factor(copy_sound._drop_off),
-  _length(copy_sound._length),
-  _loop_count(copy_sound._loop_count),
-  _loop_start(copy_sound._loop_start),
-  _desired_mode(copy_sound._desired_mode),
-  _start_time(copy_sound._start_time),
-  _time(0.),
-  _basename(copy_sound._basename),
-  _active(copy_sound._active),
-  _paused(copy_sound._paused),
-  _cone_inner_angle(copy_sound._cone_inner_angle),
-  _cone_outer_angle(copy_sound._cone_outer_angle),
-  _cone_outer_gain(copy_sound._cone_outer_gain),
-  _location(copy_sound._location),
-  _velocity(copy_sound._velocity),
-  _direction(copy_sound._direction),
-  _ma_flags(copy_sound._ma_flags) {
-
+    _positional(copy_sound.is_positional()),
+    _manager(copy_sound._manager),
+    _volume(copy_sound._volume),
+    _balance(copy_sound._balance),
+    _play_rate(copy_sound._play_rate),
+    _min_dist(copy_sound._min_dist),
+    _max_dist(copy_sound._max_dist),
+    _drop_off_factor(copy_sound._drop_off),
+    _length(copy_sound._length),
+    _loop_count(copy_sound._loop_count),
+    _loops_completed(0),
+    _loop_start(copy_sound._loop_start),
+    _desired_mode(copy_sound._desired_mode),
+    _start_time(copy_sound._start_time),
+    _time(0.),
+    _basename(copy_sound._basename),
+    _active(copy_sound._active),
+    _paused(copy_sound._paused),
+    _cone_inner_angle(copy_sound._cone_inner_angle),
+    _cone_outer_angle(copy_sound._cone_outer_angle),
+    _cone_outer_gain(copy_sound._cone_outer_gain),
+    _location(copy_sound._location),
+    _velocity(copy_sound._velocity),
+    _direction(copy_sound._direction),
+    _ma_flags(copy_sound._ma_flags) {
   //ReMutexHolder holder(MaAudioManager::_lock);
   //ReMutexHolder holder(_lock);
-
-  if (positional) {
-    if (_ma_sound->_channels != 1) {
-      audio_warning("copied stereo sound " << _basename << " will not be spatialized");
-    }
-  }
-
   cache();
+
+  ma_format format;
+  ma_uint32 channels, sample_rate;
+  ma_sound_get_format(&_ma_sound, &format, &channels, &sample_rate, nullptr, 0);
+  if (positional) {
+    if (channels != 1)
+      audio_warning("Copied stereo sound \"" << _basename
+                    << "\" will not be spatialized");
+  }
+  if (sample_rate != _manager->_device.config.playback.sampleRate)
+    audio_error("Source sample rate mismatch with MiniAudio device sample rate");
 }
 
 PT(AudioSound) MaAudioSound::make_copy() const {
@@ -110,40 +124,45 @@ PT(AudioSound) MaAudioSound::make_copy() const {
   return copy_sound;
 }`
 
+// TODO can we inline these methods?
+
 /*
  * Loads the sound to MiniAudio, if not already loaded.
- * TODO can we inline these?
  */
-void MaAudioSound::
-cache() {
+void MaAudioSound::cache() {
   //ReMutexHolder holder(MaAudioManager::_lock);
   //ReMutexHolder holder(_lock);
-  if (_ma_sound == nullptr) {
+  if (_ma_sound != nullptr) return;
+  if (_desired_mode != StreamMode{SM_stream}) {
     auto cache_it = _manager->_cache_counts.find(_basename);
     if (cache_it == _manager->_cache_counts.end())
       _manager->_cache_counts.emplace({_basename, 1});
     else cache_it->second++;
 
-    _ma_flags |=
-      (_loop) MA_RESOURCE_MANAGER_DATA_SOURCE_FLAG_LOOPING : 0;
-    check_ma(
-      ma_sound_init_from_file(
-        &manager->_engine, _basename, _ma_flags,
-        &_manager->_all_sounds_grp,
-        NULL, &_ma_sound),
-      "Failed to initialise AudioSound");
-    set_loop(_loop);
+    _ma_flags |= (_loop)
+      ? MA_RESOURCE_MANAGER_DATA_SOURCE_FLAG_LOOPING : 0;
+  }
+  if (ma_sound_init_from_file(
+      &manager->_engine, _basename, _ma_flags,
+      &_manager->_all_sounds_grp,
+      NULL, &_ma_sound) != MA_SUCCESS) {
+    audio_error("Failed to initialise AudioSound");
+    _valid = false;
+    return;
+  }
+  set_loop(_loop);
 }
 
 /*
  * If the sound is stopped, remove from memory.
  */
-bool MaAudioSound::
-uncache() {
+bool MaAudioSound::uncache() {
   //ReMutexHolder holder(MaAudioManager::_lock);
   //ReMutexHolder holder(_lock);
-  if (ma_sound_is_playing(&_ma_sound)) return false;
+  if (ma_sound_is_playing(&_ma_sound) ||
+      _desired_mode == StreamMode{SM_stream}) return false;
   set_active(false);
+  _ma_flags |= (!MA_SOUND_FLAG_ASYNC) | MA_SOUND_FLAG_DECODE;
   if (_ma_sound == nullptr) return true;
   auto cache_it = _manager->_cache_counts.find(_basename);
   if (cache_it != _manager->_cache_counts.end()) {
@@ -153,8 +172,7 @@ uncache() {
   return (ma_sound_uninit(&_ma_sound) == MA_SUCCESS);
 }
 
-void MaAudioSound::
-play() {
+void MaAudioSound::play() {
   //ReMutexHolder holder(MaAudioManager::_lock);
   //ReMutexHolder holder(_lock);
   _paused = false;
@@ -173,8 +191,7 @@ play() {
   ma_sound_start(&_ma_sound);
 }
 
-void MaAudioSound::
-stop() {
+void MaAudioSound::stop() {
   //ReMutexHolder holder(MaAudioManager::_lock);
   //ReMutexHolder holder(_lock);
   if (!is_valid()) return;
@@ -184,6 +201,14 @@ stop() {
   _manager->_num_concurrent_sounds--;
 
   set_loop(false);
+}
+
+bool MaAudioSound::configure_filters(FilterProperties *config) {
+  // TODO delete existing fx node
+  const FilterProperties::ConfigVector &conf = config->get_config();
+  // TODO make an equivalent to
+  //  FMOD::DSP::make_dsp(FilterProperties::ConfigVector)
+  //  and call here to construct a ma_node with the fx applied
 }
 
 /*
@@ -235,7 +260,7 @@ set_loop(bool loop) {
     _end_cb = [&](void *data, ma_sound *sound_ptr) noexcept {
       finished();
     };
-    _ma_flags |= 0;
+    _ma_flags |= !MA_SOUND_FLAG_LOOPING;
   }
   ma_sound_set_end_callback(&_ma_sound, _end_cb, nullptr);
   _loop = loop;
@@ -504,6 +529,14 @@ status() const {
   if (_ma_sound == nullptr) return AudioSound::BAD;
   if (ma_sound_is_playing(&_ma_sound)) return AudioSound::PLAYING;
   return AudioSound::READY;
+}
+
+/**
+ * Returns the comments attached to this audio file.
+ */
+const vector_string& OpenALAudioSound::
+get_raw_comment() const {
+  return _comment;
 }
 
 void MaAudioSound::
