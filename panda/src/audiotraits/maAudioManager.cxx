@@ -119,12 +119,52 @@ void MaAudioManager::set_speaker_setup(SpeakerModeCategory cat) {
                 << cat " channels not set.");
 }
 
+/*
+ * Parse config settings and return pointer to equivalent miniaudio node.
+ */
 bool MaAudioManager::configure_filters(FilterProperties *config) {
-  // TODO delete existing fx node
   const FilterProperties::ConfigVector &conf = config->get_config();
-  // TODO make an equivalent to
-  //  FMOD::DSP::make_dsp(FilterProperties::ConfigVector)
-  //  and call here to construct a ma_node with the fx applied
+  if (_global_fx == nullptr)
+    ma_node_init(&_engine.nodeGraph, node_config, &alloc_cb, &_global_fx);
+  // TODO if we have set _global_fx, step through and reinit() where relevant
+  switch (conf._type) {
+    case FilterProperties::FT_lowpass:
+      // ma_loshelf_node
+      break;
+    case FilterProperties::FT_highpass:
+      // ma_hishelf_node
+      break;
+    case FilterProperties::FT_echo:
+      // ma_delay_node
+      break;
+    case FilterProperties::FT_flange:
+      // ma_delay_node
+      break;
+    case FilterProperties::FT_distort:
+      // TODO
+      break;
+    case FilterProperties::FT_normalize:
+      // TODO
+      break;
+    case FilterProperties::FT_parameq:
+      // ma_biquad_node ?
+      break;
+    case FilterProperties::FT_pitchshift:
+      // TODO
+      break;
+    case FilterProperties::FT_chorus:
+      // TODO
+      break;
+    case FilterProperties::FT_sfxreverb:
+      // ma_delay
+      break;
+    case FilterProperties::FT_compress:
+      // TODO
+      break;
+    default:
+      audio_error("Malformed filter config passed to MiniAudio Manager.");
+      return nullptr;
+  }
   // ConfigVector is a typedef of pvector<FilterConfig>
   //struct FilterConfig {
   //  FilterType  _type;
@@ -133,6 +173,10 @@ bool MaAudioManager::configure_filters(FilterProperties *config) {
   //  PN_stdfloat       _i,_j,_k,_l;
   //  PN_stdfloat       _m,_n;
   //};
+
+  // TODO save the first node in the new chain to _global_fx ?
+  PT(ma_node) new_fxnode = make_fxnode(conf);
+  // TODO remove old node, attach new node to graph
 }
 
 /**

@@ -49,6 +49,7 @@ class EXPCL_MA_AUDIO MaAudioManager final : public AudioManager {
   ma_resource_manager_config _resource_mgr_conf;
   ma_resource_manager _resource_mgr;
   ma_engine _engine;
+  ma_node _global_fx;
 
   // TODO if we don't use mutexes, these should probably all
   //  be made atomic/thread-safe in some other way (smart queues)
