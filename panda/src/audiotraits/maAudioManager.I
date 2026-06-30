@@ -17,7 +17,6 @@
 
 /*
  * General error-checker for MiniAudio with callback on failure.
- */
 INLINE bool check_ma(
     bool result,
     void (*func)(void)fail_cb,
@@ -32,9 +31,7 @@ INLINE bool check_ma(
   return failed;
 }
 
-/*
  * General error-checker for MiniAudio.
- */
 INLINE bool check_ma(
     bool result,
     std::string out_str) {
@@ -44,3 +41,4 @@ INLINE bool check_ma(
   }
   return false;
 }
+*/

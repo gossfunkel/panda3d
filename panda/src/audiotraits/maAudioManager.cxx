@@ -46,8 +46,10 @@ MaAudioManager() {
   //config.dataCallback
   //config.pUserData
 
-  check_ma(ma_device_init(NULL, &device_config, &_device),
-           "Failed to initialise MiniAudio device.");
+  if (ma_device_init(NULL, &device_config, &_device) != MA_SUCCESS) {
+    audio_error("Failed to initialise MiniAudio device.");
+    return nullptr;
+  }
 
   ma_device_start(&_device);
 
@@ -80,10 +82,10 @@ MaAudioManager() {
   audio_engine_conf = ma_engine_config_init();
   audio_engine_conf.pResourceManager = &_resource_mgr;
   audio_engine_conf.noAutoStart = MA_TRUE;
-  check_ma(
-    ma_engine_init(&audio_engine_conf, &_engine),
-    &ma_device_uninit, &(&_device),
-    "Failed to initialise MiniAudio engine."
+  if (ma_engine_init(&audio_engine_conf, &_engine) != MA_SUCCESS) {
+    ma_device_uninit(&_device);
+    ma_error("Failed to initialise MiniAudio engine.");
+    return nullptr;
   );
 
   audio_3d_set_listener_attributes(
@@ -126,6 +128,7 @@ bool MaAudioManager::configure_filters(FilterProperties *config) {
   const FilterProperties::ConfigVector &conf = config->get_config();
   if (_global_fx == nullptr)
     ma_node_init(&_engine.nodeGraph, node_config, &alloc_cb, &_global_fx);
+
   // TODO if we have set _global_fx, step through and reinit() where relevant
   switch (conf._type) {
     case FilterProperties::FT_lowpass:
@@ -163,7 +166,7 @@ bool MaAudioManager::configure_filters(FilterProperties *config) {
       break;
     default:
       audio_error("Malformed filter config passed to MiniAudio Manager.");
-      return nullptr;
+      return false;
   }
   // ConfigVector is a typedef of pvector<FilterConfig>
   //struct FilterConfig {
@@ -175,8 +178,7 @@ bool MaAudioManager::configure_filters(FilterProperties *config) {
   //};
 
   // TODO save the first node in the new chain to _global_fx ?
-  PT(ma_node) new_fxnode = make_fxnode(conf);
-  // TODO remove old node, attach new node to graph
+  return true;
 }
 
 /**
@@ -229,7 +231,6 @@ get_sound(MovieAudio &source, bool positional, int mode) {
 void MaAudioManager::uncache_sound(const Filename &file_name) {
   //ReMutexHolder holder(_lock);
 
-  // TODO should we use the miniaudio vfs?
   Filename path = file_name;
   VirtualFileSystem *vfs = VirtualFileSystem::get_global_ptr();
   vfs->resolve_filename(path, get_model_path());
@@ -299,8 +300,8 @@ void MaAudioManager::set_volume(PN_stdfloat volume) {
   //ReMutexHolder holder(_lock);
   if (_volume != volume) {
     _volume = volume;
-    check_ma(ma_engine_set_volume(&_engine, volume),
-        "Failed to set MiniAudio engine global volume.");
+    if(ma_engine_set_volume(&_engine, volume) != MA_SUCCESS)
+        audio_error("Failed to set MiniAudio engine global volume.");
   }
 }
 
