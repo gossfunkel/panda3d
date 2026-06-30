@@ -124,8 +124,6 @@ PT(AudioSound) MaAudioSound::make_copy() const {
   return copy_sound;
 }`
 
-// TODO can we inline these methods?
-
 /*
  * Loads the sound to MiniAudio, if not already loaded.
  */
@@ -204,11 +202,7 @@ void MaAudioSound::stop() {
 }
 
 bool MaAudioSound::configure_filters(FilterProperties *config) {
-  // TODO delete existing fx node
-  const FilterProperties::ConfigVector &conf = config->get_config();
-  // TODO make an equivalent to
-  //  FMOD::DSP::make_dsp(FilterProperties::ConfigVector)
-  //  and call here to construct a ma_node with the fx applied
+  // TODO shared configure_filters with AudioManager
 }
 
 /*
