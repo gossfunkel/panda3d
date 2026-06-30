@@ -119,41 +119,47 @@ void MaAudioManager::set_speaker_setup(SpeakerModeCategory cat) {
                 << cat " channels not set.");
 }
 
-bool MaAudioManager::configure_filters(FilterProperties *config) {
-  const FilterProperties::ConfigVector &conf = config->get_config();
-  PT(ma_node) new_fxnode = make_fxnode(conf);
-  // TODO remove old node, attach new node to graph, overwrite _global_fx
-}
-
 /*
  * Parse config settings and return pointer to equivalent miniaudio node.
- * TODO is it safe to have these automatically garbage collected?
  */
-PT(ma_node) MaAudioManager::
-make_fxnode(const FilterProperties::Filterconfig &conf) {
-  ma_node fx_node;
+bool MaAudioManager::configure_filters(FilterProperties *config) {
+  const FilterProperties::ConfigVector &conf = config->get_config();
+  if (_global_fx == nullptr)
+    ma_node_init(&_engine.nodeGraph, node_config, &alloc_cb, &_global_fx);
+  // TODO if we have set _global_fx, step through and reinit() where relevant
   switch (conf._type) {
     case FilterProperties::FT_lowpass:
+      // ma_loshelf_node
       break;
     case FilterProperties::FT_highpass:
+      // ma_hishelf_node
       break;
     case FilterProperties::FT_echo:
+      // ma_delay_node
       break;
     case FilterProperties::FT_flange:
+      // ma_delay_node
       break;
     case FilterProperties::FT_distort:
+      // TODO
       break;
     case FilterProperties::FT_normalize:
+      // TODO
       break;
     case FilterProperties::FT_parameq:
+      // ma_biquad_node ?
       break;
     case FilterProperties::FT_pitchshift:
+      // TODO
       break;
     case FilterProperties::FT_chorus:
+      // TODO
       break;
     case FilterProperties::FT_sfxreverb:
+      // ma_delay
       break;
     case FilterProperties::FT_compress:
+      // TODO
       break;
     default:
       audio_error("Malformed filter config passed to MiniAudio Manager.");
@@ -168,6 +174,9 @@ make_fxnode(const FilterProperties::Filterconfig &conf) {
   //  PN_stdfloat       _m,_n;
   //};
 
+  // TODO save the first node in the new chain to _global_fx ?
+  PT(ma_node) new_fxnode = make_fxnode(conf);
+  // TODO remove old node, attach new node to graph
 }
 
 /**
