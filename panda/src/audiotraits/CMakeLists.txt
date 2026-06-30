@@ -5,6 +5,33 @@ elseif(NOT HAVE_FMODEX AND NOT HAVE_OPENAL AND NOT HAVE_MINIAUDIO)
     "You must have an audio backend for audio support! Turn off HAVE_AUDIO to ignore this.")
 endif()
 
+if(HAVE_MINIAUDIO)
+  set(P3MA_HEADERS
+    config_maAudio.h
+    maAudioManager.h
+    maAudioSound.h
+  )
+
+  set(P3MA_SOURCES
+    config_maAudio.cxx maAudioManager.cxx maAudioSound.cxx
+  )
+
+  composite_sources(p3ma_audio P3MA_SOURCES)
+  add_library(p3ma_audio ${MODULE_TYPE} ${P3MA_HEADERS} ${P3MA_SOURCES})
+  set_target_properties(p3ma_audio PROPERTIES DEFINE_SYMBOL BUILDING_MA_AUDIO)
+  target_link_libraries(p3ma_audio panda PKG::MINIAUDIO)
+
+  install(TARGETS p3ma_audio
+    EXPORT MINIAUDIO COMPONENT MINIAUDIO
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+    INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/panda3d
+    ARCHIVE COMPONENT MADevel)
+  install(FILES ${P3MA_HEADERS} COMPONENT MADevel DESTINATION $CMAKE_INSTALL_INCLUDEDIR}/panda3d)
+
+  export_targets(MINIAUDIO NAMESPACE "Panda3d::MINIAUDIO::" COMPONENT MADevel)
+endif()
+
 if(HAVE_FMODEX AND NOT (APPLE AND CMAKE_OSX_ARCHITECTURES STREQUAL "arm64"))
   set(P3FMOD_HEADERS
     config_fmodAudio.h
