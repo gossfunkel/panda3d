@@ -17,24 +17,24 @@
 #include "pandabase.h"
 
 #include "audioSound.h"
-#include "maAudioManager.h"
+#include "miniAudioManager.h"
 
 #include "miniaudio.h"
 
-class EXPCL_MA_AUDIO MaAudioSound final : public AudioSound {
-  friend class MaAudioManager;
+class EXPCL_MA_AUDIO MiniAudioSound final : public AudioSound {
+  friend class MiniAudioManager;
 
-  MaAudioSound(MaAudioManager *manager,
+  MiniAudioSound(MiniAudioManager *manager,
                ma_data_source *data_src,
                Filename &file_name,
                bool positional,
                int mode);
-  MaAudioSound(const MaAudioSound &copy_sound);
+  MiniAudioSound(const MiniAudioSound &copy_sound);
   void cleanup();
 
   bool            _valid;
 
-  MaAudioManager *_manager;
+  MiniAudioManager *_manager;
   ma_sound        _ma_sound;
   int             _ma_flags;
 
@@ -95,7 +95,7 @@ class EXPCL_MA_AUDIO MaAudioSound final : public AudioSound {
   INLINE bool is_valid() const;
 
 public:
-  ~MaAudioSound();
+  ~MiniAudioSound();
 
   void play();
   void stop();
@@ -194,7 +194,7 @@ public:
   }
   static void init_type() {
       AudioSound::init_type();
-      register_type(_type_handle, "MaAudioSound",
+      register_type(_type_handle, "MiniAudioSound",
           AudioSound::get_class_type());
   }
   virtual TypeHandle get_type() const {

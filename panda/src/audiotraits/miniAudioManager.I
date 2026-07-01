@@ -7,7 +7,7 @@
  * license.  You should have received a copy of this license along
  * with this source code in a file named "LICENSE."
  *
- * @file maAudioManager.I
+ * @file miniAudioManager.I
  * @author Kate Goss <katherineegoss@gmail.com>
  */
 
@@ -17,7 +17,7 @@
 
 /*
  * General error-checker for MiniAudio with callback on failure.
-INLINE bool check_ma(
+INLINE bool MaAudioManager::check_ma(
     bool result,
     void (*func)(void)fail_cb,
     void *params,
@@ -32,7 +32,7 @@ INLINE bool check_ma(
 }
 
  * General error-checker for MiniAudio.
-INLINE bool check_ma(
+INLINE bool MiniAudioManager::check_ma(
     bool result,
     std::string out_str) {
   if (result != MA_SUCCESS) {

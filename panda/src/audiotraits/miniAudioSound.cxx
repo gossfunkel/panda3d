@@ -10,12 +10,12 @@
  * @author Katie <katherineegoss@gmail.com>
  * @date 2026-06-02
  */
-#include "maAudioSound.h"
+#include "miniAudioSound.h"
 
-TypeHandle MaAudioSound::_type_handle;
+TypeHandle MiniAudioSound::_type_handle;
 
-MaAudioSound::
-MaAudioSound(MaAudioManager *manager, Filename &file_name,
+MiniAudioSound::
+MiniAudioSound(MiniAudioManager *manager, Filename &file_name,
              bool positional, int mode) :
     AudioSound(positional),
     _manager(manager),
@@ -43,7 +43,7 @@ MaAudioSound(MaAudioManager *manager, Filename &file_name,
     _direction(0.0f, 0.0f, 0.0f) {
 
   // protect against user accessing engine from multiple threads
-  //ReMutexHolder holder(MaAudioManager::_lock);
+  //ReMutexHolder holder(MiniAudioManager::_lock);
   //ReMutexHolder holder(_lock);
 
   std::string src_fn = file_name.get_basename();
@@ -73,8 +73,8 @@ MaAudioSound(MaAudioManager *manager, Filename &file_name,
 /**
  * Copy constructor (to be used with make_copy).
  */
-MaAudioSound::
-MaAudioSound(const MaAudioSound &copy_sound) :
+MiniAudioSound::
+MiniAudioSound(const MiniAudioSound &copy_sound) :
     _positional(copy_sound.is_positional()),
     _manager(copy_sound._manager),
     _volume(copy_sound._volume),
@@ -100,7 +100,7 @@ MaAudioSound(const MaAudioSound &copy_sound) :
     _velocity(copy_sound._velocity),
     _direction(copy_sound._direction),
     _ma_flags(copy_sound._ma_flags) {
-  //ReMutexHolder holder(MaAudioManager::_lock);
+  //ReMutexHolder holder(MiniAudioManager::_lock);
   //ReMutexHolder holder(_lock);
   cache();
 
@@ -116,8 +116,8 @@ MaAudioSound(const MaAudioSound &copy_sound) :
     audio_error("Source sample rate mismatch with MiniAudio device sample rate");
 }
 
-PT(AudioSound) MaAudioSound::make_copy() const {
-  PT(AudioSound) copy_sound = new MaAudioSound(*this);
+PT(AudioSound) MiniAudioSound::make_copy() const {
+  PT(AudioSound) copy_sound = new MiniAudioSound(*this);
 
   nassertr(copy_sound->is_valid() == this->is_valid(), nullptr);
 
@@ -127,8 +127,8 @@ PT(AudioSound) MaAudioSound::make_copy() const {
 /*
  * Loads the sound to MiniAudio, if not already loaded.
  */
-void MaAudioSound::cache() {
-  //ReMutexHolder holder(MaAudioManager::_lock);
+void MiniAudioSound::cache() {
+  //ReMutexHolder holder(MiniAudioManager::_lock);
   //ReMutexHolder holder(_lock);
   if (_ma_sound != nullptr) return;
   if (_desired_mode != StreamMode{SM_stream}) {
@@ -154,8 +154,8 @@ void MaAudioSound::cache() {
 /*
  * If the sound is stopped, remove from memory.
  */
-bool MaAudioSound::uncache() {
-  //ReMutexHolder holder(MaAudioManager::_lock);
+bool MiniAudioSound::uncache() {
+  //ReMutexHolder holder(MiniAudioManager::_lock);
   //ReMutexHolder holder(_lock);
   if (ma_sound_is_playing(&_ma_sound) ||
       _desired_mode == StreamMode{SM_stream}) return false;
@@ -170,8 +170,8 @@ bool MaAudioSound::uncache() {
   return (ma_sound_uninit(&_ma_sound) == MA_SUCCESS);
 }
 
-void MaAudioSound::play() {
-  //ReMutexHolder holder(MaAudioManager::_lock);
+void MiniAudioSound::play() {
+  //ReMutexHolder holder(MiniAudioManager::_lock);
   //ReMutexHolder holder(_lock);
   _paused = false;
   if (is_active()) return;
@@ -189,8 +189,8 @@ void MaAudioSound::play() {
   ma_sound_start(&_ma_sound);
 }
 
-void MaAudioSound::stop() {
-  //ReMutexHolder holder(MaAudioManager::_lock);
+void MiniAudioSound::stop() {
+  //ReMutexHolder holder(MiniAudioManager::_lock);
   //ReMutexHolder holder(_lock);
   if (!is_valid()) return;
   _paused = false;
@@ -201,7 +201,7 @@ void MaAudioSound::stop() {
   set_loop(false);
 }
 
-bool MaAudioSound::configure_filters(FilterProperties *config) {
+bool MiniAudioSound::configure_filters(FilterProperties *config) {
   // TODO shared configure_filters with AudioManager
 }
 
@@ -211,7 +211,7 @@ bool MaAudioSound::configure_filters(FilterProperties *config) {
  * the _loop_count. If so, it stops and finishes the sound. Returns
  * true if the loop_count has been reached, and false otherwise.
  */
-bool MaAudioSound::loop_completed() {
+bool MiniAudioSound::loop_completed() {
   //ReMutexHolder holder(_lock);
   if (++_loops_completed >= _loop_count) {
     _loops_completed = 0;
@@ -227,7 +227,7 @@ bool MaAudioSound::loop_completed() {
  * The callback uses the loop_completed method to update and check
  * the local variables.
  */
-void MaAudioSound::
+void MiniAudioSound::
 set_loop(bool loop) {
   //ReMutexHolder holder(_lock);
   if (loop) { // enable looping
@@ -260,22 +260,22 @@ set_loop(bool loop) {
   _loop = loop;
 }
 
-bool MaAudioSound::get_loop() const {
+bool MiniAudioSound::get_loop() const {
   return _loop;
 }
 
-void MaAudioSound::
+void MiniAudioSound::
 set_loop_count(unsigned long loop_count) {
   //ReMutexHolder holder(_lock);
   _loop_count = loop_count;
   set_loop((loop_count == 1) ? false : true);
 }
 
-PN_stdfloat MaAudioSound::get_loop_count() const {
+PN_stdfloat MiniAudioSound::get_loop_count() const {
   return _loop_count;
 }
 
-void MaAudioSound::set_loop_start(PN_stdfloat loop_start) {
+void MiniAudioSound::set_loop_start(PN_stdfloat loop_start) {
   //ReMutexHolder holder(_lock);
   _loop_start = loop_start;
   if (get_loop() && get_active())
@@ -283,83 +283,83 @@ void MaAudioSound::set_loop_start(PN_stdfloat loop_start) {
         &_ma_sound, (ma_uint64)(loop_start/1000.));
 }
 
-PN_stdfloat MaAudioSound::get_loop_start() {
+PN_stdfloat MiniAudioSound::get_loop_start() {
   return _loop_start;
 }
 
-void MaAudioSound::set_time(PN_stdfloat time) {
+void MiniAudioSound::set_time(PN_stdfloat time) {
   //ReMutexHolder holder(_lock);
   _time = time;
   ma_sound_seek_to_second(&_ma_sound, time);
 }
 
-PN_stdfloat MaAudioSound::get_time() const {
+PN_stdfloat MiniAudioSound::get_time() const {
   //ReMutexHolder holder(_lock);
   _time = ma_sound_get_time_in_seconds(&_ma_sound);
   return _time;
 }
 
-void MaAudioSound::set_volume(PN_stdfloat volume) {
+void MiniAudioSound::set_volume(PN_stdfloat volume) {
   //ReMutexHolder holder(_lock);
   _volume = volume;
   ma_sound_set_volume(&_ma_sound, volume);
 }
 
-PN_stdfloat MaAudioSound::get_volume() const {
+PN_stdfloat MiniAudioSound::get_volume() const {
   //ReMutexHolder holder(_lock);
   _volume = ma_sound_get_volume(&_ma_sound);
   return _volume;
 }
 
-void MaAudioSound::set_balance(PN_stdfloat balance_right) {
+void MiniAudioSound::set_balance(PN_stdfloat balance_right) {
   //ReMutexHolder holder(_lock);
   _balance = balance_right;
   ma_sound_set_pan(&_ma_sound, balance_right);
 }
 
-PN_stdfloat MaAudioSound::get_balance() const {
+PN_stdfloat MiniAudioSound::get_balance() const {
   //ReMutexHolder holder(_lock);
   _balance = ma_sound_get_pan(&_ma_sound);
   return _balance;
 }
 
-void MaAudioSound::set_play_rate(PN_stdfloat play_rate) {
+void MiniAudioSound::set_play_rate(PN_stdfloat play_rate) {
   //ReMutexHolder holder(_lock);
   _play_rate = play_rate;
   ma_sound_set_pitch(&_ma_sound, play_rate);
 }
 
-PN_stdfloat MaAudioSound::get_play_rate() const {
+PN_stdfloat MiniAudioSound::get_play_rate() const {
   //ReMutexHolder holder(_lock);
   _play_rate = ma_sound_get_pitch(&_ma_sound);
   return _play_rate;
 }
 
-void MaAudioSound::set_active(bool active) {
+void MiniAudioSound::set_active(bool active) {
   //ReMutexHolder holder(_lock);
   if (!active && _active)
     if (ma_sound_is_playing(&_ma_sound)) stop();
 }
 
-bool MaAudioSound::get_active() const {
+bool MiniAudioSound::get_active() const {
   //ReMutexHolder holder(_lock);
   if (!ma_sound_is_playing(&_ma_sound))
     _active = false;
   return _active;
 }
 
-void MaAudioSound::
+void MiniAudioSound::
 set_finished_event(std::string event) {
   //ReMutexHolder holder(_lock);
   _finished_event = std::move(event);
 }
 
-const std::string &MaAudioSound::
+const std::string &MiniAudioSound::
 get_finished_event() const {
   return _finished_event;
 }
 
-PN_stdfloat MaAudioSound::length() const {
+PN_stdfloat MiniAudioSound::length() const {
   //ReMutexHolder holder(_lock);
   ma_sound_get_length_in_seconds(&_ma_sound, &_length);
   return _length;
@@ -369,7 +369,7 @@ const std::string &get_name() const {
   return _basename;
 }
 
-void MaAudioSound::set_3d_attributes(
+void MiniAudioSound::set_3d_attributes(
       PN_stdfloat px, PN_stdfloat py, PN_stdfloat pz,
       PN_stdfloat vx, PN_stdfloat vy, PN_stdfloat vz) {
   //ReMutexHolder holder(_lock);
@@ -379,7 +379,7 @@ void MaAudioSound::set_3d_attributes(
   ma_sound_set_velocity(&_ma_sound, vx, vy, vz);
 }
 
-void MaAudioSound::get_3d_attributes(
+void MiniAudioSound::get_3d_attributes(
       PN_stdfloat *px, PN_stdfloat *py, PN_stdfloat *pz,
       PN_stdfloat *vx, PN_stdfloat *vy, PN_stdfloat *vz) {
   //ReMutexHolder holder(_lock);
@@ -393,49 +393,49 @@ void MaAudioSound::get_3d_attributes(
   *vz = _velocity.z;
 }
 
-void MaAudioSound::set_3d_direction(LVector3 d) {
+void MiniAudioSound::set_3d_direction(LVector3 d) {
   //ReMutexHolder holder(_lock);
   _direction = d;
   ma_sound_set_direction(&_ma_sound, d.x, d.y, d.z);
 }
 
-LVector3 MaAudioSound::get_3d_direction() const {
+LVector3 MiniAudioSound::get_3d_direction() const {
   //ReMutexHolder holder(_lock);
   _direction = (LVector3)ma_sound_get_direction(&_ma_sound);
   return _direction;
 }
 
-void MaAudioSound::set_3d_min_distance(PN_stdfloat dist) {
+void MiniAudioSound::set_3d_min_distance(PN_stdfloat dist) {
   //ReMutexHolder holder(_lock);
   _min_dist = dist;
   ma_sound_set_min_distance(&_ma_sound, dist);
 }
 
-PN_stdfloat MaAudioSound::get_3d_min_distance() const {
+PN_stdfloat MiniAudioSound::get_3d_min_distance() const {
   //ReMutexHolder holder(_lock);
   _min_dist = ma_sound_get_min_distance(&_ma_sound);
   return _min_dist;
 }
 
-void MaAudioSound::set_3d_max_distance(PN_stdfloat dist) {
+void MiniAudioSound::set_3d_max_distance(PN_stdfloat dist) {
   //ReMutexHolder holder(_lock);
   _max_dist = dist;
   ma_sound_set_max_distance(&_ma_sound, dist);
 }
 
-PN_stdfloat MaAudioSound::get_3d_max_distance() const {
+PN_stdfloat MiniAudioSound::get_3d_max_distance() const {
   //ReMutexHolder holder(_lock);
   _max_dist = ma_sound_get_max_distance(&_ma_sound);
   return _max_dist;
 }
 
-void MaAudioSound::set_3d_drop_off_factor(PN_stdfloat factor) {
+void MiniAudioSound::set_3d_drop_off_factor(PN_stdfloat factor) {
   //ReMutexHolder holder(_lock);
   _drop_off_factor = factor;
   ma_sound_set_rolloff(&_ma_sound, factor);
 }
 
-PN_stdfloat MaAudioSound::get_3d_drop_off_factor() const {
+PN_stdfloat MiniAudioSound::get_3d_drop_off_factor() const {
   //ReMutexHolder holder(_lock);
   _drop_off_factor = ma_sound_get_rolloff(&_ma_sound);
   return _drop_off_factor;
@@ -444,14 +444,14 @@ PN_stdfloat MaAudioSound::get_3d_drop_off_factor() const {
 /*
  * radians
  */
-void MaAudioSound::set_3d_cone_inner_angle(PN_stdfloat angle) {
+void MiniAudioSound::set_3d_cone_inner_angle(PN_stdfloat angle) {
   //ReMutexHolder holder(_lock);
   _cone_inner_angle = angle;
   ma_sound_set_cone(
     &_ma_sound, angle, _cone_outer_angle, _cone_outer_gain);
 }
 
-PN_stdfloat MaAudioSound::get_3d_cone_inner_angle() const {
+PN_stdfloat MiniAudioSound::get_3d_cone_inner_angle() const {
   //ReMutexHolder holder(_lock);
   ma_sound_get_cone(
     &_ma_sound,
@@ -464,14 +464,14 @@ PN_stdfloat MaAudioSound::get_3d_cone_inner_angle() const {
 /*
  * radians
  */
-void MaAudioSound::set_3d_cone_outer_angle(PN_stdfloat angle) {
+void MiniAudioSound::set_3d_cone_outer_angle(PN_stdfloat angle) {
   //ReMutexHolder holder(_lock);
   _cone_outer_angle = angle;
   ma_sound_set_cone(
     &_ma_sound, _cone_inner_angle, angle, _cone_outer_gain);
 }
 
-PN_stdfloat MaAudioSound::get_3d_cone_outer_angle() const {
+PN_stdfloat MiniAudioSound::get_3d_cone_outer_angle() const {
   //ReMutexHolder holder(_lock);
   ma_sound_get_cone(
     &_ma_sound,
@@ -484,14 +484,14 @@ PN_stdfloat MaAudioSound::get_3d_cone_outer_angle() const {
 /*
  * radians
  */
-void MaAudioSound::set_3d_cone_outer_gain(PN_stdfloat gain) {
+void MiniAudioSound::set_3d_cone_outer_gain(PN_stdfloat gain) {
   //ReMutexHolder holder(_lock);
   _cone_outer_gain = gain;
   ma_sound_set_cone(
     &_ma_sound, _cone_inner_angle, _cone_outer_angle, gain);
 }
 
-PN_stdfloat MaAudioSound::get_3d_cone_outer_gain() const {
+PN_stdfloat MiniAudioSound::get_3d_cone_outer_gain() const {
   //ReMutexHolder holder(_lock);
   ma_sound_get_cone(
     &_ma_sound,
@@ -501,7 +501,7 @@ PN_stdfloat MaAudioSound::get_3d_cone_outer_gain() const {
   return _cone_outer_gain;
 }
 
-void MaAudioSound::finished() {
+void MiniAudioSound::finished() {
   //ReMutexHolder holder(AudioManager::_lock);
   //ReMutexHolder holder(_lock);
   if (!is_valid()) return;
@@ -511,12 +511,12 @@ void MaAudioSound::finished() {
   if (!_finished_event.empty()) throw_event(_finished_event);
 }
 
-MaAudioSound::
-~MaAudioSound() {
+MiniAudioSound::
+~MiniAudioSound() {
   cleanup();
 }
 
-AudioSound::SoundStatus MaAudioSound::
+AudioSound::SoundStatus MiniAudioSound::
 status() const {
   //ReMutexHolder holder(_lock);
   if (!is_valid()) return AudioSound::BAD;
@@ -533,7 +533,7 @@ get_raw_comment() const {
   return _comment;
 }
 
-void MaAudioSound::
+void MiniAudioSound::
 cleanup() {
   //ReMutexHolder holder(AudioManager::_lock);
   //ReMutexHolder holder(_lock);

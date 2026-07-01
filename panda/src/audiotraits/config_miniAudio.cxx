@@ -6,26 +6,27 @@
  * license.  You should have received a copy of this license along
  * with this source code in a file named "LICENSE."
  *
- * @file config_maAudio.cxx
+ * @file config_miniAudio.cxx
  * @author kate & joy
  */
 
 #include "pandabase.h"
 
-#include "config_maAudio.h"
-#include "maAudioManager.h"
-#include "maAudioSound.h"
+#include "config_miniAudio.h"
+#include "miniAudioManager.h"
+#include "miniAudioSound.h"
 #include "pandaSystem.h"
 #include "dconfig.h"
 
-#if !defined(CPPPARSER) && !defined(LINK_ALL_STATIC) && !defined(BUILDING_MA_AUDIO)
-  #error Buildsystem error: BUILDING_MA_AUDIO not defined
+#if !defined(CPPPARSER) && !defined(LINK_ALL_STATIC) \
+                        && !defined(BUILDING_MINI_AUDIO)
+  #error Buildsystem error: BUILDING_MINI_AUDIO not defined
 #endif
 
-ConfigureDef(config_maAudio);
-NotifyCategoryDef(maAudio, ":audio");
+ConfigureDef(config_miniAudio);
+NotifyCategoryDef(miniAudio, ":audio");
 
-ConfigureFn(config_maAudio) {
+ConfigureFn(config_miniAudio) {
   init_libMiniAudio();
 }
 
@@ -53,10 +54,10 @@ init_libMiniAudio() {
   }
 
   initialized = true;
-  MaAudioManager::init_type();
-  MaAudioSound::init_type();
+  MiniAudioManager::init_type();
+  MiniAudioSound::init_type();
 
-  AudioManager::register_AudioManager_creator(&Create_MaAudioManager);
+  AudioManager::register_AudioManager_creator(&Create_MiniAudioManager);
 
   PandaSystem *ps = PandaSystem::get_global_ptr();
   ps->add_system("MiniAudio");
@@ -67,10 +68,10 @@ init_libMiniAudio() {
 /**
  * This function is called when the dynamic library is loaded; it should
  * return the Create_AudioManager function appropriate to create a
- * MaAudioManager.
+ * MiniAudioManager.
  */
 Create_AudioManager_proc *
-get_audio_manager_func_ma_audio() {
+get_audio_manager_func_mini_audio() {
   init_libMiniAudio();
-  return &Create_MaAudioManager;
+  return &Create_MiniAudioManager;
 }

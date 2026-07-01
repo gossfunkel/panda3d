@@ -6,7 +6,7 @@
  * license.  You should have received a copy of this license along
  * with this source code in a file named "LICENSE."
  *
- * @file maAudioManager.h
+ * @file miniAudioManager.h
  * @author Katie <katherineegoss@gmail.com> & J0y
  * @date 2026-06-02
  */
@@ -30,10 +30,10 @@
 
 #include "miniaudio.h"
 
-class MaAudioSound;
+class MiniAudioSound;
 
-class EXPCL_MA_AUDIO MaAudioManager final : public AudioManager {
-  friend class MaAudioSound;
+class EXPCL_MINI_AUDIO MiniAudioManager final : public AudioManager {
+  friend class MiniAudioSound;
   // TODO benchmarks with and without mutexes
   //static ReMutex _lock;
 
@@ -56,7 +56,7 @@ class EXPCL_MA_AUDIO MaAudioManager final : public AudioManager {
   //patomic<type> var;
 
   // set of all managers
-  static pset<MaAudioManager *> _managers;
+  static pset<MiniAudioManager *> _managers;
 
   // deque of cached AudioSounds in this manager
   pdeque<WPT(AudioSound)> _all_sounds;
@@ -79,8 +79,8 @@ class EXPCL_MA_AUDIO MaAudioManager final : public AudioManager {
   LVector3 l_up;
 
 public:
-  MaAudioManager();
-  virtual ~MaAudioManager();
+  MiniAudioManager();
+  virtual ~MiniAudioManager();
 
   virtual int get_speaker_setup();
   void set_speaker_setup(SpeakerModeCategory cat);
@@ -141,7 +141,7 @@ public:
   }
   static void init_type() {
     AudioManager::init_type();
-    register_type(_type_handle, "MaAudioManager", AudioManager::get_class_type());
+    register_type(_type_handle, "MiniAudioManager", AudioManager::get_class_type());
   }
   virtual TypeHandle get_type() const {
     return get_class_type();
@@ -156,6 +156,6 @@ public:
 
 };
 
-EXPCL_MA_AUDIO AudioManager *Create_MaAudioManager();
+EXPCL_MA_AUDIO AudioManager *Create_MiniAudioManager();
 
 #endif /* MINIAUDIOMANAGER_H */
