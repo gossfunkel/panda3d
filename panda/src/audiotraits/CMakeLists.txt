@@ -7,26 +7,26 @@ endif()
 
 if(HAVE_MINIAUDIO)
   set(P3MA_HEADERS
-    config_maAudio.h
-    maAudioManager.I
-    maAudioManager.h
-    maAudioSound.I
-    maAudioSound.h
+    config_miniAudio.h
+    miniAudioManager.I
+    miniAudioManager.h
+    miniAudioSound.I
+    miniAudioSound.h
   )
 
   set(P3MA_SOURCES
-    config_maAudio.cxx
-    maAudioManager.cxx
-    maAudioSound.cxx
+    config_miniAudio.cxx
+    miniAudioManager.cxx
+    miniAudioSound.cxx
   )
 
-  composite_sources(p3ma_audio P3MA_SOURCES)
+  composite_sources(p3mini_audio P3MA_SOURCES)
   add_library(miniaudio STATIC miniaudio.h miniaudio.cxx)
-  add_library(p3ma_audio STATIC ${P3MA_HEADERS} ${P3MA_SOURCES})
-  set_target_properties(p3ma_audio PROPERTIES DEFINE_SYMBOL BUILDING_MA_AUDIO)
-  target_link_libraries(p3ma_audio panda ${MA_LIB})
+  add_library(p3mini_audio STATIC ${P3MA_HEADERS} ${P3MA_SOURCES})
+  set_target_properties(p3mini_audio PROPERTIES DEFINE_SYMBOL BUILDING_MINI_AUDIO)
+  target_link_libraries(p3mini_audio panda miniaudio)
 
-  install(TARGETS p3ma_audio
+  install(TARGETS p3mini_audio
     EXPORT MINIAUDIO COMPONENT MINIAUDIO
     DESTINATION ${CMAKE_INSTALL_LIBDIR}
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}

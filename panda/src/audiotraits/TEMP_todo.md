@@ -63,7 +63,11 @@ lower than the number of cached sounds, or calling `uncache_sound`). This is
 why `MaAudioSounds` now have a `cache` and `uncache` method in order to
 manually call `init()` and `uninit()` on their `ma_sound`s. This incurs a
 runtime cost to check if a sound is initialised at runtime, but it prevents
-Python objects from breaking after using `uncache_sound` in some situations.
+Python objects from breaking after using `uncache_sound` in some situations
+
+We have elected to format the internal backend names in the style
+`miniAudio*`/`[*_]mini_audio[_*]`. This optimises for internal consistency
+along with clarity, and has a minimal character cost (2 more than `ma`).
 
 #### Other tools to note / concepts involved
 - `nassertv` - assert a condition

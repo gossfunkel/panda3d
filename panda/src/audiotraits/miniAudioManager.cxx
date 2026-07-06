@@ -11,29 +11,29 @@
  * @date 2026-06-02
  */
 
-#include "maAudioManager.h"
-#include "maAudioSound.h"
+#include "miniAudioManager.h"
+#include "miniAudioSound.h"
 
-TypeHandle MaAudioManager::_type_handle;
+TypeHandle MiniAudioManager::_type_handle;
 
 // TODO debug macros?
 
-//ReMutex MaAudioManager::_lock;
-pset<MaAudioManager *> *MaAudioManager::_managers = nullptr;
-int MaAudioManager::_active_managers = 0;
-bool MaAudioManager::_active = false;
+//ReMutex MiniAudioManager::_lock;
+pset<MiniAudioManager *> *MiniAudioManager::_managers = nullptr;
+int MiniAudioManager::_active_managers = 0;
+bool MiniAudioManager::_active = false;
 
 /**
  * Factory Function
  */
-AudioManager *Create_MaAudioManager() {
-  audio_debug("Create_MaAudioManager()");
+AudioManager *Create_MiniAudioManager() {
+  audio_debug("Create_MiniAudioManager()");
   //ReMutexHolder holder(_lock);
-  return new MaAudioManager;
+  return new MiniAudioManager;
 }
 
-MaAudioManager::
-MaAudioManager() {
+MiniAudioManager::
+MiniAudioManager() {
   //ReMutexHolder holder(_lock);
   audio_cat.init();
 
@@ -112,11 +112,11 @@ MaAudioManager() {
   // TODO miniaudio config? logging?
 }
 
-int MaAudioManager::get_speaker_setup() {
+int MiniAudioManager::get_speaker_setup() {
   return _device.playback.channels;
 }
 
-void MaAudioManager::set_speaker_setup(SpeakerModeCategory cat) {
+void MiniAudioManager::set_speaker_setup(SpeakerModeCategory cat) {
   audio_warning("MiniAudio does not support setting channel setup.\n"
                 << cat " channels not set.");
 }
@@ -124,7 +124,7 @@ void MaAudioManager::set_speaker_setup(SpeakerModeCategory cat) {
 /*
  * Parse config settings and return pointer to equivalent miniaudio node.
  */
-bool MaAudioManager::configure_filters(FilterProperties *config) {
+bool MiniAudioManager::configure_filters(FilterProperties *config) {
   const FilterProperties::ConfigVector &conf = config->get_config();
   if (_global_fx == nullptr)
     ma_node_init(&_engine.nodeGraph, node_config, &alloc_cb, &_global_fx);
@@ -182,14 +182,14 @@ bool MaAudioManager::configure_filters(FilterProperties *config) {
 }
 
 /**
- * Creates a MaAudioSound object, and adds it to the cache.
+ * Creates a MiniAudioSound object, and adds it to the cache.
  * Note: if mode is set to SM_stream, the AudioSound will not be
  * kept in the manager's cache, so will not be culled if stop()
- * (and the MaAudioSound destructor) are not called.
+ * (and the MiniAudioSound destructor) are not called.
  * MiniAudio buffers streaming sounds in one second 'pages', so
  * take care not to fill the user's memory with streaming sounds.
  */
-PT(AudioSound) MaAudioManager::
+PT(AudioSound) MiniAudioManager::
 get_sound(const Filename &file_name, bool positional, int mode) {
   //ReMutexHolder holder(_lock);
   if (mode != StreamMode{SM_stream}) {
@@ -205,7 +205,7 @@ get_sound(const Filename &file_name, bool positional, int mode) {
   }
 
   PT(AudioSound) new_sound =
-    new MaAudioSound(this, file_name, positional, mode);
+    new MiniAudioSound(this, file_name, positional, mode);
 
   if (mode != StreamMode{SM_stream})
     new_sound->_manager_it =
@@ -220,7 +220,7 @@ get_sound(const Filename &file_name, bool positional, int mode) {
  * a performant manner already, so we use its reference counting and
  * cache implementation, which works similarly to ours.
  */
-PT(AudioSound) MaAudioManager::
+PT(AudioSound) MiniAudioManager::
 get_sound(MovieAudio &source, bool positional, int mode) {
   return get_sound(source.get_filename(), positional, mode);
 }
@@ -228,7 +228,7 @@ get_sound(MovieAudio &source, bool positional, int mode) {
 /*
  * Deletes a reference to a sound if not active.
  */
-void MaAudioManager::uncache_sound(const Filename &file_name) {
+void MiniAudioManager::uncache_sound(const Filename &file_name) {
   //ReMutexHolder holder(_lock);
 
   Filename path = file_name;
@@ -249,7 +249,7 @@ void MaAudioManager::uncache_sound(const Filename &file_name) {
 /*
  * Clears data from cache for sources with no playing sounds.
  */
-void MaAudioManager::clear_cache() {
+void MiniAudioManager::clear_cache() {
   //ReMutexHolder holder(_lock);
   audio_cat.debug() << "Clearing audio cache..." << std::endl;
 
@@ -266,7 +266,7 @@ void MaAudioManager::clear_cache() {
  * MiniAudio buffers streaming sounds in one second 'pages', so
  * take care not to fill the user's memory with streaming sounds.
  */
-void MaAudioManager::set_cache_limit(unsigned int count) {
+void MiniAudioManager::set_cache_limit(unsigned int count) {
   //ReMutexHolder holder(_lock);
   _cache_limit = count;
 
@@ -289,14 +289,14 @@ void MaAudioManager::set_cache_limit(unsigned int count) {
   }
 }
 
-unsigned int MaAudioManager::get_cache_limit() const {
+unsigned int MiniAudioManager::get_cache_limit() const {
   return _cache_limit;
 }
 
 /*
  * Sets global volume (gain) setting on our MiniAudio engine
  */
-void MaAudioManager::set_volume(PN_stdfloat volume) {
+void MiniAudioManager::set_volume(PN_stdfloat volume) {
   //ReMutexHolder holder(_lock);
   if (_volume != volume) {
     _volume = volume;
@@ -308,7 +308,7 @@ void MaAudioManager::set_volume(PN_stdfloat volume) {
 /*
  * Gets the global volume (gain) setting on our MiniAudio engine
  */
-PN_stdfloat MaAudioManager::get_volume() const {
+PN_stdfloat MiniAudioManager::get_volume() const {
   _volume = ma_engine_get_volume(&_engine);
   return _volume;
 }
@@ -317,7 +317,7 @@ PN_stdfloat MaAudioManager::get_volume() const {
  * Turn on/off active flag, stopping all if false. Caution!
  *  This method may cause undefined behaviour; use others.
  */
-void MaAudioManager::set_active(bool flag) {
+void MiniAudioManager::set_active(bool flag) {
   //ReMutexHolder holder(_lock);
   if (_active!=flag) {
     _active=flag;
@@ -334,22 +334,22 @@ void MaAudioManager::set_active(bool flag) {
   }
 }
 
-bool MaAudioManager::get_active() const {
+bool MiniAudioManager::get_active() const {
   return _active;
 }
 
-void MaAudioManager::
+void MiniAudioManager::
 set_concurent_sound_limit(unsigned int) {
   //ReMutexHolder holder(_lock);
   _concurrent_sound_limit = limit;
   reduce_sounds_playing_to(_concurrent_sound_limit);
 }
 
-unsigned int MaAudioManager::get_concurrent_sound_limit() const {
+unsigned int MiniAudioManager::get_concurrent_sound_limit() const {
   return _concurrent_sound_limit;
 }
 
-void MaAudioManager::reduce_sounds_playing_to(unsigned int count) {
+void MiniAudioManager::reduce_sounds_playing_to(unsigned int count) {
   //ReMutexHolder holder(_lock);
 
   audio_cat.debug() << "Reducing playing sounds to " << count
@@ -367,7 +367,7 @@ void MaAudioManager::reduce_sounds_playing_to(unsigned int count) {
   }
 }
 
-void MaAudioManager::stop_all_sounds() {
+void MiniAudioManager::stop_all_sounds() {
   audio_cat.debug() << "Stopping all sounds." << std::endl;
   reduce_sounds_playing_to(0);
 }
@@ -376,7 +376,7 @@ void MaAudioManager::stop_all_sounds() {
  * Must be called every frame(?)
  * Do housework on any buffers and playing sounds
  */
-void MaAudioManager::update() {
+void MiniAudioManager::update() {
   //ReMutexHolder holder(_lock);
 }
 
@@ -385,7 +385,7 @@ void MaAudioManager::update() {
  *  take care of this coordinate difference if you're going beyond the
  *  exposed API of this module.
  */
-void MaAudioManager::
+void MiniAudioManager::
 audio_3d_set_listener_attributes(
     PN_stdfloat px, PN_stdfloat py, PN_stdfloat pz, //pos
     PN_stdfloat vx, PN_stdfloat vy, PN_stdfloat vz, //vel
@@ -439,7 +439,7 @@ audio_3d_set_listener_attributes(
   }
 }
 
-void MaAudioManager::
+void MiniAudioManager::
 audio_3d_get_listener_attributes(
     PN_stdfloat *px, PN_stdfloat *py, PN_stdfloat *pz, //pos
     PN_stdfloat *vx, PN_stdfloat *vy, PN_stdfloat *vz, //vel
@@ -483,7 +483,7 @@ audio_3d_get_listener_attributes(
 /*
  * NOT IMPLEMENTED (yet?)
  */
-void MaAudioManager::
+void MiniAudioManager::
 audio_3d_set_distance_factor(PN_stdfloat factor) {
   //ReMutexHolder holder(_lock);
   return;
@@ -492,29 +492,29 @@ audio_3d_set_distance_factor(PN_stdfloat factor) {
 /*
  * NOT IMPLEMENTED (yet?)
  */
-PN_stdfloat MaAudioManager::
+PN_stdfloat MiniAudioManager::
 audio_3d_get_distance_factor() const {
   return 1.f;
 }
 
-void MaAudioManager::
+void MiniAudioManager::
 audio_3d_set_doppler_factor(PN_stdfloat factor) {
   //ReMutexHolder holder(_lock);
   ma_sound_group_set_doppler_factor(&_all_sounds_grp, factor);
 }
 
-PN_stdfloat MaAudioManager::
+PN_stdfloat MiniAudioManager::
 audio_3d_get_doppler_factor() const {
   ma_sound_group_get_doppler_factor(&_all_sounds_grp);
 }
 
-void MaAudioManager::
+void MiniAudioManager::
 audio_3d_set_drop_off_factor(PN_stdfloat factor) {
   //ReMutexHolder holder(_lock);
   ma_sound_group_set_rolloff(&_all_sounds_grp, factor);
 }
 
-PN_stdfloat MaAudioManager::
+PN_stdfloat MiniAudioManager::
 audio_3d_get_drop_off_factor() const {
   ma_sound_group_get_rolloff(&_all_sounds_grp);
 }
@@ -523,7 +523,7 @@ audio_3d_get_drop_off_factor() const {
  * Shut down the entire audio system. Invalidates all AudioManagers and
  *  AudioSounds in the system, even if they're active! This cannot be undone
  */
-void MaAudioManager::
+void MiniAudioManager::
 shutdown() {
   audio_cat.debug() << "Shutting down Audio Managers." << std::endl;
   //ReMutexHolder holder(_lock);
@@ -534,7 +534,7 @@ shutdown() {
   nassertv(_active_managers == 0);
 }
 
-~MaAudioManager() {
+~MiniAudioManager() {
   //ReMutexHolder holder(_lock);
   nassertv(_managers != nullptr);
   Managers::iterator man_it = _managers->find(this);
@@ -546,7 +546,7 @@ shutdown() {
 /**
  * For debug but you can use it for release if you don't mind the cost
  */
-bool MaAudioManager::
+bool MiniAudioManager::
 is_valid() {
   return _is_valid;
 }
@@ -556,7 +556,7 @@ is_valid() {
  *  the audio engine, device, and resource manager.
  * Warning: invalidates all pointers to sounds!
  */
-void MaAudioManager::
+void MiniAudioManager::
 cleanup() {
   audio_cat.debug() << "Cleaning up Audio Manager..." << std::endl;
   //ReMutexHolder holder(_lock);
