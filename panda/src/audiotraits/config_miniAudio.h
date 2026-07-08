@@ -19,14 +19,13 @@
 #include "dconfig.h"
 #include "audioManager.h"
 
-ConfigureDecl(config_miniAudio, EXPCL_MA_AUDIO, EXPTP_MA_AUDIO);
-NotifyCategoryDecl(miniAudio, EXPCL_MA_AUDIO, EXPTP_MA_AUDIO);
+ConfigureDecl(config_miniAudio, EXPCL_MINI_AUDIO, EXPTP_MINI_AUDIO);
+NotifyCategoryDecl(miniAudio, EXPCL_MINI_AUDIO, EXPTP_MINI_AUDIO);
 
-extern "C" EXPCL_MA_AUDIO void init_libMiniAudio();
-extern "C" EXPCL_MA_AUDIO Create_AudioManager_proc *get_audio_manager_func_ma_audio();
+extern "C" EXPCL_MINI_AUDIO void init_libMiniAudio();
+extern "C" EXPCL_MINI_AUDIO Create_AudioManager_proc *get_audio_manager_func_ma_audio();
 
-extern ConfigVariableString ma_device;
-extern ConfigVariableInt ma_buffer_delete_retries;
-extern ConfigVariableDouble ma_buffer_delete_delay;
+extern ConfigVariableString miniaudio_device;
+extern ConfigVariableBool disable_miniaudio;
 
 #endif // CONFIG_OPENALAUDIO_H

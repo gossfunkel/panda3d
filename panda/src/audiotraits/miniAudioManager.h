@@ -56,7 +56,7 @@ class EXPCL_MINI_AUDIO MiniAudioManager final : public AudioManager {
   //patomic<type> var;
 
   // set of all managers
-  static pset<MiniAudioManager *> _managers;
+  static pset<AudioManager *> _managers;
 
   // deque of cached AudioSounds in this manager
   pdeque<WPT(AudioSound)> _all_sounds;
@@ -156,6 +156,6 @@ public:
 
 };
 
-EXPCL_MA_AUDIO AudioManager *Create_MiniAudioManager();
+EXPCL_MINI_AUDIO AudioManager *Create_MiniAudioManager();
 
 #endif /* MINIAUDIOMANAGER_H */

@@ -122,7 +122,7 @@ PT(AudioSound) MiniAudioSound::make_copy() const {
   nassertr(copy_sound->is_valid() == this->is_valid(), nullptr);
 
   return copy_sound;
-}`
+}
 
 /*
  * Loads the sound to MiniAudio, if not already loaded.

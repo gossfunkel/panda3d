@@ -6,13 +6,13 @@
  * license.  You should have received a copy of this license along
  * with this source code in a file named "LICENSE."
  *
- * @file maAudioSound.h
+ * @file miniAudioSound.h
  * @author Katie <katherineegoss@gmail.com> & J0y
  * @date 2026-06-02
  */
 
-#ifndef MAAUDIOSOUND_H
-#define MAAUDIOSOUND_H
+#ifndef MINIAUDIOSOUND_H
+#define MINIAUDIOSOUND_H
 
 #include "pandabase.h"
 
@@ -21,7 +21,7 @@
 
 #include "miniaudio.h"
 
-class EXPCL_MA_AUDIO MiniAudioSound final : public AudioSound {
+class EXPCL_MINI_AUDIO MiniAudioSound final : public AudioSound {
   friend class MiniAudioManager;
 
   MiniAudioSound(MiniAudioManager *manager,
@@ -209,6 +209,6 @@ public:
   static TypeHandle _type_handle;
 };
 
-#include "maAudioSound.I"
+#include "miniAudioSound.I"
 
-#endif /* __MAAUDIOSOUND_H__ */
+#endif /* __MINIAUDIOSOUND_H__ */
