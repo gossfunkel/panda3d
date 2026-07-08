@@ -1,11 +1,6 @@
 if(NOT HAVE_AUDIO)
   return()
-elseif(NOT HAVE_FMODEX AND NOT HAVE_OPENAL AND NOT HAVE_MINIAUDIO)
-  message(SEND_ERROR
-    "You must have an audio backend for audio support! Turn off HAVE_AUDIO to ignore this.")
-endif()
-
-if(HAVE_MINIAUDIO)
+elseif(NOT HAVE_FMODEX AND NOT HAVE_OPENAL)
   set(P3MA_HEADERS
     config_miniAudio.h
     miniAudioManager.I

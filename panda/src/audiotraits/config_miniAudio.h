@@ -6,7 +6,7 @@
  * license.  You should have received a copy of this license along
  * with this source code in a file named "LICENSE."
  *
- * @file config_maAudio.h
+ * @file config_miniAudio.h
  * @author Katie & J0y
  */
 
@@ -19,8 +19,8 @@
 #include "dconfig.h"
 #include "audioManager.h"
 
-ConfigureDecl(config_maAudio, EXPCL_MA_AUDIO, EXPTP_MA_AUDIO);
-NotifyCategoryDecl(maAudio, EXPCL_MA_AUDIO, EXPTP_MA_AUDIO);
+ConfigureDecl(config_miniAudio, EXPCL_MA_AUDIO, EXPTP_MA_AUDIO);
+NotifyCategoryDecl(miniAudio, EXPCL_MA_AUDIO, EXPTP_MA_AUDIO);
 
 extern "C" EXPCL_MA_AUDIO void init_libMiniAudio();
 extern "C" EXPCL_MA_AUDIO Create_AudioManager_proc *get_audio_manager_func_ma_audio();
