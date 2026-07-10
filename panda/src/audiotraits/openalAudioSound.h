@@ -115,7 +115,7 @@ public:
   PN_stdfloat get_3d_cone_outer_gain() const;
 
   // Construct a near-identical copy of this object on the heap and return a pointer to the new copy
-  virtual AudioSound *make_copy() const;
+  virtual PT(AudioSound) make_copy() const;
 
   AudioSound::SoundStatus status() const;
 
@@ -147,8 +147,6 @@ private:
   INLINE bool is_valid() const;
   INLINE bool is_playing() const;
   INLINE bool has_sound_data() const;
-
-private:
 
   PT(MovieAudio) _movie;
   OpenALAudioManager::SoundData *_sd;

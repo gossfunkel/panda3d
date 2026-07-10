@@ -38,10 +38,12 @@ AudioSound(bool positional) : _positional(positional) {
  * Copies an OpenALAudioSound into a new OpenALAudioSound.
  * Not implemented in FMOD!
  */
-AudioSound *AudioSound::
+PT(AudioSound) AudioSound::
 make_copy() const {
   // Intentionally blank.
-  audio_cat.error() << "Copying " << (*this) << "failed: copying an AudioSound object is currently only available with OpenAL.\n";
+  audio_cat.error() << "Copying " << (*this) << "failed: copying an AudioSound "
+                    << "object is currently only available with MiniAudio or "
+                    << "OpenAL audio engines.\n";
   return nullptr;
 }
 

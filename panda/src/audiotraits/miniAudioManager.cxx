@@ -221,8 +221,8 @@ get_sound(const Filename &file_name, bool positional, int mode) {
  * cache implementation, which works similarly to ours.
  */
 PT(AudioSound) MiniAudioManager::
-get_sound(MovieAudio &source, bool positional, int mode) {
-  return get_sound(source.get_filename(), positional, mode);
+get_sound(MovieAudio *source, bool positional, int mode) {
+  return get_sound(source->get_filename(), positional, mode);
 }
 
 /*

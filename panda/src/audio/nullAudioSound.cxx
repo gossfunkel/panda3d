@@ -34,8 +34,8 @@ NullAudioSound::~NullAudioSound() {
   // Intentionally blank.
 }
 
-AudioSound *NullAudioSound::make_copy() const {
-  return new NullAudioSound();
+PT(AudioSound) NullAudioSound::make_copy() const {
+  return (AudioSound *)this;
 }
 
 void NullAudioSound::play() {

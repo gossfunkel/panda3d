@@ -18,6 +18,7 @@
 #include "pandabase.h"
 
 #include "audioManager.h"
+#include "weakPointerTo.h"
 #include "pdeque.h"
 #include "pmap.h"
 #include "pset.h"
@@ -91,7 +92,7 @@ public:
   virtual bool is_valid();
 
   virtual PT(AudioSound) get_sound(const Filename &file_name, bool positional = false, int mode=SM_heuristic);
-  virtual PT(AudioSound) get_sound(MovieAudio &source, bool positional = false, int mode=SM_heuristic);
+  virtual PT(AudioSound) get_sound(MovieAudio *source, bool positional = false, int mode=SM_heuristic);
 
   virtual void uncache_sound(const Filename &file_name);
   virtual void clear_cache();

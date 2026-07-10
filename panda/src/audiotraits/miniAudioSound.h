@@ -60,7 +60,7 @@ class EXPCL_MINI_AUDIO MiniAudioSound final : public AudioSound {
   int             _loops_completed;
 
   // MiniAudio callback at end of play
-  auto _end_cb;
+  void *_end_cb;
 
   int             _desired_mode;
 
