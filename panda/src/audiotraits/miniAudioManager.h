@@ -38,7 +38,7 @@ class EXPCL_MINI_AUDIO MiniAudioManager final : public AudioManager {
   // TODO benchmarks with and without mutexes
   //static ReMutex _lock;
 
-  int _active_managers;
+  static int _active_managers;
   bool _active;
   bool _is_valid;
   int _cache_limit;

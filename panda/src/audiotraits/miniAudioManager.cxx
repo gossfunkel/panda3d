@@ -19,9 +19,7 @@ TypeHandle MiniAudioManager::_type_handle;
 // TODO debug macros?
 
 //ReMutex MiniAudioManager::_lock;
-pset<MiniAudioManager *> *MiniAudioManager::_managers = nullptr;
 int MiniAudioManager::_active_managers = 0;
-bool MiniAudioManager::_active = false;
 
 /**
  * Factory Function
@@ -36,47 +34,49 @@ MiniAudioManager::
 MiniAudioManager() {
   //ReMutexHolder holder(_lock);
   audio_cat.init();
+  _active = false;
+  _is_valid = false;
 
-  if (_managers == nullptr) _managers = new Managers;
+  _managers.insert(this);
 
   ma_device_config device_config = ma_device_config_init(ma_device_type_playback);
-  config.playback.format = ma_format_f32;
-  config.playback.channels = 2;
-  config.samplerate = 48000;
-  //config.dataCallback
-  //config.pUserData
+  device_config.playback.format = ma_format_f32;
+  device_config.playback.channels = 2;
+  device_config.sampleRate = 48000;
+  //device_config.dataCallback
+  //device_config.pUserData
 
   if (ma_device_init(NULL, &device_config, &_device) != MA_SUCCESS) {
     audio_error("Failed to initialise MiniAudio device.");
-    return nullptr;
+    return;
   }
 
   ma_device_start(&_device);
 
-  audio_cat.info() << "Using MiniAudio device " << device.playback.name <<
+  audio_cat.info() << "Using MiniAudio device " << _device.playback.name <<
     "." << std::endl;
 
   // TODO share resource manager between MA engines
-  resource_mgr_conf = ma_resource_manager_config_init();
+  _resource_mgr_conf = ma_resource_manager_config_init();
   // TODO we need to make a custom ma_decoding_backend_vtable for
   //  vorbis etc and set it on the config
-  resource_mgr_conf.decodedFormat     = _device.playback.format;
-  resource_mgr_conf.decodedChannels   = _device.playback.channels;
-  resource_mgr_conf.decodedSampleRate = _device.sampleRate;
+  _resource_mgr_conf.decodedFormat     = _device.playback.format;
+  _resource_mgr_conf.decodedChannels   = _device.playback.channels;
+  _resource_mgr_conf.decodedSampleRate = _device.sampleRate;
 #ifdef HAVE_THREADS
-  resource_mgr_conf.jobThreadCount = 2;
+  _resource_mgr_conf.jobThreadCount = 2;
 #endif
 
   // here we could assign the p3d VFS to the resource mgr
   //  this would get us access to minified files
   //resource_mgr_conf.pVFS = VirtualFileSystem::get_global_pointer();
-  if (ma_resource_manager_init(&resource_mgr_conf, &_resource_mgr)
-      != MA_SUCCESS {
+  if (ma_resource_manager_init(&_resource_mgr_conf, &_resource_mgr)
+      != MA_SUCCESS) {
     ma_device_uninit(&_device);
     audio_error("Failed to initialise MiniAudio resource manager.");
-  )
+  }
 
-  _managers->insert(this);
+  _managers.insert(this);
 
   ma_engine_config audio_engine_conf;
   audio_engine_conf = ma_engine_config_init();
@@ -84,9 +84,9 @@ MiniAudioManager() {
   audio_engine_conf.noAutoStart = MA_TRUE;
   if (ma_engine_init(&audio_engine_conf, &_engine) != MA_SUCCESS) {
     ma_device_uninit(&_device);
-    ma_error("Failed to initialise MiniAudio engine.");
-    return nullptr;
-  );
+    audio_error("Failed to initialise MiniAudio engine.");
+    return;
+  };
 
   audio_3d_set_listener_attributes(
       0, 0, 0,
@@ -94,7 +94,7 @@ MiniAudioManager() {
       1, 0, 0,
       0, 0, 1);
 
-  _num_sources_cached = 0;
+  _num_concurrent_sounds = 0;
 
   // TODO default flags for global sound group:
   //  0 loads without decoding at init time
@@ -110,6 +110,9 @@ MiniAudioManager() {
     audio_cat.debug() << "MiniAudio version: " << ma_version_string()
                       << std::endl;
   // TODO miniaudio config? logging?
+
+  _is_valid = true;
+  _active = true;
 }
 
 int MiniAudioManager::get_speaker_setup() {
@@ -118,7 +121,7 @@ int MiniAudioManager::get_speaker_setup() {
 
 void MiniAudioManager::set_speaker_setup(SpeakerModeCategory cat) {
   audio_warning("MiniAudio does not support setting channel setup.\n"
-                << cat " channels not set.");
+                << cat << " channels not set.");
 }
 
 /*
@@ -127,7 +130,8 @@ void MiniAudioManager::set_speaker_setup(SpeakerModeCategory cat) {
 bool MiniAudioManager::configure_filters(FilterProperties *config) {
   const FilterProperties::ConfigVector &conf = config->get_config();
   if (_global_fx == nullptr)
-    ma_node_init(&_engine.nodeGraph, node_config, &alloc_cb, &_global_fx);
+    // TODO node config
+    ma_node_init(&_engine.nodeGraph, nullptr, nullptr, &_global_fx);
 
   // TODO if we have set _global_fx, step through and reinit() where relevant
   switch (conf._type) {
