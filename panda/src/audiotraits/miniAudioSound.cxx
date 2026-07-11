@@ -383,25 +383,25 @@ void MiniAudioSound::get_3d_attributes(
       PN_stdfloat *px, PN_stdfloat *py, PN_stdfloat *pz,
       PN_stdfloat *vx, PN_stdfloat *vy, PN_stdfloat *vz) {
   //ReMutexHolder holder(_lock);
-  _position = (LVector3)ma_sound_get_position(&_ma_sound);
-  *px = _position.x;
-  *py = _position.y;
-  *pz = _position.z;
-  _velocity = (LVector3)ma_sound_get_velocity(&_ma_sound);
-  *vx = _velocity.x;
-  *vy = _velocity.y;
-  *vz = _velocity.z;
+  _position = LVector3(ma_sound_get_position(&_ma_sound).x, ma_sound_get_position(&_ma_sound).y, ma_sound_get_position(&_ma_sound).z);
+  *px = _position.get_x();
+  *py = _position.get_y();
+  *pz = _position.get_z();
+  _velocity = LVector3(ma_sound_get_velocity(&_ma_sound).x, ma_sound_get_velocity(&_ma_sound).y, ma_sound_get_velocity(&_ma_sound).z);
+  *vx = _velocity.get_x();
+  *vy = _velocity.get_y();
+  *vz = _velocity.get_z();
 }
 
 void MiniAudioSound::set_3d_direction(LVector3 d) {
   //ReMutexHolder holder(_lock);
   _direction = d;
-  ma_sound_set_direction(&_ma_sound, d.x, d.y, d.z);
+  ma_sound_set_direction(&_ma_sound, d.get_x(), d.get_y(), d.get_z());
 }
 
 LVector3 MiniAudioSound::get_3d_direction() const {
   //ReMutexHolder holder(_lock);
-  _direction = (LVector3)ma_sound_get_direction(&_ma_sound);
+  _direction = LVector3(ma_sound_get_direction(&_ma_sound).x, ma_sound_get_direction(&_ma_sound).y, ma_sound_get_direction(&_ma_sound).z);
   return _direction;
 }
 

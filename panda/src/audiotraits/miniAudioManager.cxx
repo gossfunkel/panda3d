@@ -361,7 +361,8 @@ void MiniAudioManager::reduce_sounds_playing_to(unsigned int count) {
   for (auto sound_it = _all_sounds.begin();
        _num_concurrent_sounds > count; sound_it.next()) {
     if (auto s_ptr = sound_it->lock()) {
-      if (s_ptr == _all_sounds.end() {
+      auto it = std::find(_all_sounds.begin(), _all_sounds.end(), s_ptr);
+      if (it == _all_sounds.end()) {
         audio_error("Could not stop sounds to reduce concurrent sound limit");
         return;
       }
@@ -449,35 +450,35 @@ audio_3d_get_listener_attributes(
     PN_stdfloat *vx, PN_stdfloat *vy, PN_stdfloat *vz, //vel
     PN_stdfloat *fx, PN_stdfloat *fy, PN_stdfloat *fz, //fwd
     PN_stdfloat *ux, PN_stdfloat *uy, PN_stdfloat *uz) { //up
-  l_pos = ma_engine_listener_get_position(&_engine, 0);
-  l_vel = ma_engine_listener_get_velocity(&_engine, 0);
-  l_fwd = ma_engine_listener_get_direction(&_engine, 0);
-  l_up = ma_engine_listener_get_world_up(&_engine, 0);
+  l_pos = LVector3(ma_engine_listener_get_position(&_engine, 0).x, ma_engine_listener_get_position(&_engine, 0).y, ma_engine_listener_get_position(&_engine, 0).z);
+  l_vel = LVector3(ma_engine_listener_get_velocity(&_engine, 0).x, ma_engine_listener_get_velocity(&_engine, 0).y, ma_engine_listener_get_velocity(&_engine, 0).z);
+  l_fwd = LVector3(ma_engine_listener_get_direction(&_engine, 0).x, ma_engine_listener_get_direction(&_engine, 0).y, ma_engine_listener_get_direction(&_engine, 0).z);
+  l_up = LVector3(ma_engine_listener_get_world_up(&_engine, 0).x, ma_engine_listener_get_world_up(&_engine, 0).y, ma_engine_listener_get_world_up(&_engine, 0).z);
   CoordinateSystem cs = get_default_coordinate_system();
   switch (cs) {
   case CS_yup_right:
-    *px = l_pos.x; *py = l_pos.y; *pz = l_pos.z;
-    *vx = l_vel.x; *vy = l_vel.y; *vz = l_vel.z;
-    *fx = l_fwd.x; *fy = l_fwd.y; *fz = l_fwd.z;
-    *ux = l_up.x; *uy = l_up.y; *uz = l_up.z;
+    *px = l_pos.get_x(); *py = l_pos.get_y(); *pz = l_pos.get_z();
+    *vx = l_vel.get_x(); *vy = l_vel.get_y(); *vz = l_vel.get_z();
+    *fx = l_fwd.get_x(); *fy = l_fwd.get_y(); *fz = l_fwd.get_z();
+    *ux = l_up.get_x(); *uy = l_up.get_y(); *uz = l_up.get_z();
     break;
   case CS_zup_right:
-    *px = l_pos.x; *py = l_pos.z; *pz = -l_pos.y;
-    *vx = l_vel.x; *vy = l_vel.z; *vz = -l_vel.y;
-    *fx = l_fwd.x; *fy = l_fwd.z; *fz = -l_fwd.y;
-    *ux = l_up.x; *uy = l_up.z; *uz = -l_up.y;
+    *px = l_pos.get_x(); *py = l_pos.get_z(); *pz = -l_pos.get_y();
+    *vx = l_vel.get_x(); *vy = l_vel.get_z(); *vz = -l_vel.get_y();
+    *fx = l_fwd.get_x(); *fy = l_fwd.get_z(); *fz = -l_fwd.get_y();
+    *ux = l_up.get_x(); *uy = l_up.get_z(); *uz = -l_up.get_y();
     break;
   case CS_yup_left:
-    *px = l_pos.x; *py = l_pos.y; *pz = -l_pos.z;
-    *vx = l_vel.x; *vy = l_vel.y; *vz = -l_vel.z;
-    *fx = l_fwd.x; *fy = l_fwd.y; *fz = -l_fwd.z;
-    *ux = l_up.x; *uy = l_up.y; *uz = -l_up.z;
+    *px = l_pos.get_x(); *py = l_pos.get_y(); *pz = -l_pos.get_z();
+    *vx = l_vel.get_x(); *vy = l_vel.get_y(); *vz = -l_vel.get_z();
+    *fx = l_fwd.get_x(); *fy = l_fwd.get_y(); *fz = -l_fwd.get_z();
+    *ux = l_up.get_x(); *uy = l_up.get_y(); *uz = -l_up.get_z();
     break;
   case CS_zup_left:
-    *px = l_pos.x; *py = l_pos.z; *pz = l_pos.y;
-    *vx = l_vel.x; *vy = l_vel.z; *vz = l_vel.y;
-    *fx = l_fwd.x; *fy = l_fwd.z; *fz = l_fwd.y;
-    *ux = l_up.x; *uy = l_up.z; *uz = l_up.y;
+    *px = l_pos.get_x(); *py = l_pos.get_z(); *pz = l_pos.get_y();
+    *vx = l_vel.get_x(); *vy = l_vel.get_z(); *vz = l_vel.get_y();
+    *fx = l_fwd.get_x(); *fy = l_fwd.get_z(); *fz = l_fwd.get_y();
+    *ux = l_up.get_x(); *uy = l_up.get_z(); *uz = l_up.get_y();
     break;
   default:
     nassert_raise("Invalid coordinate system given to MiniAudio.");
