@@ -29,7 +29,7 @@ using std::string;
 
 TypeHandle AudioManager::_type_handle;
 
-
+PT(AudioSound) AudioManager::_null_sound = new NullAudioSound();
 namespace {
   AudioManager *create_NullAudioManager() {
     audio_debug("create_NullAudioManager()");
@@ -122,17 +122,15 @@ PT(AudioManager) AudioManager::create_AudioManager() {
  */
 AudioManager::
 ~AudioManager() {
-  AudioSound *null_sound = _null_sound.load(std::memory_order_acquire);
-  if (null_sound != nullptr) {
-    unref_delete(null_sound);
-  }
+  // intentionally blank
 }
 
 /**
- *
+ * Default constructor
  */
 AudioManager::
-AudioManager() : _null_sound(nullptr) {
+AudioManager() {
+  // intentionally blank
 }
 
 /**
@@ -143,30 +141,19 @@ AudioManager() : _null_sound(nullptr) {
  */
 void AudioManager::
 shutdown() {
+  // intentionally blank
 }
 
 /**
  * Returns a special NullAudioSound object that has all the interface of a
- * normal sound object, but plays no sound.  This same object may also be
- * returned by get_sound() if it fails.
+ * normal sound object, but does nothing.  This same object may also be
+ * returned by get_sound() if it fails. This allows error-free handling of
+ * failure cases. Ensure to use is_valid() if a null sound may be
+ * generated, as you will not be given a null pointer.
  */
 PT(AudioSound) AudioManager::
 get_null_sound() {
-  AudioSound *sound = _null_sound.load(std::memory_order_acquire);
-
-  if (sound == nullptr) {
-    sound = new NullAudioSound;
-    sound->ref();
-    AudioSound *old_sound = nullptr;
-    if (!_null_sound.compare_exchange_strong(old_sound, sound, std::memory_order_release, std::memory_order_acquire)) {
-      // Someone else must have assigned the AudioSound first.  OK.
-      unref_delete(sound);
-      sound = old_sound;
-    }
-    nassertr(sound != nullptr, nullptr);
-  }
-
-  return sound;
+  return _null_sound;
 }
 
 /**

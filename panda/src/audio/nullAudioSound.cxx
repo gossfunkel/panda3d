@@ -10,6 +10,8 @@
  * @author skyler
  * @date 2001-06-06
  * Prior system by: cary
+ * Modified by: katie <katherineegoss@gmail.com>
+ * Modified: 2026-07
  */
 
 #include "nullAudioSound.h"
