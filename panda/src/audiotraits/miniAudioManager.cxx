@@ -361,7 +361,8 @@ void MiniAudioManager::reduce_sounds_playing_to(unsigned int count) {
   for (auto sound_it = _all_sounds.begin();
        _num_concurrent_sounds > count; sound_it.next()) {
     if (auto s_ptr = sound_it->lock()) {
-      if (s_ptr == _all_sounds.end()) {
+      auto it = std::find(_all_sounds.begin(), _all_sounds.end(), s_ptr);
+      if (it == _all_sounds.end()) {
         audio_error("Could not stop sounds to reduce concurrent sound limit");
         return;
       }
@@ -449,10 +450,10 @@ audio_3d_get_listener_attributes(
     PN_stdfloat *vx, PN_stdfloat *vy, PN_stdfloat *vz, //vel
     PN_stdfloat *fx, PN_stdfloat *fy, PN_stdfloat *fz, //fwd
     PN_stdfloat *ux, PN_stdfloat *uy, PN_stdfloat *uz) { //up
-  l_pos = ma_engine_listener_get_position(&_engine, 0);
-  l_vel = ma_engine_listener_get_velocity(&_engine, 0);
-  l_fwd = ma_engine_listener_get_direction(&_engine, 0);
-  l_up = ma_engine_listener_get_world_up(&_engine, 0);
+  l_pos = LVector3(ma_engine_listener_get_position(&_engine, 0).x, ma_engine_listener_get_position(&_engine, 0).y, ma_engine_listener_get_position(&_engine, 0).z);
+  l_vel = LVector3(ma_engine_listener_get_velocity(&_engine, 0).x, ma_engine_listener_get_velocity(&_engine, 0).y, ma_engine_listener_get_velocity(&_engine, 0).z);
+  l_fwd = LVector3(ma_engine_listener_get_direction(&_engine, 0).x, ma_engine_listener_get_direction(&_engine, 0).y, ma_engine_listener_get_direction(&_engine, 0).z);
+  l_up = LVector3(ma_engine_listener_get_world_up(&_engine, 0).x, ma_engine_listener_get_world_up(&_engine, 0).y, ma_engine_listener_get_world_up(&_engine, 0).z);
   CoordinateSystem cs = get_default_coordinate_system();
   switch (cs) {
   case CS_yup_right:
