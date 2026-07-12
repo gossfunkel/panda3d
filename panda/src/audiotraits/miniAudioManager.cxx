@@ -13,6 +13,7 @@
 
 #include "miniAudioManager.h"
 #include "miniAudioSound.h"
+#include "virtualFileSystem.h"
 
 TypeHandle MiniAudioManager::_type_handle;
 
@@ -245,8 +246,8 @@ void MiniAudioManager::uncache_sound(const Filename &file_name) {
   auto sound_it = _all_sounds.begin();
   while (sound_it != _all_sounds.end())
     if (auto s_ptr = sound_it->lock()) {
-      if (s_ptr.file_name == file_name ||
-          s_ptr.file_name == path)
+      if (s_ptr.basename == file_name ||
+          s_ptr.basename == path)
         s_ptr.uncache();
         // should this uncache all/any sounds with this filename?
         //return;
