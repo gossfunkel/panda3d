@@ -208,13 +208,13 @@ get_sound(const Filename &file_name, bool positional, int mode) {
     } else cached_it->second++;
   }
 
-  PT(AudioSound) new_sound =
+  MiniAudioSound *new_ma_sound =
     new MiniAudioSound(this, file_name, positional, mode);
 
   if (mode != StreamMode{SM_stream})
-    new_sound->_manager_it =
-      _all_sounds.emplace_back((WPT(AudioSound)(*new_sound)));
-  return new_sound;
+    new_ma_sound->_manager_it =
+      _all_sounds.emplace_back((WPT(AudioSound))new_ma_sound);
+  return (PT(AudioSound))new_sound;
 }
 
 /*
