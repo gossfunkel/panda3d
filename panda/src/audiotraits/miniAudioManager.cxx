@@ -131,7 +131,7 @@ bool MiniAudioManager::configure_filters(FilterProperties *config) {
   const FilterProperties::ConfigVector &conf = config->get_config();
   if (_global_fx == nullptr)
     // TODO node config
-    ma_node_init(&_engine.nodeGraph, nullptr, nullptr, &_global_fx);
+    ma_node_init(&_engine.nodeGraph, nullptr, nullptr, _global_fx);
 
   // TODO if we have set _global_fx, step through and reinit() where relevant
   switch (conf._type) {
@@ -211,10 +211,12 @@ get_sound(const Filename &file_name, bool positional, int mode) {
   MiniAudioSound *new_ma_sound =
     new MiniAudioSound(this, file_name, positional, mode);
 
-  if (mode != StreamMode{SM_stream})
-    new_ma_sound->_manager_it =
-      _all_sounds.emplace_back((WPT(AudioSound))new_ma_sound);
-  return (PT(AudioSound))new_sound;
+  if (mode != StreamMode{SM_stream}) {
+    // TODO this must be done thread-safely
+    _all_sounds.emplace_back((WPT(AudioSound))new_ma_sound);
+    new_ma_sound->_manager_it = _all_sounds.back();
+  }
+  return (PT(AudioSound))new_ma_sound;
 }
 
 /*
