@@ -134,7 +134,7 @@ bool MiniAudioManager::configure_filters(FilterProperties *config) {
     ma_node_init(&_engine.nodeGraph, nullptr, nullptr, _global_fx);
 
   // TODO if we have set _global_fx, step through and reinit() where relevant
-  for (FilterProperies::FilterConfig conf_item : conf) {
+  for (FilterProperties::FilterConfig conf_item : conf) {
     switch (conf_item._type) {
       case FilterProperties::FT_lowpass:
         // ma_loshelf_node
