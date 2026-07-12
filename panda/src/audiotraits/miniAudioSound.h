@@ -25,7 +25,7 @@ class EXPCL_MINI_AUDIO MiniAudioSound final : public AudioSound {
   friend class MiniAudioManager;
 
   MiniAudioSound(MiniAudioManager *manager,
-               Filename &file_name,
+               const Filename &file_name,
                bool positional,
                int mode);
   MiniAudioSound(const MiniAudioSound &copy_sound);
