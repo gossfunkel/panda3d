@@ -41,7 +41,7 @@ class EXPCL_MINI_AUDIO MiniAudioManager final : public AudioManager {
   static int _active_managers;
   bool _active;
   bool _is_valid;
-  int _cache_limit;
+  unsigned int _cache_limit;
   PN_stdfloat _volume;
   PN_stdfloat _play_rate;
 
@@ -62,7 +62,7 @@ class EXPCL_MINI_AUDIO MiniAudioManager final : public AudioManager {
   // deque of cached AudioSounds in this manager
   pdeque<WPT(AudioSound)> _all_sounds;
   // counting number of sounds referencing cached sources
-  pmap<Filename, int>_cache_counts;
+  pmap<Filename, unsigned int>_cache_counts;
   // MiniAudio node containing all sounds
   ma_sound _all_sounds_grp;
   // maximum playing sounds

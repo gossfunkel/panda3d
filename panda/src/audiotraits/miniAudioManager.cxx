@@ -201,9 +201,9 @@ get_sound(const Filename &file_name, bool positional, int mode) {
     if (cached_it == _cache_counts.end()) {
       if (_cache_counts.size() >= _cache_limit) {
         audio_error("Cache limit reached; cannot load new sound file");
-        return get_null_sound();.
+        return get_null_sound();
       } else {
-        _cached_it.emplace({file_name, 1});
+        _cache_counts.emplace(std::pair(file_name, 1));
       }
     } else cached_it->second++;
   }

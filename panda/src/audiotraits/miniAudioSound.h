@@ -25,7 +25,6 @@ class EXPCL_MINI_AUDIO MiniAudioSound final : public AudioSound {
   friend class MiniAudioManager;
 
   MiniAudioSound(MiniAudioManager *manager,
-               ma_data_source *data_src,
                Filename &file_name,
                bool positional,
                int mode);
