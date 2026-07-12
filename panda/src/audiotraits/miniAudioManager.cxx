@@ -134,43 +134,45 @@ bool MiniAudioManager::configure_filters(FilterProperties *config) {
     ma_node_init(&_engine.nodeGraph, nullptr, nullptr, _global_fx);
 
   // TODO if we have set _global_fx, step through and reinit() where relevant
-  switch (conf._type) {
-    case FilterProperties::FT_lowpass:
-      // ma_loshelf_node
-      break;
-    case FilterProperties::FT_highpass:
-      // ma_hishelf_node
-      break;
-    case FilterProperties::FT_echo:
-      // ma_delay_node
-      break;
-    case FilterProperties::FT_flange:
-      // ma_delay_node
-      break;
-    case FilterProperties::FT_distort:
-      // TODO
-      break;
-    case FilterProperties::FT_normalize:
-      // TODO
-      break;
-    case FilterProperties::FT_parameq:
-      // ma_biquad_node ?
-      break;
-    case FilterProperties::FT_pitchshift:
-      // TODO
-      break;
-    case FilterProperties::FT_chorus:
-      // TODO
-      break;
-    case FilterProperties::FT_sfxreverb:
-      // ma_delay
-      break;
-    case FilterProperties::FT_compress:
-      // TODO
-      break;
-    default:
-      audio_error("Malformed filter config passed to MiniAudio Manager.");
-      return false;
+  for (FilterProperies::FilterConfig conf_item : conf) {
+    switch (conf_item._type) {
+      case FilterProperties::FT_lowpass:
+        // ma_loshelf_node
+        break;
+      case FilterProperties::FT_highpass:
+        // ma_hishelf_node
+        break;
+      case FilterProperties::FT_echo:
+        // ma_delay_node
+        break;
+      case FilterProperties::FT_flange:
+        // ma_delay_node
+        break;
+      case FilterProperties::FT_distort:
+        // TODO
+        break;
+      case FilterProperties::FT_normalize:
+        // TODO
+        break;
+      case FilterProperties::FT_parameq:
+        // ma_biquad_node ?
+        break;
+      case FilterProperties::FT_pitchshift:
+        // TODO
+        break;
+      case FilterProperties::FT_chorus:
+        // TODO
+        break;
+      case FilterProperties::FT_sfxreverb:
+        // ma_delay
+        break;
+      case FilterProperties::FT_compress:
+        // TODO
+        break;
+      default:
+        audio_error("Malformed filter config passed to MiniAudio Manager.");
+        return false;
+    }
   }
   // ConfigVector is a typedef of pvector<FilterConfig>
   //struct FilterConfig {
