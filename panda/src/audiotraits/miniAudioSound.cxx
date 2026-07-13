@@ -45,10 +45,10 @@ MiniAudioSound(
       _direction(0.0f, 0.0f, 0.0f) {
   //ReMutexHolder holder(MiniAudioManager::_lock);
   //ReMutexHolder holder(_lock);
-
   std::string src_fn = file_name.get_basename();
   // TODO set larger files (e.g. soundtracks/music) to stream mode
-  _ma_flags = (mode == StreamMode{SM_stream})
+  _ma_flags =
+    (mode == AudioManager::StreamMode{AudioManager::SM_stream})
     ? MA_RESOURCE_MANAGER_DATA_SOURCE_FLAG_STREAM // decode in 1s pages
     : MA_RESOURCE_MANAGER_DATA_SOURCE_FLAG_ASYNC; // load to ram later
   //_ma_flags |= MA_RESOURCE_MANAGER_DATA_SOURCE_FLAG_DECODE; // decode to ram
@@ -82,7 +82,7 @@ MiniAudioSound(const MiniAudioSound &copy_sound) :
     _play_rate(copy_sound._play_rate),
     _min_dist(copy_sound._min_dist),
     _max_dist(copy_sound._max_dist),
-    _drop_off_factor(copy_sound._drop_off),
+    _drop_off_factor(copy_sound._drop_off_factor),
     _length(copy_sound._length),
     _loop_count(copy_sound._loop_count),
     _loops_completed(0),
@@ -130,7 +130,8 @@ void MiniAudioSound::cache() {
   //ReMutexHolder holder(MiniAudioManager::_lock);
   //ReMutexHolder holder(_lock);
   if (_ma_sound != nullptr) return;
-  if (_desired_mode != StreamMode{SM_stream}) {
+  if (_desired_mode !=
+      AudioManager::StreamMode{AudioManager::SM_stream}) {
     auto cache_it = _manager->_cache_counts.find(_basename);
     if (cache_it == _manager->_cache_counts.end())
       _manager->_cache_counts.emplace({_basename, 1});
@@ -157,7 +158,8 @@ bool MiniAudioSound::uncache() {
   //ReMutexHolder holder(MiniAudioManager::_lock);
   //ReMutexHolder holder(_lock);
   if (ma_sound_is_playing(&_ma_sound) ||
-      _desired_mode == StreamMode{SM_stream}) return false;
+      _desired_mode == AudioManager::StreamMode{AudioManager::SM_stream})
+    return false;
   set_active(false);
   _ma_flags |= (!MA_SOUND_FLAG_ASYNC) | MA_SOUND_FLAG_DECODE;
   if (_ma_sound == nullptr) return true;
