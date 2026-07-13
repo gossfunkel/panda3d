@@ -352,7 +352,7 @@ bool MiniAudioManager::get_active() const {
 }
 
 void MiniAudioManager::
-set_concurent_sound_limit(unsigned int) {
+set_concurrent_sound_limit(unsigned int) {
   //ReMutexHolder holder(_lock);
   _concurrent_sound_limit = limit;
   reduce_sounds_playing_to(_concurrent_sound_limit);
