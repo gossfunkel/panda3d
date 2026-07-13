@@ -266,7 +266,7 @@ void MiniAudioManager::clear_cache() {
 
   auto sound_it = _all_sounds.begin();
   while (sound_it != _all_sounds.end()) {
-    if (auto s_ptr = sound_it.lock())
+    if (auto s_ptr = sound_it->lock())
         ((PT(MiniAudioSound))s_ptr)->uncache();
     _all_sounds.erase(sound_it);
   }
@@ -290,15 +290,15 @@ void MiniAudioManager::set_cache_limit(unsigned int count) {
   // MiniAudio until we have reached the new cache limit
   for (auto sound_it = _all_sounds.begin();
        _cache_counts.size() > count; sound_it++) {
-    if (auto s_ptr = sound_it->lock()) {
-      if (s_ptr == _all_sounds.end()) {
+    if (PT(MiniAudioSound) s_ptr = sound_it->lock()) {
+      if (sound_it == _all_sounds.end()) {
         audio_error("Could not uncache sounds to reduce cache size to new limit");
         return;
       }
-      s_ptr.stop();
-      s_ptr.uncache();
-    } else // pointer has expired
-      _all_sounds.erase(sound_it);
+      s_ptr->stop();
+      s_ptr->uncache();
+    }
+    _all_sounds.erase(sound_it);
   }
 }
 
