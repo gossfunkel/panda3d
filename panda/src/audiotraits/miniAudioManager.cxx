@@ -548,6 +548,7 @@ shutdown() {
   nassertv(_active_managers == 0);
 }
 
+MiniAudioManager::
 ~MiniAudioManager() {
   //ReMutexHolder holder(_lock);
   nassertv(_managers != nullptr);

@@ -17,7 +17,7 @@ TypeHandle MiniAudioSound::_type_handle;
 MiniAudioSound::
 MiniAudioSound(
     MiniAudioManager *manager,
-    Filename &file_name,
+    const Filename &file_name,
     bool positional,
     int mode) :
     AudioSound(positional),
@@ -41,7 +41,7 @@ MiniAudioSound(
       _cone_inner_angle(360.0f),
       _cone_outer_angle(360.0f),
       _cone_outer_gain(0.0f),
-      _location(0.0f, 0.0f, 0.0f),
+      _position(0.0f, 0.0f, 0.0f),
       _velocity(0.0f, 0.0f, 0.0f),
       _direction(0.0f, 0.0f, 0.0f) {
   //ReMutexHolder holder(MiniAudioManager::_lock);
@@ -97,7 +97,7 @@ MiniAudioSound(const MiniAudioSound &copy_sound) :
     _cone_inner_angle(copy_sound._cone_inner_angle),
     _cone_outer_angle(copy_sound._cone_outer_angle),
     _cone_outer_gain(copy_sound._cone_outer_gain),
-    _location(copy_sound._location),
+    _position(copy_sound._position),
     _velocity(copy_sound._velocity),
     _direction(copy_sound._direction),
     _ma_flags(copy_sound._ma_flags) {

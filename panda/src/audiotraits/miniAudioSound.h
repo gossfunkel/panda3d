@@ -44,7 +44,7 @@ class EXPCL_MINI_AUDIO MiniAudioSound final : public AudioSound {
   PN_stdfloat     _balance; // -1..1
   PN_stdfloat     _play_rate; // 0..1.0
 
-  LVector3        _location;
+  LVector3        _position;
   LVector3        _velocity;
   LVector3        _direction;
 
@@ -99,6 +99,8 @@ public:
   void play();
   void stop();
 
+  // add to or remove from manager sound cache
+  void cache();
   void uncache();
 
   // loop: false = play once; true = play forever.  inits to false.
