@@ -542,7 +542,7 @@ shutdown() {
   audio_cat.debug() << "Shutting down Audio Managers." << std::endl;
   //ReMutexHolder holder(_lock);
   if (_managers != nullptr)
-    for (Managers::iterator man_it : _managers)
+    for (pset<AudioManager *>::iterator man_it : _managers)
       man_it->cleanup();
 
   nassertv(_active_managers == 0);
@@ -552,7 +552,7 @@ MiniAudioManager::
 ~MiniAudioManager() {
   //ReMutexHolder holder(_lock);
   nassertv(_managers != nullptr);
-  Managers::iterator man_it = _managers->find(this);
+  auto man_it = _managers->find(this);
   nassertv(man_it != _managers->end());
   _managers->erase(man_it);
   cleanup();
