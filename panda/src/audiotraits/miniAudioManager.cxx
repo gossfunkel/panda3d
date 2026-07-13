@@ -246,9 +246,9 @@ void MiniAudioManager::uncache_sound(const Filename &file_name) {
   auto sound_it = _all_sounds.begin();
   while (sound_it != _all_sounds.end())
     if (auto s_ptr = sound_it->lock()) {
-      if (s_ptr->basename == file_name ||
-          s_ptr->basename == path)
-        s_ptr.uncache();
+      if (s_ptr->get_name() == file_name.get_basename() ||
+          s_ptr->get_name() == path.get_basename())
+        s_ptr->uncache();
         // should this uncache all/any sounds with this filename?
         //return;
     } else // pointer has expired
@@ -263,7 +263,7 @@ void MiniAudioManager::clear_cache() {
   audio_cat.debug() << "Clearing audio cache..." << std::endl;
 
   for (auto sound_it : _all_sounds) {
-    if (auto s_ptr = sound_it->lock()) s_ptr->uncache();
+    if (auto s_ptr = sound_it.lock()) s_ptr->uncache();
     else _all_sounds.erase(sound_it);
   }
 }
