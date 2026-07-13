@@ -217,7 +217,7 @@ get_sound(const Filename &file_name, bool positional, int mode) {
   if (mode != StreamMode{SM_stream}) {
     // TODO this must be done thread-safely
     _all_sounds.emplace_back((WPT(AudioSound))new_ma_sound);
-    new_ma_sound->_manager_it = _all_sounds.back();
+    new_ma_sound->_manager_it = _all_sounds.end();
   }
   return (PT(AudioSound))new_ma_sound;
 }
@@ -246,8 +246,8 @@ void MiniAudioManager::uncache_sound(const Filename &file_name) {
   auto sound_it = _all_sounds.begin();
   while (sound_it != _all_sounds.end())
     if (auto s_ptr = sound_it->lock()) {
-      if (s_ptr.basename == file_name ||
-          s_ptr.basename == path)
+      if (s_ptr->basename == file_name ||
+          s_ptr->basename == path)
         s_ptr.uncache();
         // should this uncache all/any sounds with this filename?
         //return;
