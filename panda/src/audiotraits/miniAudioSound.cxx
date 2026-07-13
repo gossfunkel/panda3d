@@ -34,7 +34,6 @@ MiniAudioSound(
       _loops_completed(0),
       _desired_mode(mode),
       _start_time(0.0),
-      _current_time(0.0),
       _basename(file_name.get_basename()),
       _active(manager->get_active()),
       _paused(false),
@@ -90,7 +89,6 @@ MiniAudioSound(const MiniAudioSound &copy_sound) :
     _loop_start(copy_sound._loop_start),
     _desired_mode(copy_sound._desired_mode),
     _start_time(copy_sound._start_time),
-    _time(0.),
     _basename(copy_sound._basename),
     _active(copy_sound._active),
     _paused(copy_sound._paused),
@@ -290,7 +288,6 @@ PN_stdfloat MiniAudioSound::get_loop_start() {
 
 void MiniAudioSound::set_time(PN_stdfloat time) {
   //ReMutexHolder holder(_lock);
-  _time = time;
   ma_sound_seek_to_second(&_ma_sound, time);
 }
 
@@ -492,7 +489,7 @@ void MiniAudioSound::finished() {
   if (!is_valid()) return;
 
   stop();
-  _time = _length;
+  set_time(_length);
   if (!_finished_event.empty()) throw_event(_finished_event);
 }
 
