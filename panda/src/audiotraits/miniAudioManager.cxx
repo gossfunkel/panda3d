@@ -244,7 +244,7 @@ void MiniAudioManager::uncache_sound(const Filename &file_name) {
   VirtualFileSystem *vfs = VirtualFileSystem::get_global_ptr();
   vfs->resolve_filename(path, get_model_path());
   auto sound_it = _all_sounds.begin();
-  while (sound_it != _all_sounds.end())
+  while (sound_it != _all_sounds.end()) {
     if (auto s_ptr = sound_it->lock()) {
       if (s_ptr->get_name() == file_name.get_basename() ||
           s_ptr->get_name() == path.get_basename())
@@ -253,6 +253,8 @@ void MiniAudioManager::uncache_sound(const Filename &file_name) {
         //return;
     } else // pointer has expired
       _all_sounds.erase(sound_it);
+    sound_it++;
+  }
 }
 
 /*
@@ -262,10 +264,11 @@ void MiniAudioManager::clear_cache() {
   //ReMutexHolder holder(_lock);
   audio_cat.debug() << "Clearing audio cache..." << std::endl;
 
-  for (auto sound_it : _all_sounds) {
+  auto sound_it = _all_sounds.begin();
+  while (sound_it != _all_sounds.end()) {
     if (auto s_ptr = sound_it.lock())
         ((PT(MiniAudioSound))s_ptr)->uncache();
-    else _all_sounds.erase(sound_it);
+    _all_sounds.erase(sound_it);
   }
 }
 
@@ -286,7 +289,7 @@ void MiniAudioManager::set_cache_limit(unsigned int count) {
   // step through all sounds, stopping them and unloading them from
   // MiniAudio until we have reached the new cache limit
   for (auto sound_it = _all_sounds.begin();
-       _cache_counts.size() > count; sound_it.next()) {
+       _cache_counts.size() > count; sound_it++) {
     if (auto s_ptr = sound_it->lock()) {
       if (s_ptr == _all_sounds.end()) {
         audio_error("Could not uncache sounds to reduce cache size to new limit");
