@@ -88,6 +88,7 @@ public:
   bool configure_filters(FilterProperties *config);
 
   virtual void shutdown();
+  void cleanup();
 
   virtual bool is_valid();
 

@@ -351,7 +351,7 @@ bool MiniAudioManager::get_active() const {
 }
 
 void MiniAudioManager::
-set_concurrent_sound_limit(unsigned int) {
+set_concurrent_sound_limit(unsigned int limit) {
   //ReMutexHolder holder(_lock);
   _concurrent_sound_limit = limit;
   reduce_sounds_playing_to(_concurrent_sound_limit);
@@ -537,9 +537,9 @@ void MiniAudioManager::
 shutdown() {
   audio_cat.debug() << "Shutting down Audio Managers." << std::endl;
   //ReMutexHolder holder(_lock);
-  if (_managers != nullptr)
-    for (pset<AudioManager *>::iterator man_it : _managers)
-      man_it->cleanup();
+  if (_managers.size() < 1)
+    for (auto man_it : _managers)
+      ((PT(MiniAudioManager))man_it)->cleanup();
 
   nassertv(_active_managers == 0);
 }
@@ -547,10 +547,10 @@ shutdown() {
 MiniAudioManager::
 ~MiniAudioManager() {
   //ReMutexHolder holder(_lock);
-  nassertv(_managers != nullptr);
-  auto man_it = _managers->find(this);
-  nassertv(man_it != _managers->end());
-  _managers->erase(man_it);
+  nassertv(_managers.size() > 0);
+  auto man_it = _managers.find(this);
+  nassertv(man_it != _managers.end());
+  _managers.erase(man_it);
   cleanup();
 }
 
