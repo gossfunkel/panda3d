@@ -571,12 +571,13 @@ void MiniAudioManager::
 cleanup() {
   audio_cat.debug() << "Cleaning up Audio Manager..." << std::endl;
   //ReMutexHolder holder(_lock);
-  for (auto sound_it : _all_sounds) {
+  for (auto sound_it = _all_sounds.begin();
+       sound_it != _all_sounds.end(); sound_it++) {
     if (auto s_ptr = sound_it->lock()) {
       s_ptr->stop();
-      _all_sounds.erase(s_ptr);
       delete s_ptr;
-    } else _all_sounds.erase(sound_it);
+    }
+    _all_sounds.erase(sound_it);
   }
 
   ma_device_uninit(&_device);
