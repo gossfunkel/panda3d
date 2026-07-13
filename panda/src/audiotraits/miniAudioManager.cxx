@@ -368,14 +368,9 @@ void MiniAudioManager::reduce_sounds_playing_to(unsigned int count) {
   audio_cat.debug() << "Reducing playing sounds to " << count
                     << "." << std::endl;
   for (auto sound_it = _all_sounds.begin();
-       _num_concurrent_sounds > count; sound_it.next()) {
+       _num_concurrent_sounds > count; sound_it++) {
     if (auto s_ptr = sound_it->lock()) {
-      auto it = std::find(_all_sounds.begin(), _all_sounds.end(), s_ptr);
-      if (it == _all_sounds.end()) {
-        audio_error("Could not stop sounds to reduce concurrent sound limit");
-        return;
-      }
-      s_ptr.stop();
+      s_ptr->stop();
     } else // pointer has expired
       _all_sounds.erase(sound_it);
   }
