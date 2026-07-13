@@ -322,7 +322,6 @@ void MiniAudioManager::set_volume(PN_stdfloat volume) {
  * Gets the global volume (gain) setting on our MiniAudio engine
  */
 PN_stdfloat MiniAudioManager::get_volume() const {
-  _volume = ma_engine_get_volume(&_engine);
   return _volume;
 }
 
@@ -509,23 +508,25 @@ audio_3d_get_distance_factor() const {
 void MiniAudioManager::
 audio_3d_set_doppler_factor(PN_stdfloat factor) {
   //ReMutexHolder holder(_lock);
+  _doppler_factor = factor;
   ma_sound_group_set_doppler_factor(&_all_sounds_grp, factor);
 }
 
 PN_stdfloat MiniAudioManager::
 audio_3d_get_doppler_factor() const {
-  ma_sound_group_get_doppler_factor(&_all_sounds_grp);
+  return ma_sound_group_get_doppler_factor(&_all_sounds_grp);
 }
 
 void MiniAudioManager::
 audio_3d_set_drop_off_factor(PN_stdfloat factor) {
   //ReMutexHolder holder(_lock);
+  _drop_off_factor = factor;
   ma_sound_group_set_rolloff(&_all_sounds_grp, factor);
 }
 
 PN_stdfloat MiniAudioManager::
 audio_3d_get_drop_off_factor() const {
-  ma_sound_group_get_rolloff(&_all_sounds_grp);
+  return ma_sound_group_get_rolloff(&_all_sounds_grp);
 }
 
 /**
