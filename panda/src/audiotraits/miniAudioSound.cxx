@@ -170,8 +170,7 @@ void MiniAudioSound::uncache() {
     if (--cache_it->second <= 0)
       _manager->_cache_counts.erase(cache_it);
   }
-  if (!(ma_sound_uninit(_ma_sound) == MA_SUCCESS))
-    audio_error("Failed to uncache sound " << _basename);
+  ma_sound_uninit(_ma_sound);
 }
 
 void MiniAudioSound::play() {
