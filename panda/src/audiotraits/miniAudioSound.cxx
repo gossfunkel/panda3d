@@ -134,7 +134,7 @@ void MiniAudioSound::cache() {
       AudioManager::StreamMode{AudioManager::SM_stream}) {
     auto cache_it = _manager->_cache_counts.find(_basename);
     if (cache_it == _manager->_cache_counts.end())
-      _manager->_cache_counts.emplace({_basename, 1});
+      _manager->_cache_counts.emplace(std::pair(_basename, 1));
     else cache_it->second++;
 
     _ma_flags |= (_loop)
@@ -158,9 +158,10 @@ void MiniAudioSound::uncache() {
   //ReMutexHolder holder(MiniAudioManager::_lock);
   //ReMutexHolder holder(_lock);
   if (ma_sound_is_playing(_ma_sound) ||
-      _desired_mode == AudioManager::StreamMode{AudioManager::SM_stream})
+      _desired_mode == AudioManager::StreamMode{AudioManager::SM_stream}) {
     audio_warning("Cannot uncache stream sound");
     return;
+  }
   set_active(false);
   _ma_flags |= (!MA_SOUND_FLAG_ASYNC) | MA_SOUND_FLAG_DECODE;
   if (_ma_sound == nullptr) return;
@@ -169,7 +170,7 @@ void MiniAudioSound::uncache() {
     if (--cache_it->second <= 0)
       _manager->_cache_counts.erase(cache_it);
   }
-  if (!ma_sound_uninit(_ma_sound) == MA_SUCCESS)
+  if (!(ma_sound_uninit(_ma_sound) == MA_SUCCESS))
     audio_error("Failed to uncache sound " << _basename);
 }
 
