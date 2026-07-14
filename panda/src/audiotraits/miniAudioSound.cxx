@@ -370,7 +370,7 @@ PN_stdfloat MiniAudioSound::length() const {
   return len;
 }
 
-const std::string &get_name() const {
+const std::string &MiniAudioSound::get_name() const {
   return _basename;
 }
 
