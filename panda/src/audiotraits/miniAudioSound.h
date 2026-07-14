@@ -34,7 +34,7 @@ class EXPCL_MINI_AUDIO MiniAudioSound final : public AudioSound {
   bool            _valid;
 
   MiniAudioManager *_manager;
-  ma_sound        _ma_sound;
+  ma_sound        *_ma_sound;
   int             _ma_flags;
 
   // iterator holding the manager's reference to the sound
