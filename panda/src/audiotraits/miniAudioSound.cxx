@@ -20,7 +20,7 @@ MiniAudioSound(
     const Filename &file_name,
     bool positional,
     int mode) :
-    AudioSound(positional),
+      AudioSound(positional),
       _manager(manager),
       _volume(1.0f),
       _balance(0),
@@ -57,7 +57,7 @@ MiniAudioSound(
 
   ma_format format;
   ma_uint32 channels, sample_rate;
-  ma_sound_get_format(&_ma_sound, &format, &channels, &sample_rate, nullptr, 0);
+  ma_sound_get_data_format(&_ma_sound, &format, &channels, &sample_rate, nullptr, 0);
   if (positional) {
     if (channels != 1)
       audio_warning("Copied stereo sound \"" << _basename
@@ -105,7 +105,7 @@ MiniAudioSound(const MiniAudioSound &copy_sound) :
 
   ma_format format;
   ma_uint32 channels, sample_rate;
-  ma_sound_get_format(&_ma_sound, &format, &channels, &sample_rate, nullptr, 0);
+  ma_sound_get_data_format(&_ma_sound, &format, &channels, &sample_rate, nullptr, 0);
   if (positional) {
     if (channels != 1)
       audio_warning("Copied stereo sound \"" << _basename
@@ -141,7 +141,7 @@ void MiniAudioSound::cache() {
       ? MA_RESOURCE_MANAGER_DATA_SOURCE_FLAG_LOOPING : 0;
   }
   if (ma_sound_init_from_file(
-      &manager->_engine, _basename, _ma_flags,
+      &_manager->_engine, _basename, _ma_flags,
       &_manager->_all_sounds_grp,
       NULL, &_ma_sound) != MA_SUCCESS) {
     audio_error("Failed to initialise AudioSound");
@@ -154,21 +154,23 @@ void MiniAudioSound::cache() {
 /*
  * If the sound is stopped, remove from memory.
  */
-bool MiniAudioSound::uncache() {
+void MiniAudioSound::uncache() {
   //ReMutexHolder holder(MiniAudioManager::_lock);
   //ReMutexHolder holder(_lock);
   if (ma_sound_is_playing(&_ma_sound) ||
       _desired_mode == AudioManager::StreamMode{AudioManager::SM_stream})
-    return false;
+    audio_warning("Cannot uncache stream sound");
+    return;
   set_active(false);
   _ma_flags |= (!MA_SOUND_FLAG_ASYNC) | MA_SOUND_FLAG_DECODE;
-  if (_ma_sound == nullptr) return true;
+  if (_ma_sound == nullptr) return;
   auto cache_it = _manager->_cache_counts.find(_basename);
   if (cache_it != _manager->_cache_counts.end()) {
     if (--cache_it->second <= 0)
       _manager->_cache_counts.erase(cache_it);
   }
-  return (ma_sound_uninit(&_ma_sound) == MA_SUCCESS);
+  if (!ma_sound_uninit(&_ma_sound) == MA_SUCCESS)
+    audio_error("Failed to uncache sound " << _basename);
 }
 
 void MiniAudioSound::play() {
