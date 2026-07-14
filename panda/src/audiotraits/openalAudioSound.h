@@ -72,7 +72,7 @@ public:
   void set_play_rate(PN_stdfloat play_rate=1.0f);
   PN_stdfloat get_play_rate() const;
 
-  // Inits to manager's state.
+  // inits to manager's state.
   void set_active(bool active=true);
   bool get_active() const;
 
