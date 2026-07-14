@@ -103,6 +103,8 @@ public:
   void cache();
   void uncache();
 
+  bool configure_filters(FilterProperties *config);
+
   // loop: false = play once; true = play forever.  inits to false.
   void set_loop(bool loop=true);
   bool get_loop() const;

@@ -273,7 +273,7 @@ set_loop_count(unsigned long loop_count) {
   set_loop((loop_count == 1) ? false : true);
 }
 
-PN_stdfloat MiniAudioSound::get_loop_count() const {
+unsigned long MiniAudioSound::get_loop_count() const {
   return _loop_count;
 }
 
