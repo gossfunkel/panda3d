@@ -75,7 +75,7 @@ MiniAudioSound(
  */
 MiniAudioSound::
 MiniAudioSound(const MiniAudioSound &copy_sound) :
-    _positional(copy_sound.is_positional()),
+    AudioSound(copy_sound.is_positional()),
     _manager(copy_sound._manager),
     _volume(copy_sound._volume),
     _balance(copy_sound._balance),
@@ -106,7 +106,7 @@ MiniAudioSound(const MiniAudioSound &copy_sound) :
   ma_format format;
   ma_uint32 channels, sample_rate;
   ma_sound_get_data_format(&_ma_sound, &format, &channels, &sample_rate, nullptr, 0);
-  if (positional) {
+  if (copy_sound.is_positional()) {
     if (channels != 1)
       audio_warning("Copied stereo sound \"" << _basename
                     << "\" will not be spatialized");
