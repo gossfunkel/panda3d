@@ -231,7 +231,7 @@ void _loop_cb(void *data, ma_sound *ma_sound_ptr) {
   if (!audio_sound->loop_completed()) {
     ma_sound_set_start_time_in_milliseconds(
       ma_sound_ptr,
-      (ma_uint64)(audio_sound->_start_time/1000.));
+      (ma_uint64)(audio_sound->get_start_time()/1000.));
     ma_sound_start(ma_sound_ptr);
   }
 }
