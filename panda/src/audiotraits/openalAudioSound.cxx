@@ -185,9 +185,9 @@ cleanup() {
 /**
  * Copies an OpenALAudioSound into a new OpenALAudioSound.
  */
-AudioSound PT(OpenALAudioSound)::
+PT(AudioSound) OpenALAudioSound::
 make_copy() const {
-  PT(AudioSound) copy_sound = new OpenALAudioSound(*this);
+  PT(OpenALAudioSound) copy_sound = new OpenALAudioSound(*this);
 
   // throw errors if the copied-to node doesn't match the copied-from
   nassertr(copy_sound->is_valid() == this->is_valid(), nullptr);

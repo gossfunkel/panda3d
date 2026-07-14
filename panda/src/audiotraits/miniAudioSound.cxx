@@ -116,9 +116,9 @@ MiniAudioSound(const MiniAudioSound &copy_sound) :
 }
 
 PT(AudioSound) MiniAudioSound::make_copy() const {
-  PT(AudioSound) copy_sound = new MiniAudioSound(*this);
+  PT(MiniAudioSound) copy_sound = new MiniAudioSound(*this);
 
-  nassertr(copy_sound.is_valid() == is_valid(), nullptr);
+  nassertr(copy_sound->is_valid() == this->is_valid(), nullptr);
 
   return copy_sound;
 }
