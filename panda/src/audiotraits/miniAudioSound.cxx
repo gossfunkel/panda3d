@@ -180,7 +180,7 @@ void MiniAudioSound::play() {
   if (is_active()) return;
   set_active(true);
   if (_manager->_num_concurrent_sounds >=
-      _manager.get_concurrent_sound_limit()) {
+      _manager->get_concurrent_sound_limit()) {
     audio_error("Maximum concurrently-playing sounds reached; cannot play sound");
     return;
   }
@@ -188,7 +188,6 @@ void MiniAudioSound::play() {
   if (_loop_count != 1) _loop = true;
   cache();
 
-  _manager->_active_sounds.emplace_back(&this);
   ma_sound_start(_ma_sound);
 }
 
