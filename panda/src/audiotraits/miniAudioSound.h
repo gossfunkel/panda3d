@@ -58,9 +58,6 @@ class EXPCL_MINI_AUDIO MiniAudioSound final : public AudioSound {
   PN_stdfloat     _loop_start;
   int             _loops_completed;
 
-  // MiniAudio callback at end of play
-  void *_end_cb;
-
   int             _desired_mode;
 
   // The start_time field affects the next call to play.
