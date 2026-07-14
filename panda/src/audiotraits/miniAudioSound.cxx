@@ -226,17 +226,18 @@ bool MiniAudioSound::loop_completed() {
 /*
  * Functions to use as loop callbacks
  */
-void *_loop_cb(void *data, ma_sound *ma_sound_ptr) {
-  if (!data->loop_completed()) {
+void _loop_cb(void *data, ma_sound *ma_sound_ptr) {
+  MiniAudioSound *audio_sound = (MiniAudioSound *)data;
+  if (!audio_sound->loop_completed()) {
     ma_sound_set_start_time_in_milliseconds(
       ma_sound_ptr,
-      (ma_uint64)(data->_start_time/1000.));
+      (ma_uint64)(audio_sound->_start_time/1000.));
     ma_sound_start(ma_sound_ptr);
   }
 }
 
-void *_no_loop_cb(void *data, ma_sound *ma_sound_ptr) {
-  data->finished();
+void _no_loop_cb(void *data, ma_sound *ma_sound_ptr) {
+  ((MiniAudioSound *)data)->finished();
 }
 
 /*
@@ -256,13 +257,13 @@ set_loop(bool loop) {
       // here we use a callback function to restart the sound
       //  from the _loop_start every time it ends until _loop_count
       //  loops have been executed. loop_completed() cleans up at end
-      ma_sound_set_end_callback(_ma_sound, _loop_cb, this);
+      ma_sound_set_end_callback(_ma_sound, &_loop_cb, this);
     } else { // otherwise, we let miniaudio loop it forever
       ma_sound_set_looping(_ma_sound, true);
     }
   } else { // disable looping
     ma_sound_set_looping(_ma_sound, false);
-    ma_sound_set_end_callback(_ma_sound, _no_loop_cb, this);
+    ma_sound_set_end_callback(_ma_sound, &_no_loop_cb, this);
     _ma_flags |= !MA_SOUND_FLAG_LOOPING;
   }
   _loop = loop;
@@ -291,7 +292,7 @@ void MiniAudioSound::set_loop_start(PN_stdfloat loop_start) {
         _ma_sound, (ma_uint64)(loop_start/1000.));
 }
 
-PN_stdfloat MiniAudioSound::get_loop_start() {
+PN_stdfloat MiniAudioSound::get_loop_start() const {
   return _loop_start;
 }
 
