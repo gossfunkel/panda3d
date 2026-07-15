@@ -214,6 +214,7 @@ void MiniAudioSound::stop() {
 
 bool MiniAudioSound::configure_filters(FilterProperties *config) {
   // TODO shared configure_filters with AudioManager
+  return false;
 }
 
 /*
@@ -312,7 +313,7 @@ void MiniAudioSound::set_time(PN_stdfloat time) {
 
 PN_stdfloat MiniAudioSound::get_time() const {
   //ReMutexHolder holder(_lock);
-  return ma_sound_get_time_in_seconds(_ma_sound);
+  return ma_sound_get_time_in_milliseconds(_ma_sound)/1000.f;
 }
 
 void MiniAudioSound::set_volume(PN_stdfloat volume) {
