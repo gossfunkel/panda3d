@@ -11,6 +11,7 @@
  * @date 2026-06-02
  */
 #include "miniAudioSound.h"
+#include "throw_event.h"
 
 TypeHandle MiniAudioSound::_type_handle;
 
