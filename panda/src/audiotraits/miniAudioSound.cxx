@@ -115,7 +115,7 @@ MiniAudioSound(const MiniAudioSound &copy_sound) :
                     << copy_sound._filename.get_basename()
                     << "\" will not be spatialized");
   }
-  if (sample_rate != _manager->_device.config.playback.sampleRate)
+  if (sample_rate != _manager->_device.playback.internalSampleRate)
     audio_error("Source sample rate mismatch with MiniAudio "
                 << "device sample rate");
 }
