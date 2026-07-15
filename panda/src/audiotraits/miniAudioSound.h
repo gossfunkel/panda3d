@@ -67,7 +67,8 @@ class EXPCL_MINI_AUDIO MiniAudioSound final : public AudioSound {
   //  playing.  It is not triggered when the sound is stopped with stop().
   std::string     _finished_event;
 
-  Filename        _basename;
+  Filename        _filename;
+  std::string     _basename;
 
   // _active is for things like a 'turn off sound effects' in a preferences
   //  panel.  _active is not about whether a sound is currently playing.  Use

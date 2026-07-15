@@ -34,7 +34,7 @@ MiniAudioSound(
       _loops_completed(0),
       _desired_mode(mode),
       _start_time(0.0),
-      _basename(file_name.get_basename()),
+      _filename(file_name),
       _active(manager->get_active()),
       _paused(false),
       _cone_inner_angle(360.0f),
@@ -45,7 +45,6 @@ MiniAudioSound(
       _direction(0.0f, 0.0f, 0.0f) {
   //ReMutexHolder holder(MiniAudioManager::_lock);
   //ReMutexHolder holder(_lock);
-  std::string src_fn = file_name.get_basename();
   // TODO set larger files (e.g. soundtracks/music) to stream mode
   _ma_flags =
     (mode == AudioManager::StreamMode{AudioManager::SM_stream})
@@ -57,10 +56,12 @@ MiniAudioSound(
 
   ma_format format;
   ma_uint32 channels, sample_rate;
-  ma_sound_get_data_format(_ma_sound, &format, &channels, &sample_rate, nullptr, 0);
+  ma_sound_get_data_format(
+    _ma_sound, &format, &channels, &sample_rate, nullptr, 0
+  );
   if (positional) {
     if (channels != 1)
-      audio_warning("Copied stereo sound \"" << _basename
+      audio_warning("Copied stereo sound \"" << file_name.get_basename()
                     << "\" will not be spatialized");
   }
   if (sample_rate != _manager->_device.config.playback.sampleRate)
@@ -89,7 +90,7 @@ MiniAudioSound(const MiniAudioSound &copy_sound) :
     _loop_start(copy_sound._loop_start),
     _desired_mode(copy_sound._desired_mode),
     _start_time(copy_sound._start_time),
-    _basename(copy_sound._basename),
+    _filename(copy_sound._filename),
     _active(copy_sound._active),
     _paused(copy_sound._paused),
     _cone_inner_angle(copy_sound._cone_inner_angle),
@@ -105,14 +106,18 @@ MiniAudioSound(const MiniAudioSound &copy_sound) :
 
   ma_format format;
   ma_uint32 channels, sample_rate;
-  ma_sound_get_data_format(_ma_sound, &format, &channels, &sample_rate, nullptr, 0);
+  ma_sound_get_data_format(
+    _ma_sound, &format, &channels, &sample_rate, nullptr, 0
+  );
   if (copy_sound.is_positional()) {
     if (channels != 1)
-      audio_warning("Copied stereo sound \"" << _basename
+      audio_warning("Copied stereo sound \""
+                    << copy_sound._filename.get_basename()
                     << "\" will not be spatialized");
   }
   if (sample_rate != _manager->_device.config.playback.sampleRate)
-    audio_error("Source sample rate mismatch with MiniAudio device sample rate");
+    audio_error("Source sample rate mismatch with MiniAudio "
+                << "device sample rate");
 }
 
 PT(AudioSound) MiniAudioSound::make_copy() const {
@@ -132,16 +137,19 @@ void MiniAudioSound::cache() {
   if (_ma_sound != nullptr) return;
   if (_desired_mode !=
       AudioManager::StreamMode{AudioManager::SM_stream}) {
-    auto cache_it = _manager->_cache_counts.find(_basename);
+    auto cache_it =
+      _manager->_cache_counts.find(_filename.get_basename());
     if (cache_it == _manager->_cache_counts.end())
-      _manager->_cache_counts.emplace(std::pair(_basename, 1));
+      _manager->_cache_counts.emplace(
+        std::pair(_filename.get_basename(), 1)
+      );
     else cache_it->second++;
 
     _ma_flags |= (_loop)
       ? MA_RESOURCE_MANAGER_DATA_SOURCE_FLAG_LOOPING : 0;
   }
   if (ma_sound_init_from_file(
-      &_manager->_engine, _basename, _ma_flags,
+      &_manager->_engine, _filename.c_str(), _ma_flags,
       &_manager->_all_sounds_grp,
       NULL, _ma_sound) != MA_SUCCESS) {
     audio_error("Failed to initialise AudioSound");
@@ -165,7 +173,8 @@ void MiniAudioSound::uncache() {
   set_active(false);
   _ma_flags |= (!MA_SOUND_FLAG_ASYNC) | MA_SOUND_FLAG_DECODE;
   if (_ma_sound == nullptr) return;
-  auto cache_it = _manager->_cache_counts.find(_basename);
+  auto cache_it =
+    _manager->_cache_counts.find(_filename.get_basename());
   if (cache_it != _manager->_cache_counts.end()) {
     if (--cache_it->second <= 0)
       _manager->_cache_counts.erase(cache_it);
@@ -371,7 +380,7 @@ PN_stdfloat MiniAudioSound::length() const {
 }
 
 const std::string &MiniAudioSound::get_name() const {
-  return _basename;
+  return _filename.get_basename();
 }
 
 void MiniAudioSound::set_3d_attributes(
