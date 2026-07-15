@@ -245,10 +245,10 @@ void MiniAudioManager::uncache_sound(const Filename &file_name) {
   vfs->resolve_filename(path, get_model_path());
   auto sound_it = _all_sounds.begin();
   while (sound_it != _all_sounds.end()) {
-    if (auto s_ptr = sound_it->lock()) {
+    if (PT(MiniAudioSound) s_ptr = sound_it->lock()) {
       if (s_ptr->get_name() == file_name.get_basename() ||
           s_ptr->get_name() == path.get_basename())
-        ((PT(MiniAudioSound))s_ptr)->uncache();
+        s_ptr->uncache();
         // should this uncache all/any sounds with this filename?
         //return;
     } else // pointer has expired
@@ -266,8 +266,8 @@ void MiniAudioManager::clear_cache() {
 
   auto sound_it = _all_sounds.begin();
   while (sound_it != _all_sounds.end()) {
-    if (auto s_ptr = sound_it->lock())
-        ((PT(MiniAudioSound))s_ptr)->uncache();
+    if (PT(MiniAudioSound) s_ptr = sound_it->lock())
+        s_ptr->uncache();
     _all_sounds.erase(sound_it);
   }
 }
@@ -538,8 +538,8 @@ shutdown() {
   audio_cat.debug() << "Shutting down Audio Managers." << std::endl;
   //ReMutexHolder holder(_lock);
   if (_managers.size() < 1)
-    for (auto man_it : _managers)
-      ((PT(MiniAudioManager))man_it)->cleanup();
+    for (PT(MiniAudioManager) man_it : _managers)
+      man_it->cleanup();
 
   nassertv(_active_managers == 0);
 }

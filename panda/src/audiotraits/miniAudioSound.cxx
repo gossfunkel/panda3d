@@ -65,7 +65,7 @@ MiniAudioSound(
       audio_warning("Copied stereo sound \"" << file_name.get_basename()
                     << "\" will not be spatialized");
   }
-  if (sample_rate != _manager->_device.config.playback.sampleRate)
+  if (sample_rate != _manager->_device.playback.internalSampleRate)
     audio_error("Source sample rate mismatch with MiniAudio device sample rate");
 
   length();
