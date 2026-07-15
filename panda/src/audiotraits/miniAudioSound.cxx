@@ -186,7 +186,7 @@ void MiniAudioSound::play() {
   //ReMutexHolder holder(MiniAudioManager::_lock);
   //ReMutexHolder holder(_lock);
   _paused = false;
-  if (is_active()) return;
+  if (_active) return;
   set_active(true);
   if (_manager->_num_concurrent_sounds >=
       _manager->get_concurrent_sound_limit()) {
@@ -205,7 +205,7 @@ void MiniAudioSound::stop() {
   //ReMutexHolder holder(_lock);
   if (!is_valid()) return;
   _paused = false;
-  if (!is_active()) return;
+  if (!_active) return;
   set_active(false);
   _manager->_num_concurrent_sounds--;
 
