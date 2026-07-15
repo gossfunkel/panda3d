@@ -216,7 +216,7 @@ get_sound(const Filename &file_name, bool positional, int mode) {
 
   if (mode != StreamMode{SM_stream}) {
     // TODO this must be done thread-safely
-    _all_sounds.emplace_back((WPT(AudioSound))new_ma_sound);
+    _all_sounds.emplace_back((WPT(MiniAudioSound))new_ma_sound);
     new_ma_sound->_manager_it = _all_sounds.end();
   }
   return (PT(AudioSound))new_ma_sound;
@@ -538,8 +538,10 @@ shutdown() {
   audio_cat.debug() << "Shutting down Audio Managers." << std::endl;
   //ReMutexHolder holder(_lock);
   if (_managers.size() < 1)
-    for (PT(MiniAudioManager) man_it : _managers)
-      man_it->cleanup();
+    for (PT(MiniAudioManager) man_ptr : _managers) {
+      delete man_ptr;
+      _managers.erase(man_ptr);
+    }
 
   nassertv(_active_managers == 0);
 }
@@ -573,7 +575,7 @@ cleanup() {
   //ReMutexHolder holder(_lock);
   for (auto sound_it = _all_sounds.begin();
        sound_it != _all_sounds.end(); sound_it++) {
-    if (auto s_ptr = sound_it->lock()) {
+    if (PT(MiniAudioSound) s_ptr = sound_it->lock()) {
       s_ptr->stop();
       delete s_ptr;
     }

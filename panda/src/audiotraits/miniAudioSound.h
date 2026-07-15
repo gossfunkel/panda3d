@@ -38,7 +38,7 @@ class EXPCL_MINI_AUDIO MiniAudioSound final : public AudioSound {
   int             _ma_flags;
 
   // iterator holding the manager's reference to the sound
-  pdeque<WPT(AudioSound)>::iterator _manager_it;
+  pdeque<WPT(MiniAudioSound)>::iterator _manager_it;
 
   PN_stdfloat     _volume; // 0..1.0
   PN_stdfloat     _balance; // -1..1
@@ -68,7 +68,6 @@ class EXPCL_MINI_AUDIO MiniAudioSound final : public AudioSound {
   std::string     _finished_event;
 
   Filename        _filename;
-  std::string     _basename;
 
   // _active is for things like a 'turn off sound effects' in a preferences
   //  panel.  _active is not about whether a sound is currently playing.  Use
