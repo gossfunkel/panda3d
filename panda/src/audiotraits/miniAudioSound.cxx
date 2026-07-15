@@ -459,7 +459,8 @@ void MiniAudioSound::set_3d_cone_inner_angle(PN_stdfloat angle) {
   //ReMutexHolder holder(_lock);
   _cone_inner_angle = angle;
   ma_sound_set_cone(
-    _ma_sound, angle, _cone_outer_angle, _cone_outer_gain);
+    _ma_sound, angle, _cone_outer_angle, _cone_outer_gain
+  );
 }
 
 PN_stdfloat MiniAudioSound::get_3d_cone_inner_angle() const {
@@ -476,14 +477,15 @@ void MiniAudioSound::set_3d_cone_outer_angle(PN_stdfloat angle) {
   //ReMutexHolder holder(_lock);
   _cone_outer_angle = angle;
   ma_sound_set_cone(
-    _ma_sound, _cone_inner_angle, angle, _cone_outer_gain);
+    _ma_sound, _cone_inner_angle, angle, _cone_outer_gain
+  );
 }
 
 PN_stdfloat MiniAudioSound::get_3d_cone_outer_angle() const {
   //ReMutexHolder holder(_lock);
   float cone_inner, cone_outer, gain;
   ma_sound_get_cone(_ma_sound, &cone_inner, &cone_outer, &gain);
-  return _cone_outer;
+  return cone_outer;
 }
 
 /*
@@ -493,7 +495,8 @@ void MiniAudioSound::set_3d_cone_outer_gain(PN_stdfloat gain) {
   //ReMutexHolder holder(_lock);
   _cone_outer_gain = gain;
   ma_sound_set_cone(
-    _ma_sound, _cone_inner_angle, _cone_outer_angle, gain);
+    _ma_sound, _cone_inner_angle, _cone_outer_angle, gain
+  );
 }
 
 PN_stdfloat MiniAudioSound::get_3d_cone_outer_gain() const {
