@@ -19,7 +19,7 @@ if(HAVE_TINYDISPLAY)
 endif()
 
 if(((NOT HAVE_OPENAL) AND (NOT HAVE_FMODEX)) OR HAVE_MINIAUDIO)
-  set(AUDIO_LIBRARY_NAME mini_audio)
+  set(AUDIO_LIBRARY_NAME p3mini_audio)
 elseif(HAVE_OPENAL)
   set(AUDIO_LIBRARY_NAME p3openal_audio)
 elseif(HAVE_FMODEX)

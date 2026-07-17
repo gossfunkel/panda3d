@@ -8,7 +8,6 @@ def test_missing_file(audiomgr):
     sound = audiomgr.get_sound("/not/a/valid/file.ogg")
     assert str(sound).startswith("NullAudioSound")
 
-
 @pytest.mark.parametrize("extension", ["ogg", "opus", "mp3", "flac"])
 def test_comments(audiomgr, extension):
     if ("openal" or "mini") not in str(audiomgr).lower():
