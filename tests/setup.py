@@ -10,6 +10,7 @@ setup(
             },
             'plugins': [
                 'pandagl',
+                'p3mini_audio'
                 'p3openal_audio',
             ],
         }

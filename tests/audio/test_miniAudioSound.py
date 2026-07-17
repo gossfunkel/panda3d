@@ -4,9 +4,9 @@ import pytest
 from panda3d.core import Filename, MovieAudio
 
 def test_make_copy(audiomgr):
-    if "openal" not in str(audiomgr).lower():
+    if "mini" not in str(audiomgr).lower():
         # NULL audio manager (as well as fmod) don't support copying yet
-        pytest.skip("Copying is currently only supported on OpenAL and MiniAudio")
+        pytest.skip("Copying is currently only supported on Miniaudio and OpenAL")
 
     sound_path = os.path.join(os.path.dirname(__file__), "wav_test.wav")
     sound_path = Filename.from_os_specific(sound_path)

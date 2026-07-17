@@ -81,7 +81,7 @@ PkgListSet(["PYTHON", "DIRECT",                        # Python support
   "GL", "GLES", "GLES2"] + DXVERSIONS + ["TINYDISPLAY", "NVIDIACG", # 3D graphics
   "EGL",                                               # OpenGL (ES) integration
   "EIGEN",                                             # Linear algebra acceleration
-  "OPENAL", "FMODEX",                                  # Audio playback
+  "MINIAUDIO", "OPENAL", "FMODEX",                     # Audio playback
   "VORBIS", "OPUS", "FFMPEG", "SWSCALE", "SWRESAMPLE", # Audio decoding
   "ODE", "BULLET", "PANDAPHYSICS",                     # Physics
   "SPEEDTREE",                                         # SpeedTree
@@ -3049,6 +3049,10 @@ if PkgSkip("TINYDISPLAY") or GetLinkAllStatic():
 
 if PkgSkip("OPENAL") or GetLinkAllStatic():
     configprc = configprc.replace("audio-library-name p3openal_audio", "#audio-library-name p3openal_audio")
+    if not PkgSkip("FMODX") or GetLinkAllStatic():
+        configprc = configpc.replace("audio-library-name p3openal_audio", "audio-library-name p3fmod_audio")
+    else:
+        configprc = configpc.replace("audio-library-name p3openal_audio", "audio-library-name p3mini_audio")
 
 if GetTarget() == 'windows':
     # Convert to Windows newlines.
@@ -4409,6 +4413,13 @@ if PkgSkip("FFMPEG") == 0:
 #
 # DIRECTORY: panda/src/audiotraits/
 #
+
+if PkgSkip("MINIAUDIO") == 0:
+    OPTS=['DIR:panda/src/audiotraits', 'BUILDING:MINI_AUDIO', 'MINIAUDIO']
+    TargetAdd('mini_audio_mini_audio_composite1.obj', opts=OPTS, input='mini_audio_composite1.cxx')
+    TargetAdd('libp3mini_audio.dll', input='mini_audio_mini_audio_composite1.obj')
+    TargetAdd('libp3mini_audio.dll', input=COMMON_PANDA_LIBS)
+    TargetAdd('libp3mini_audio.dll', opts=['MODULE', 'ADVAPI', 'WINUSER', 'WINMM', 'MINIAUDIO']
 
 if PkgSkip("FMODEX") == 0:
     OPTS=['DIR:panda/src/audiotraits', 'BUILDING:FMOD_AUDIO', 'FMODEX']
