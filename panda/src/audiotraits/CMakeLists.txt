@@ -4,7 +4,7 @@ endif()
 
 set(P3MA_HEADERS
   miniaudio.h
-  config_miniAudio.h
+  config_miniaudio.h
   miniAudioManager.I
   miniAudioManager.h
   miniAudioSound.I
@@ -13,7 +13,7 @@ set(P3MA_HEADERS
 
 set(P3MA_SOURCES
   miniaudio.cxx
-  config_miniAudio.cxx
+  config_miniaudio.cxx
   miniAudioManager.cxx
   miniAudioSound.cxx
 )
@@ -32,7 +32,7 @@ install(TARGETS p3mini_audio
   ARCHIVE COMPONENT MADevel)
 install(FILES ${P3MA_HEADERS} COMPONENT MADevel DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/panda3d)
 
-export_targets(MINIAUDIO NAMESPACE "Panda3D::MINIAUDIO::" COMPONENT MADevel)
+export_targets(MINIAUDIO NAMESPACE "Panda3D::miniaudio::" COMPONENT MADevel)
 
 if(HAVE_FMODEX AND NOT (APPLE AND CMAKE_OSX_ARCHITECTURES STREQUAL "arm64"))
   set(P3FMOD_HEADERS

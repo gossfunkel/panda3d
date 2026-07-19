@@ -80,7 +80,7 @@
 #
 #   miniaudio - Support for MiniAudio audio output.
 #
-#               Panda3D::MINIAUDIO::p3mini_audio
+#               Panda3D::miniaudio::p3mini_audio
 #
 #
 #   FMOD      - Support for FMOD audio output.

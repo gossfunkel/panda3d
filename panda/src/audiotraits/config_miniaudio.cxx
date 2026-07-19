@@ -6,13 +6,13 @@
  * license.  You should have received a copy of this license along
  * with this source code in a file named "LICENSE."
  *
- * @file config_miniAudio.cxx
+ * @file config_miniaudio.cxx
  * @author kate & joy
  */
 
 #include "pandabase.h"
 
-#include "config_miniAudio.h"
+#include "config_miniaudio.h"
 #include "miniAudioManager.h"
 #include "miniAudioSound.h"
 #include "pandaSystem.h"
@@ -23,10 +23,10 @@
   #error Buildsystem error: BUILDING_MINI_AUDIO not defined
 #endif
 
-ConfigureDef(config_miniAudio);
-NotifyCategoryDef(miniAudio, ":audio");
+ConfigureDef(config_miniaudio);
+NotifyCategoryDef(miniaudio, ":audio");
 
-ConfigureFn(config_miniAudio) {
+ConfigureFn(config_miniaudio) {
   init_libMiniAudio();
 }
 
@@ -60,9 +60,9 @@ init_libMiniAudio() {
   AudioManager::register_AudioManager_creator(&Create_MiniAudioManager);
 
   PandaSystem *ps = PandaSystem::get_global_ptr();
-  ps->add_system("MiniAudio");
+  ps->add_system("miniaudio");
   ps->add_system("audio");
-  ps->set_system_tag("audio", "implementation", "MiniAudio");
+  ps->set_system_tag("audio", "implementation", "miniaudio");
 }
 
 /**
