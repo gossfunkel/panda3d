@@ -3050,9 +3050,9 @@ if PkgSkip("TINYDISPLAY") or GetLinkAllStatic():
 if PkgSkip("OPENAL") or GetLinkAllStatic():
     configprc = configprc.replace("audio-library-name p3openal_audio", "#audio-library-name p3openal_audio")
     if not PkgSkip("FMODX") or GetLinkAllStatic():
-        configprc = configpc.replace("audio-library-name p3openal_audio", "audio-library-name p3fmod_audio")
+        configprc = configpc.replace("#audio-library-name p3openal_audio", "audio-library-name p3fmod_audio")
     else:
-        configprc = configpc.replace("audio-library-name p3openal_audio", "audio-library-name p3mini_audio")
+        configprc = configpc.replace("#audio-library-name p3openal_audio", "audio-library-name p3mini_audio")
 
 if GetTarget() == 'windows':
     # Convert to Windows newlines.

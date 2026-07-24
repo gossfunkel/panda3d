@@ -21,6 +21,8 @@ TypeHandle MiniAudioManager::_type_handle;
 
 //ReMutex MiniAudioManager::_lock;
 int MiniAudioManager::_active_managers = 0;
+pset<PT(MiniAudioManager)> MiniAudioManager::_managers =
+  pset<PT(MiniAudioManager)>();
 
 /**
  * Factory Function
@@ -28,7 +30,9 @@ int MiniAudioManager::_active_managers = 0;
 AudioManager *Create_MiniAudioManager() {
   audio_debug("Create_MiniAudioManager()");
   //ReMutexHolder holder(_lock);
-  return new MiniAudioManager;
+  PT(MiniAudioManager) new_man = new MiniAudioManager;
+  MiniAudioManager::_managers.insert(new_man);
+  return &(*new_man);
 }
 
 MiniAudioManager::
@@ -37,8 +41,6 @@ MiniAudioManager() {
   audio_cat.init();
   _active = false;
   _is_valid = false;
-
-  _managers.insert(this);
 
   ma_device_config device_config = ma_device_config_init(ma_device_type_playback);
   device_config.playback.format = ma_format_f32;

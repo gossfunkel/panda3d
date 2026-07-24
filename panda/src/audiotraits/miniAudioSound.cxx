@@ -172,7 +172,7 @@ void MiniAudioSound::uncache() {
     return;
   }
   set_active(false);
-  _ma_flags |= (!MA_SOUND_FLAG_ASYNC) | MA_SOUND_FLAG_DECODE;
+  _ma_flags |= (~MA_SOUND_FLAG_ASYNC) | MA_SOUND_FLAG_DECODE;
   if (_ma_sound == nullptr) return;
   auto cache_it =
     _manager->_cache_counts.find(_filename.get_basename());
@@ -275,7 +275,7 @@ set_loop(bool loop) {
   } else { // disable looping
     ma_sound_set_looping(_ma_sound, false);
     ma_sound_set_end_callback(_ma_sound, &_no_loop_cb, this);
-    _ma_flags |= !MA_SOUND_FLAG_LOOPING;
+    _ma_flags |= ~MA_SOUND_FLAG_LOOPING;
   }
   _loop = loop;
 }

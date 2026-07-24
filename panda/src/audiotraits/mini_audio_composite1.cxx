@@ -1,5 +1,5 @@
 
-#include "config_maAudio.cxx"
-#include "maAudioManager.cxx"
-#include "maAudioSound.cxx"
+#include "config_miniAudio.cxx"
+#include "miniAudioManager.cxx"
+#include "miniAudioSound.cxx"
 
