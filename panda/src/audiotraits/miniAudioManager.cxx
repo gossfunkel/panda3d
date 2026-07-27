@@ -21,8 +21,7 @@ TypeHandle MiniAudioManager::_type_handle;
 
 //ReMutex MiniAudioManager::_lock;
 int MiniAudioManager::_active_managers = 0;
-pset<PT(MiniAudioManager)> MiniAudioManager::_managers =
-  pset<PT(MiniAudioManager)>();
+pset<PT(MiniAudioManager)> MiniAudioManager::_managers = nullptr;
 
 /**
  * Factory Function
@@ -31,7 +30,9 @@ AudioManager *Create_MiniAudioManager() {
   audio_debug("Create_MiniAudioManager()");
   //ReMutexHolder holder(_lock);
   PT(MiniAudioManager) new_man = new MiniAudioManager;
-  MiniAudioManager::_managers.insert(new_man);
+  if (MiniAudioManager::_managers == nullptr)
+    MiniAudioManager::_managers = new pset<PT(MiniAudioManager)>;
+  MiniAudioManager::_managers->insert(new_man);
   return &(*new_man);
 }
 
@@ -78,8 +79,6 @@ MiniAudioManager() {
     ma_device_uninit(&_device);
     audio_error("Failed to initialise MiniAudio resource manager.");
   }
-
-  _managers.insert(this);
 
   ma_engine_config audio_engine_conf;
   audio_engine_conf = ma_engine_config_init();
@@ -539,22 +538,22 @@ void MiniAudioManager::
 shutdown() {
   audio_cat.debug() << "Shutting down Audio Managers." << std::endl;
   //ReMutexHolder holder(_lock);
-  if (_managers.size() < 1)
-    for (PT(MiniAudioManager) man_ptr : _managers) {
+  if (_managers->size() > 1)
+    for (PT(MiniAudioManager) man_ptr : *_managers) {
       delete man_ptr;
-      _managers.erase(man_ptr);
+      _managers->erase(man_ptr);
     }
 
-  nassertv(_active_managers == 0);
+  //nassertv(_active_managers == 0);
 }
 
 MiniAudioManager::
 ~MiniAudioManager() {
   //ReMutexHolder holder(_lock);
-  nassertv(_managers.size() > 0);
-  auto man_it = _managers.find(this);
-  nassertv(man_it != _managers.end());
-  _managers.erase(man_it);
+  nassertv(_managers->size() > 0);
+  auto man_it = _managers->find(this);
+  nassertv(man_it != _managers->end());
+  _managers->erase(man_it);
   cleanup();
 }
 

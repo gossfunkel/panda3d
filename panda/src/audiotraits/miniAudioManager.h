@@ -56,8 +56,8 @@ class EXPCL_MINI_AUDIO MiniAudioManager final : public AudioManager {
   //  be made atomic/thread-safe in some other way (smart queues)
   //patomic<type> var;
 
-  // set of all managers
-  static pset<PT(MiniAudioManager)> _managers;
+  // pointer to set of all managers
+  static pset<PT(MiniAudioManager)> *_managers;
 
   // deque of cached AudioSounds in this manager
   pdeque<WPT(MiniAudioSound)> _all_sounds;
