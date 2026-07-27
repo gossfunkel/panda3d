@@ -21,7 +21,7 @@ TypeHandle MiniAudioManager::_type_handle;
 
 //ReMutex MiniAudioManager::_lock;
 int MiniAudioManager::_active_managers = 0;
-pset<PT(MiniAudioManager)> MiniAudioManager::_managers = nullptr;
+pset<PT(MiniAudioManager)> *MiniAudioManager::_managers = nullptr;
 
 /**
  * Factory Function
@@ -29,11 +29,7 @@ pset<PT(MiniAudioManager)> MiniAudioManager::_managers = nullptr;
 AudioManager *Create_MiniAudioManager() {
   audio_debug("Create_MiniAudioManager()");
   //ReMutexHolder holder(_lock);
-  PT(MiniAudioManager) new_man = new MiniAudioManager;
-  if (MiniAudioManager::_managers == nullptr)
-    MiniAudioManager::_managers = new pset<PT(MiniAudioManager)>;
-  MiniAudioManager::_managers->insert(new_man);
-  return &(*new_man);
+  return new MiniAudioManager;
 }
 
 MiniAudioManager::
@@ -44,6 +40,8 @@ MiniAudioManager() {
   _is_valid = false;
 
   ma_device_config device_config = ma_device_config_init(ma_device_type_playback);
+  if (_managers == nullptr) _managers = new pset<PT(MiniAudioManager)>;
+  _managers->insert((MiniAudioManager *)this);
   device_config.playback.format = ma_format_f32;
   device_config.playback.channels = 2;
   device_config.sampleRate = 48000;
