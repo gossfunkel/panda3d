@@ -4419,7 +4419,7 @@ if PkgSkip("MINIAUDIO") == 0:
     TargetAdd('mini_audio_mini_audio_composite1.obj', opts=OPTS, input='mini_audio_composite1.cxx')
     TargetAdd('libp3mini_audio.dll', input='mini_audio_mini_audio_composite1.obj')
     TargetAdd('libp3mini_audio.dll', input=COMMON_PANDA_LIBS)
-    TargetAdd('libp3mini_audio.dll', opts=['MODULE', 'ADVAPI', 'WINUSER', 'WINMM', 'MINIAUDIO']
+    TargetAdd('libp3mini_audio.dll', opts=['MODULE', 'ADVAPI', 'WINUSER', 'WINMM', 'MINIAUDIO'])
 
 if PkgSkip("FMODEX") == 0:
     OPTS=['DIR:panda/src/audiotraits', 'BUILDING:FMOD_AUDIO', 'FMODEX']
