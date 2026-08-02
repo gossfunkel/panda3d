@@ -185,9 +185,9 @@ cleanup() {
 /**
  * Copies an OpenALAudioSound into a new OpenALAudioSound.
  */
-PT(AudioSound) OpenALAudioSound::
+AudioSound *OpenALAudioSound::
 make_copy() const {
-  PT(OpenALAudioSound) copy_sound = new OpenALAudioSound(*this);
+  OpenALAudioSound *copy_sound = new OpenALAudioSound(*this);
 
   // throw errors if the copied-to node doesn't match the copied-from
   nassertr(copy_sound->is_valid() == this->is_valid(), nullptr);
@@ -1106,10 +1106,11 @@ set_active(bool active) {
     } else {
       // ...deactivate the sound.
       if (status()==PLAYING) {
-        // Store the current time so we can resume from where we paused.
+        // Store off the current time so we can resume from where we paused.
         _start_time = get_time();
         stop();
         if (_loop_count == 0) {
+          // ...we're pausing a looping sound.
           _paused = true;
         }
       }

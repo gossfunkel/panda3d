@@ -79,7 +79,7 @@ public:
   // This is the string that throw_event() will throw when the sound finishes
   // playing.  It is not triggered when the sound is stopped with stop().
   void set_finished_event(std::string event);
-  const std::string &get_finished_event() const;
+  const std::string& get_finished_event() const;
 
   const std::string &get_name() const;
 
@@ -115,7 +115,7 @@ public:
   PN_stdfloat get_3d_cone_outer_gain() const;
 
   // Construct a near-identical copy of this object on the heap and return a pointer to the new copy
-  virtual PT(AudioSound) make_copy() const;
+  virtual AudioSound *make_copy() const;
 
   AudioSound::SoundStatus status() const;
 
@@ -148,6 +148,8 @@ private:
   INLINE bool is_playing() const;
   INLINE bool has_sound_data() const;
 
+private:
+
   PT(MovieAudio) _movie;
   OpenALAudioManager::SoundData *_sd;
 
@@ -158,7 +160,7 @@ private:
     double _time_offset;
   };
 
-  int          _playing_loops;
+  int    _playing_loops;
   PN_stdfloat  _playing_rate;
 
   pdeque<QueuedBuffer> _stream_queued;
@@ -206,13 +208,13 @@ private:
   Filename _basename;
 
   // _active is for things like a 'turn off sound effects' in a preferences
-  // panel.  _active is not about whether a sound is currently playing.  Use
+  // pannel.  _active is not about whether a sound is currently playing.  Use
   // status() for info on whether the sound is playing.
   bool _active;
   bool _paused;
 
-  // These settings are used to define a directional sound source. The inner angle
-  // defines a cone wherein the sound can be heard at normal volume. _cone_outer_angle defines a second cone.
+  // these settings are used to define a directional sound source. The inner angle
+  // defines a cone wherein the sound can be heard with normal volume. _cone_outer_angle defines a second cone.
   // Between the inner and the outer cone the volume is attenuated.
   // _cone_outer_gain is a factor applied to the volume setting to define the volume in the zone outside of the outer cone.
   PN_stdfloat _cone_inner_angle;

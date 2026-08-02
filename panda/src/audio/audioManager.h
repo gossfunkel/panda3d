@@ -24,6 +24,7 @@
 
 typedef AudioManager *Create_AudioManager_proc();
 
+
 class EXPCL_PANDA_AUDIO AudioManager : public TypedReferenceCount {
 PUBLISHED:
 
@@ -186,7 +187,7 @@ protected:
   // flexibility.
 
   static Create_AudioManager_proc* _create_AudioManager;
-  static PT(AudioSound) _null_sound;
+  patomic<AudioSound *> _null_sound;
 
   AudioManager();
 
