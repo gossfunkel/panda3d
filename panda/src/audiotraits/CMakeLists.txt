@@ -1,38 +1,38 @@
 if(NOT HAVE_AUDIO)
   return()
+elseif((NOT HAVE_FMODEX AND NOT HAVE_OPENAL) OR HAVE_MINIAUDIO)
+  set(P3MA_HEADERS
+    miniaudio.h
+    config_miniaudio.h
+    miniAudioManager.I
+    miniAudioManager.h
+    miniAudioSound.I
+    miniAudioSound.h
+  )
+
+  set(P3MA_SOURCES
+    miniaudio.cxx
+    config_miniaudio.cxx
+    miniAudioManager.cxx
+    miniAudioSound.cxx
+  )
+
+  composite_sources(p3mini_audio P3MA_SOURCES)
+  add_library(p3mini_audio ${MODULE_TYPE} ${P3MA_HEADERS} ${P3MA_SOURCES})
+  set_target_properties(p3mini_audio PROPERTIES DEFINE_SYMBOL BUILDING_MINI_AUDIO)
+  target_link_libraries(p3mini_audio panda)
+
+  install(TARGETS p3mini_audio
+    EXPORT MINIAUDIO COMPONENT MINIAUDIO
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+    INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/panda3d
+    # INCLUDES DESTINATION panda/src/audiotraits
+    ARCHIVE COMPONENT MADevel)
+  install(FILES ${P3MA_HEADERS} COMPONENT MADevel DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/panda3d)
+
+  export_targets(MINIAUDIO NAMESPACE "Panda3D::miniaudio::" COMPONENT MADevel)
 endif()
-
-set(P3MA_HEADERS
-  miniaudio.h
-  config_miniaudio.h
-  miniAudioManager.I
-  miniAudioManager.h
-  miniAudioSound.I
-  miniAudioSound.h
-)
-
-set(P3MA_SOURCES
-  miniaudio.cxx
-  config_miniaudio.cxx
-  miniAudioManager.cxx
-  miniAudioSound.cxx
-)
-
-composite_sources(p3mini_audio P3MA_SOURCES)
-add_library(p3mini_audio ${MODULE_TYPE} ${P3MA_HEADERS} ${P3MA_SOURCES})
-set_target_properties(p3mini_audio PROPERTIES DEFINE_SYMBOL BUILDING_MINI_AUDIO)
-target_link_libraries(p3mini_audio panda)
-
-install(TARGETS p3mini_audio
-  EXPORT MINIAUDIO COMPONENT MINIAUDIO
-  DESTINATION ${CMAKE_INSTALL_LIBDIR}
-  RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-  INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/panda3d
-  # INCLUDES DESTINATION panda/src/audiotraits
-  ARCHIVE COMPONENT MADevel)
-install(FILES ${P3MA_HEADERS} COMPONENT MADevel DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/panda3d)
-
-export_targets(MINIAUDIO NAMESPACE "Panda3D::miniaudio::" COMPONENT MADevel)
 
 if(HAVE_FMODEX AND NOT (APPLE AND CMAKE_OSX_ARCHITECTURES STREQUAL "arm64"))
   set(P3FMOD_HEADERS

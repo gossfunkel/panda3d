@@ -3048,11 +3048,13 @@ if PkgSkip("TINYDISPLAY") or GetLinkAllStatic():
     configprc = configprc.replace("\n#load-display p3tinydisplay", "")
 
 if PkgSkip("OPENAL") or GetLinkAllStatic():
-    configprc = configprc.replace("audio-library-name p3openal_audio", "#audio-library-name p3openal_audio")
-    if not PkgSkip("FMODX") or GetLinkAllStatic():
-        configprc = configpc.replace("#audio-library-name p3openal_audio", "audio-library-name p3fmod_audio")
-    else:
-        configprc = configpc.replace("#audio-library-name p3openal_audio", "audio-library-name p3mini_audio")
+    configprc = configprc.replace("audio-library-name p3openal_audio", "audio-library-name p3mini_audio")
+
+#if not PkgSkip("FMODX") and not GetLinkAllStatic():
+#    configprc = configpc.replace("audio-library-name p3openal_audio", "audio-library-name p3fmod_audio")
+
+#if not PkgSkip("MINIAUDIO"):
+#    configprc = configpc.replace("audio-library-name p3openal_audio", "audio-library-name p3mini_audio")
 
 if GetTarget() == 'windows':
     # Convert to Windows newlines.
