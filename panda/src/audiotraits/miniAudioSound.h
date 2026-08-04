@@ -181,7 +181,7 @@ public:
 
   // Construct a near-identical copy of this object on the heap and return
   //  a refcounted pointer to the new copy
-  virtual PT(AudioSound) make_copy() const;
+  virtual AudioSound *make_copy() const;
 
   AudioSound::SoundStatus status() const;
 

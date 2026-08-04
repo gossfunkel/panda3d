@@ -26,11 +26,12 @@ pset<PT(MiniAudioManager)> *MiniAudioManager::_managers = nullptr;
 /**
  * Factory Function
  */
-PT(AudioManager) Create_MiniAudioManager() {
+AudioManager *Create_MiniAudioManager() {
   audio_debug("Create_MiniAudioManager()");
   //ReMutexHolder holder(_lock);
-  PT(AudioManager) new_man = new MiniAudioManager;
-  return new_man;
+  //PT(AudioManager) new_man = new MiniAudioManager;
+  //return new_man;
+  return new MiniAudioManager;
 }
 
 MiniAudioManager::

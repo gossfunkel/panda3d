@@ -158,6 +158,6 @@ public:
 
 };
 
-EXPCL_MINI_AUDIO PT(AudioManager) Create_MiniAudioManager();
+EXPCL_MINI_AUDIO AudioManager *Create_MiniAudioManager();
 
 #endif /* MINIAUDIOMANAGER_H */

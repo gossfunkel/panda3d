@@ -121,8 +121,8 @@ MiniAudioSound(const MiniAudioSound &copy_sound) :
                 << "device sample rate");
 }
 
-PT(AudioSound) MiniAudioSound::make_copy() const {
-  PT(MiniAudioSound) copy_sound = new MiniAudioSound(*this);
+AudioSound *MiniAudioSound::make_copy() const {
+  MiniAudioSound *copy_sound = new MiniAudioSound(*this);
 
   nassertr(copy_sound->is_valid() == this->is_valid(), nullptr);
 
