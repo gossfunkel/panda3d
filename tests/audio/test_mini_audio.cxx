@@ -4,10 +4,9 @@
 
 #include "catch_amalgamated.hpp"
 
-#include "config_miniaudio.h"
+#include "miniAudioManager.h"
 
 TEST_CASE("p3mini_audio initialises a new MiniAudioManager correctly", "[audio]") {
-  init_libMiniAudio();
-  AudioManager *test_man = get_audio_manager();
+  PT(AudioManager) test_man = AudioManager::create_AudioManager();
   REQUIRE(test_man->is_valid());
 }
