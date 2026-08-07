@@ -1,20 +1,25 @@
 # TODO list:
 ### features and functionality:
-- exhaustively go through the supported DSP effects in FilterConfig and implement a 'parser' to read the config and construct a MiniAudio node with equivalent effects applied.
+- currently, the binaries don't link through correctly, causing load_dso to fail and a NullAudioManager to be generated
+- the config options declared in the config files should probably be defined somewhere
 - additional decoding vtables (vorbis)
 ### debugging, logging, and testing:
 - debug macro guard in `MaAudioSound`?
 - check over miniaudio.h 6.2.3. Data Streams
-- set up any config or logging for MiniAudio
+- set up config or logging for MiniAudio
 - more error checking with `nassert`
 - write tests
 - run tests
 - benchmarks with and without the `ReMutex`es
 ### MiniAudio library files:
 - might need to make an empty header for interrogate?
+### Documentation
+- manual page for miniaudio
+- reference pages: comments, sphinx
 
 # For a second PR (P3MiniAudio expanded):
 - custom distance attenuation factor fx node
+- exhaustively go through the supported DSP effects in FilterConfig and implement a mapping from config settings to MiniAudio nodes with equivalent effects applied.
 - fade in/out support?
 - resampling support?
 
@@ -50,7 +55,7 @@ have class template argument deduction and the `auto` keyword for easy
 iterator procurement.
 
 Also, rdb said that the `plist` data type isn't very good and should be
-avoided, so I'm just going to try using STL arrays. For this, we'll need to
+avoided, so I'm using `pset`s, `pdeque`s, and `pmap`s. For this, we'll need to
 make sure that AudioSounds (or the AudioManager) do not construct sounds if
 the `_cache_size` has been reached, since they cannot be stored in the array.
 We should instead return a null sound, to allow applications to hit the limit
@@ -63,17 +68,28 @@ lower than the number of cached sounds, or calling `uncache_sound`). This is
 why `MaAudioSounds` now have a `cache` and `uncache` method in order to
 manually call `init()` and `uninit()` on their `ma_sound`s. This incurs a
 runtime cost to check if a sound is initialised at runtime, but it prevents
-Python objects from breaking after using `uncache_sound` in some situations
+Python objects from breaking after using `uncache_sound` in some situations.
+Adjusting the pointer format for null sounds could have wider effects and
+will have to go in a future PR.
 
 We have elected to format the internal backend names in the style
 `miniAudio*`/`[*_]mini_audio[_*]`. This optimises for internal consistency
 along with clarity, and has a minimal character cost (2 more than `ma`).
 
+I've been trying to debug and test the loading of the library and the
+initialisation of the backend with the Catch2 and Pytest testing. More in-
+depth debugging or knowledge of the p3d initialisation process might be
+needed to fix what I've done wrong here.
+
 #### Other tools to note / concepts involved
+- cmake
+- makepanda
+- pandabase? framework? TODO figure out how this whole thing is loaded in p3d
+- Catch2
+- Pytest
 - `nassertv` - assert a condition
 - `ReMutexHolder` - mutex
-- `phash_map` - fast lookup table (hashmap)
-- `phash_set` - fast set
+- `pmap` - fast lookup table (hashmap)
 - `pset` - fast set
 - `friend` classes
 - `iterator`s and C++ containers

@@ -18,6 +18,7 @@
 #include "notifyCategoryProxy.h"
 #include "dconfig.h"
 #include "audioManager.h"
+#include "miniaudio.h"
 
 ConfigureDecl(config_miniaudio, EXPCL_MINI_AUDIO, EXPTP_MINI_AUDIO);
 NotifyCategoryDecl(miniaudio, EXPCL_MINI_AUDIO, EXPTP_MINI_AUDIO);

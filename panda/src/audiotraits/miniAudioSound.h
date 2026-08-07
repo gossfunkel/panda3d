@@ -19,8 +19,6 @@
 #include "audioSound.h"
 #include "miniAudioManager.h"
 
-#include "miniaudio.h"
-
 class EXPCL_MINI_AUDIO MiniAudioSound final : public AudioSound {
   friend class MiniAudioManager;
 

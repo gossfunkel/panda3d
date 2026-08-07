@@ -27,9 +27,7 @@
 #include "config_audio.h"
 #include "config_putil.h"
 #include "config_express.h"
-#include "config_openalAudio.h"
-
-#include "miniaudio.h"
+#include "config_miniaudio.h"
 
 class MiniAudioSound;
 
