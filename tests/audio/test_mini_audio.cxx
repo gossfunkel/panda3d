@@ -6,7 +6,7 @@
 
 #include "miniAudioManager.h"
 
-TEST_CASE("p3mini_audio initialises a new MiniAudioManager correctly", "[audio]") {
+TEST_CASE("p3mini_audio creates a valid MiniAudioManager", "[audio]") {
   PT(AudioManager) test_man = AudioManager::create_AudioManager();
   REQUIRE(test_man->is_valid());
 }
