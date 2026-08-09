@@ -28,4 +28,4 @@ extern "C" EXPCL_MINI_AUDIO Create_AudioManager_proc *get_audio_manager_func_min
 
 extern ConfigVariableString miniaudio_device;
 
-#endif // CONFIG_OPENALAUDIO_H
+#endif // CONFIG_MINIAUDIO_H
