@@ -3050,7 +3050,7 @@ if PkgSkip("TINYDISPLAY") or GetLinkAllStatic():
 
 if PkgSkip("OPENAL") or GetLinkAllStatic():
     configprc = configprc.replace("audio-library-name p3openal_audio", "audio-library-name p3mini_audio")
-else if PkgSkip("MINIAUDIO") == 0:
+elif PkgSkip("MINIAUDIO") == 0:
     configprc = configpc.replace("audio-library-name p3openal_audio", "audio-library-name p3mini_audio")
 
 #if not PkgSkip("FMODX") and not GetLinkAllStatic():
