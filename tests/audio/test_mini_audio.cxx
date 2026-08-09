@@ -10,3 +10,9 @@ TEST_CASE("p3mini_audio creates a valid MiniAudioManager", "[audio]") {
   PT(AudioManager) test_man = AudioManager::create_AudioManager();
   REQUIRE(test_man->is_valid());
 }
+
+TEST_CASE("MiniAudioManager creates a valid MiniAudiosound", "[audio]") {
+  PT(AudioManager) test_man = AudioManager::create_AudioManager();
+  PT(AudioSound) test_sound = test_man->get_sound("wav_test.wav", 0, 0);
+  REQUIRE(test_sound->status() == AudioSound::READY);
+}
