@@ -23,6 +23,10 @@
 - fade in/out support?
 - resampling support?
 
+# For a general audio update PR:
+- replace `panda/src/audio/test_audio.cxx` with Catch2 test
+- keep a const static PT(NullAudioSound) instead of creating many objects
+
 # notes from MiniAudio header
 - resource manager uses refcounts to keep sources in memory until all sounds `uninit()`ed. Expiring sounds: what if we just keep a reference to a sound? checking this list seems more expensive than just sometimes reloading a sound, honestly. I think we should ditch it.
 - resource manager handles data sources itself; `init()`ing a sound with a source skips the manager.
