@@ -24,7 +24,7 @@ ConfigureDecl(config_miniaudio, EXPCL_MINI_AUDIO, EXPTP_MINI_AUDIO);
 NotifyCategoryDecl(miniaudio, EXPCL_MINI_AUDIO, EXPTP_MINI_AUDIO);
 
 extern "C" EXPCL_MINI_AUDIO void init_libMiniAudio();
-extern "C" EXPCL_MINI_AUDIO Create_AudioManager_proc *get_audio_manager_func_ma_audio();
+extern "C" EXPCL_MINI_AUDIO Create_AudioManager_proc *get_audio_manager_func_mini_audio();
 
 extern ConfigVariableString miniaudio_device;
 

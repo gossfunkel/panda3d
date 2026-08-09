@@ -3050,12 +3050,12 @@ if PkgSkip("TINYDISPLAY") or GetLinkAllStatic():
 
 if PkgSkip("OPENAL") or GetLinkAllStatic():
     configprc = configprc.replace("audio-library-name p3openal_audio", "audio-library-name p3mini_audio")
+else if PkgSkip("MINIAUDIO") == 0:
+    configprc = configpc.replace("audio-library-name p3openal_audio", "audio-library-name p3mini_audio")
 
 #if not PkgSkip("FMODX") and not GetLinkAllStatic():
 #    configprc = configpc.replace("audio-library-name p3openal_audio", "audio-library-name p3fmod_audio")
 
-#if not PkgSkip("MINIAUDIO"):
-#    configprc = configpc.replace("audio-library-name p3openal_audio", "audio-library-name p3mini_audio")
 
 if GetTarget() == 'windows':
     # Convert to Windows newlines.
@@ -4419,7 +4419,9 @@ if PkgSkip("FFMPEG") == 0:
 
 if PkgSkip("MINIAUDIO") == 0:
     OPTS=['DIR:panda/src/audiotraits', 'BUILDING:MINI_AUDIO', 'MINIAUDIO']
+    TargetAdd('miniaudio.obj', opts=OPTS, input='miniaudio.c')
     TargetAdd('mini_audio_mini_audio_composite1.obj', opts=OPTS, input='mini_audio_composite1.cxx')
+    TargetAdd('libp3mini_audio.dll', input='miniaudio.obj')
     TargetAdd('libp3mini_audio.dll', input='mini_audio_mini_audio_composite1.obj')
     TargetAdd('libp3mini_audio.dll', input=COMMON_PANDA_LIBS)
     TargetAdd('libp3mini_audio.dll', opts=['MODULE', 'ADVAPI', 'WINUSER', 'WINMM', 'MINIAUDIO'])

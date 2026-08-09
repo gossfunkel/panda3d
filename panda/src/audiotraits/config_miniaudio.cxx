@@ -32,8 +32,8 @@ ConfigureFn(config_miniaudio) {
 
 ConfigVariableString miniaudio_device
 ("miniaudio-device", "",
- PRC_DESC("Specify the MiniAudio device string for audio playback (no quotes). If this "
-          "is not specified, the MiniAudio default device is used."));
+ PRC_DESC("Specify the MiniAudio device string for audio playback (no quotes)."
+    "If this is not specified, the MiniAudio default device is used."));
 
 /**
  * Initializes the library.  This must be called at least once before any of
