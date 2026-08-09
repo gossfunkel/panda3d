@@ -27,6 +27,5 @@ extern "C" EXPCL_MINI_AUDIO void init_libMiniAudio();
 extern "C" EXPCL_MINI_AUDIO Create_AudioManager_proc *get_audio_manager_func_mini_audio();
 
 extern ConfigVariableString miniaudio_device;
-extern ConfigVariableBool disable_miniaudio;
 
 #endif // CONFIG_MINIAUDIO_H
