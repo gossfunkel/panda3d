@@ -33,49 +33,7 @@ class MiniAudioSound;
 
 class EXPCL_MINI_AUDIO MiniAudioManager final : public AudioManager {
   friend class MiniAudioSound;
-  // TODO benchmarks with and without mutexes
   //static ReMutex _lock;
-
-  static int _active_managers;
-  bool _active;
-  bool _is_valid;
-  unsigned int _cache_limit;
-  PN_stdfloat _volume;
-  PN_stdfloat _play_rate;
-
-  // MiniAudio high-level interface objects
-  ma_device _device;
-  ma_resource_manager_config _resource_mgr_conf;
-  ma_resource_manager _resource_mgr;
-  ma_engine _engine;
-  ma_node *_global_fx;
-
-  // TODO if we don't use mutexes, these should probably all
-  //  be made atomic/thread-safe in some other way (smart queues)
-  //patomic<type> var;
-
-  // pointer to set of all managers
-  static pset<PT(MiniAudioManager)> *_managers;
-
-  // deque of cached AudioSounds in this manager
-  pdeque<WPT(MiniAudioSound)> _all_sounds;
-  // counting number of sounds referencing cached sources
-  pmap<Filename, unsigned int>_cache_counts;
-  // MiniAudio node containing all sounds
-  ma_sound _all_sounds_grp;
-  // maximum playing sounds
-  unsigned int _concurrent_sound_limit;
-  // Counter for playing sounds
-  unsigned int _num_concurrent_sounds;
-
-  PN_stdfloat _distance_factor;
-  PN_stdfloat _doppler_factor;
-  PN_stdfloat _drop_off_factor;
-
-  LVector3 l_pos;
-  LVector3 l_vel;
-  LVector3 l_fwd;
-  LVector3 l_up;
 
 public:
   MiniAudioManager();
@@ -133,6 +91,48 @@ public:
 
   virtual void audio_3d_set_drop_off_factor(PN_stdfloat factor);
   virtual PN_stdfloat audio_3d_get_drop_off_factor() const;
+
+private:
+  static int _active_managers;
+  bool _active;
+  bool _is_valid;
+  unsigned int _cache_limit;
+  PN_stdfloat _volume;
+  PN_stdfloat _play_rate;
+
+  // MiniAudio high-level interface objects
+  ma_device _device;
+  ma_resource_manager_config _resource_mgr_conf;
+  ma_resource_manager _resource_mgr;
+  ma_engine _engine;
+  ma_node *_global_fx;
+
+  // TODO if we don't use mutexes, these should probably all
+  //  be made atomic/thread-safe in some other way (smart queues)
+  //patomic<type> var;
+
+  // pointer to set of all managers
+  static pset<PT(MiniAudioManager)> *_managers;
+
+  // deque of cached AudioSounds in this manager
+  pdeque<WPT(MiniAudioSound)> _all_sounds;
+  // counting number of sounds referencing cached sources
+  pmap<Filename, unsigned int>_cache_counts;
+  // MiniAudio node containing all sounds
+  ma_sound _all_sounds_grp;
+  // maximum playing sounds
+  unsigned int _concurrent_sound_limit;
+  // Counter for playing sounds
+  unsigned int _num_concurrent_sounds;
+
+  PN_stdfloat _distance_factor;
+  PN_stdfloat _doppler_factor;
+  PN_stdfloat _drop_off_factor;
+
+  LVector3 l_pos;
+  LVector3 l_vel;
+  LVector3 l_fwd;
+  LVector3 l_up;
 
   // For Panda3D's pointer system
  public:
