@@ -11,7 +11,7 @@ elseif((NOT HAVE_FMODEX AND NOT HAVE_OPENAL) OR HAVE_MINIAUDIO)
   )
 
   set(P3MA_SOURCES
-    miniaudio.cxx
+    miniaudio.c
     config_miniaudio.cxx
     miniAudioManager.cxx
     miniAudioSound.cxx
