@@ -78,11 +78,6 @@
 #               Panda3D::OpenAL::p3openal_audio
 #
 #
-#   miniaudio - Support for MiniAudio audio output.
-#
-#               Panda3D::miniaudio::p3mini_audio
-#
-#
 #   FMOD      - Support for FMOD audio output.
 #
 #               Panda3D::FMOD::p3fmod_audio
@@ -135,7 +130,7 @@ set(_panda_components
   Direct Contrib Framework Egg
   Bullet ODE
   FFmpeg
-  miniaudio OpenAL FMOD
+  OpenAL FMOD
   OpenGL DX9 OpenGLES1 OpenGLES2 TinyDisplay
   Vision VRPN
 )

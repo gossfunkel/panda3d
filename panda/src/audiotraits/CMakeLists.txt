@@ -18,8 +18,9 @@ elseif((NOT HAVE_FMODEX AND NOT HAVE_OPENAL) OR HAVE_MINIAUDIO)
   )
 
   composite_sources(p3mini_audio P3MA_SOURCES)
-  add_library(p3mini_audio ${MODULE_TYPE} ${P3MA_HEADERS} ${P3MA_SOURCES})
-  set_target_properties(p3mini_audio PROPERTIES DEFINE_SYMBOL BUILDING_MINI_AUDIO)
+  #add_library(p3mini_audio ${MODULE_TYPE} ${P3MA_HEADERS} ${P3MA_SOURCES})
+  add_component_library(p3mini_audio SYMBOL BUILDING_MINI_AUDIO ${P3MA_HEADERS} ${P3MA_SOURCES})
+  # set_target_properties(p3mini_audio PROPERTIES DEFINE_SYMBOL BUILDING_MINI_AUDIO)
   target_link_libraries(p3mini_audio panda)
 
   install(TARGETS p3mini_audio
