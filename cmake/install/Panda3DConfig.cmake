@@ -130,7 +130,7 @@ set(_panda_components
   Direct Contrib Framework Egg
   Bullet ODE
   FFmpeg
-  OpenAL FMOD
+  MiniAudio OpenAL FMOD
   OpenGL DX9 OpenGLES1 OpenGLES2 TinyDisplay
   Vision VRPN
 )
