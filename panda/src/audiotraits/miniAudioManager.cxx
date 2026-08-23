@@ -84,8 +84,6 @@ MiniAudioManager() {
 
   // TODO share resource manager between MA engines
   _resource_mgr_conf = ma_resource_manager_config_init();
-  // TODO we need to make a custom ma_decoding_backend_vtable for
-  //  vorbis etc and set it on the config
   _resource_mgr_conf.decodedFormat     = _device.playback.format;
   _resource_mgr_conf.decodedChannels   = _device.playback.channels;
   _resource_mgr_conf.decodedSampleRate = _device.sampleRate;
@@ -93,9 +91,6 @@ MiniAudioManager() {
   _resource_mgr_conf.jobThreadCount = 2;
 #endif
 
-  // here we could assign the p3d VFS to the resource mgr
-  //  this would get us access to minified files
-  //resource_mgr_conf.pVFS = VirtualFileSystem::get_global_pointer();
   if (ma_resource_manager_init(&_resource_mgr_conf, &_resource_mgr)
       != MA_SUCCESS) {
     ma_device_uninit(&_device);
