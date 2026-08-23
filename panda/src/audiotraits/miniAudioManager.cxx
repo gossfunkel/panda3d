@@ -1,4 +1,4 @@
-/**
+  /**
  * PANDA 3D SOFTWARE
  * Copyright (c) Carnegie Mellon University.  All rights reserved.
  *
@@ -21,7 +21,7 @@ TypeHandle MiniAudioManager::_type_handle;
 
 //ReMutex MiniAudioManager::_lock;
 int MiniAudioManager::_active_managers = 0;
-pset<PT(MiniAudioManager)> *MiniAudioManager::_managers = nullptr;
+pset<MiniAudioManager *> *MiniAudioManager::_managers = nullptr;
 
 /**
  * Factory Function
@@ -34,29 +34,50 @@ AudioManager *Create_MiniAudioManager() {
   return new MiniAudioManager;
 }
 
+/*
+ * Device data callback: forward all audio to it
+ */
+static void mini_audio_device_callback(ma_device *device, void *output,
+                                       const void *input,
+                                       ma_uint32 frame_count) {
+  (void)input;
+  ma_engine *engine = (ma_engine *)device->pUserData;
+  ma_engine_read_pcm_frames(engine, output, frame_count, nullptr);
+}
+
 MiniAudioManager::
 MiniAudioManager() {
   //ReMutexHolder holder(_lock);
   audio_cat.init();
-  _active = false;
+  _active = audio_active;
   _is_valid = false;
+  _volume = audio_volume;
+  _play_rate = 1.0f;
+  _cache_limit = audio_cache_limit;
+  _concurrent_sound_limit = 0;
+  _num_concurrent_sounds = 0;
+  _distance_factor = 1.0f;
+  _doppler_factor = 1.0f;
+  _drop_off_factor = 1.0f;
+  l_pos = LVector3(0, 0, 0);
+  l_vel = LVector3(0, 0, 0);
+  l_fwd = LVector3(0, 0, 1);
+  l_up = LVector3(0, 1, 0);
 
-  if (_managers == nullptr) _managers = new pset<PT(MiniAudioManager)>;
-  _managers->insert((PT(MiniAudioManager))this);
+  if (_managers == nullptr) _managers = new pset<MiniAudioManager *>;
+  _managers->insert(this);
 
   ma_device_config device_config = ma_device_config_init(ma_device_type_playback);
   device_config.playback.format = ma_format_f32;
   device_config.playback.channels = 2;
   device_config.sampleRate = 48000;
-  //device_config.dataCallback
-  //device_config.pUserData
+  device_config.dataCallback = &mini_audio_device_callback;
+  device_config.pUserData = &_engine;
 
   if (ma_device_init(NULL, &device_config, &_device) != MA_SUCCESS) {
     audio_error("Failed to initialise MiniAudio device.");
     return;
   }
-
-  ma_device_start(&_device);
 
   audio_cat.info() << "Using MiniAudio device " << _device.playback.name <<
     "." << std::endl;
@@ -84,8 +105,10 @@ MiniAudioManager() {
   ma_engine_config audio_engine_conf;
   audio_engine_conf = ma_engine_config_init();
   audio_engine_conf.pResourceManager = &_resource_mgr;
+  audio_engine_conf.pDevice = &_device;
   audio_engine_conf.noAutoStart = MA_TRUE;
   if (ma_engine_init(&audio_engine_conf, &_engine) != MA_SUCCESS) {
+    ma_resource_manager_uninit(&_resource_mgr);
     ma_device_uninit(&_device);
     audio_error("Failed to initialise MiniAudio engine.");
     return;
@@ -161,7 +184,7 @@ bool MiniAudioManager::configure_filters(FilterProperties *config) {
         // ma_biquad_node ?
         break;
       case FilterProperties::FT_pitchshift:
-        // TODO
+        // TODOre
         break;
       case FilterProperties::FT_chorus:
         // TODO
@@ -201,25 +224,39 @@ bool MiniAudioManager::configure_filters(FilterProperties *config) {
 PT(AudioSound) MiniAudioManager::
 get_sound(const Filename &file_name, bool positional, int mode) {
   //ReMutexHolder holder(_lock);
+  if (!is_valid()) {
+    return get_null_sound();
+  }
+
+  Filename path = file_name;
+  VirtualFileSystem *vfs = VirtualFileSystem::get_global_ptr();
+  vfs->resolve_filename(path, get_model_path());
+  if (path.empty()) {
+    audio_error("get_sound - invalid filename");
+    return get_null_sound();
+  }
+
   if (mode != StreamMode{SM_stream}) {
-    auto cached_it = _cache_counts.find(file_name);
-    if (cached_it == _cache_counts.end()) {
-      if (_cache_counts.size() >= _cache_limit) {
-        audio_error("Cache limit reached; cannot load new sound file");
-        return get_null_sound();
-      } else {
-        _cache_counts.emplace(std::pair(file_name, 1));
-      }
-    } else cached_it->second++;
+    if (_cache_counts.find(path) == _cache_counts.end() &&
+        _cache_counts.size() >= _cache_limit) {
+      audio_error("Cache limit reached; cannot load new sound file");
+      return get_null_sound();
+    }
   }
 
   MiniAudioSound *new_ma_sound =
-    new MiniAudioSound(this, file_name, positional, mode);
+    new MiniAudioSound(this, path, positional, mode);
+
+  if (!new_ma_sound->is_valid()) {
+    // The sound failed to load; return a null sound instead.
+    delete new_ma_sound;
+    return get_null_sound();
+  }
 
   if (mode != StreamMode{SM_stream}) {
     // TODO this must be done thread-safely
     _all_sounds.emplace_back((WPT(MiniAudioSound))new_ma_sound);
-    new_ma_sound->_manager_it = _all_sounds.end();
+    new_ma_sound->_manager_it = --_all_sounds.end();
   }
   return (PT(AudioSound))new_ma_sound;
 }
@@ -245,17 +282,14 @@ void MiniAudioManager::uncache_sound(const Filename &file_name) {
   Filename path = file_name;
   VirtualFileSystem *vfs = VirtualFileSystem::get_global_ptr();
   vfs->resolve_filename(path, get_model_path());
-  auto sound_it = _all_sounds.begin();
-  while (sound_it != _all_sounds.end()) {
+  pdeque<WPT(MiniAudioSound)> all_sounds(_all_sounds);
+  for (auto sound_it = all_sounds.begin();
+       sound_it != all_sounds.end(); sound_it++) {
     if (PT(MiniAudioSound) s_ptr = sound_it->lock()) {
       if (s_ptr->get_name() == file_name.get_basename() ||
           s_ptr->get_name() == path.get_basename())
         s_ptr->uncache();
-        // should this uncache all/any sounds with this filename?
-        //return;
-    } else // pointer has expired
-      _all_sounds.erase(sound_it);
-    sound_it++;
+    }
   }
 }
 
@@ -266,12 +300,13 @@ void MiniAudioManager::clear_cache() {
   //ReMutexHolder holder(_lock);
   audio_cat.debug() << "Clearing audio cache..." << std::endl;
 
-  auto sound_it = _all_sounds.begin();
-  while (sound_it != _all_sounds.end()) {
+  pdeque<WPT(MiniAudioSound)> all_sounds(_all_sounds);
+  for (auto sound_it = all_sounds.begin();
+       sound_it != all_sounds.end(); sound_it++) {
     if (PT(MiniAudioSound) s_ptr = sound_it->lock())
         s_ptr->uncache();
-    _all_sounds.erase(sound_it);
   }
+  _all_sounds.clear();
 }
 
 /*
@@ -290,17 +325,17 @@ void MiniAudioManager::set_cache_limit(unsigned int count) {
   clear_cache();
   // step through all sounds, stopping them and unloading them from
   // MiniAudio until we have reached the new cache limit
-  for (auto sound_it = _all_sounds.begin();
-       _cache_counts.size() > count; sound_it++) {
+  pdeque<WPT(MiniAudioSound)> all_sounds(_all_sounds);
+  for (auto sound_it = all_sounds.begin();
+       sound_it != all_sounds.end() && _cache_counts.size() > count;
+       sound_it++) {
     if (PT(MiniAudioSound) s_ptr = sound_it->lock()) {
-      if (sound_it == _all_sounds.end()) {
-        audio_error("Could not uncache sounds to reduce cache size to new limit");
-        return;
-      }
       s_ptr->stop();
       s_ptr->uncache();
     }
-    _all_sounds.erase(sound_it);
+  }
+  if (_cache_counts.size() > count) {
+    audio_error("Could not uncache sounds to reduce cache size to new limit");
   }
 }
 
@@ -368,12 +403,13 @@ void MiniAudioManager::reduce_sounds_playing_to(unsigned int count) {
 
   audio_cat.debug() << "Reducing playing sounds to " << count
                     << "." << std::endl;
-  for (auto sound_it = _all_sounds.begin();
-       _num_concurrent_sounds > count; sound_it++) {
+  pdeque<WPT(MiniAudioSound)> all_sounds(_all_sounds);
+  for (auto sound_it = all_sounds.begin();
+       sound_it != all_sounds.end() && _num_concurrent_sounds > count;
+       sound_it++) {
     if (auto s_ptr = sound_it->lock()) {
       s_ptr->stop();
-    } else // pointer has expired
-      _all_sounds.erase(sound_it);
+    }
   }
 }
 
@@ -539,22 +575,22 @@ void MiniAudioManager::
 shutdown() {
   audio_cat.debug() << "Shutting down Audio Managers." << std::endl;
   //ReMutexHolder holder(_lock);
-  if (_managers->size() > 1)
-    for (PT(MiniAudioManager) man_ptr : *_managers) {
-      delete man_ptr;
-      _managers->erase(man_ptr);
+  if (_managers != nullptr) {
+    for (MiniAudioManager *man_ptr : *_managers) {
+      man_ptr->cleanup();
     }
-
-  //nassertv(_active_managers == 0);
+  }
 }
 
 MiniAudioManager::
 ~MiniAudioManager() {
   //ReMutexHolder holder(_lock);
-  nassertv(_managers->size() > 0);
-  auto man_it = _managers->find(this);
-  nassertv(man_it != _managers->end());
-  _managers->erase(man_it);
+  if (_managers != nullptr) {
+    auto man_it = _managers->find(this);
+    if (man_it != _managers->end()) {
+      _managers->erase(man_it);
+    }
+  }
   cleanup();
 }
 
@@ -575,16 +611,24 @@ void MiniAudioManager::
 cleanup() {
   audio_cat.debug() << "Cleaning up Audio Manager..." << std::endl;
   //ReMutexHolder holder(_lock);
-  for (auto sound_it = _all_sounds.begin();
-       sound_it != _all_sounds.end(); sound_it++) {
+  if (!_is_valid) {
+    // Already cleaned up; make sure the device is not uninitialised twice.
+    return;
+  }
+  _is_valid = false;
+
+  pdeque<WPT(MiniAudioSound)> all_sounds(_all_sounds);
+  for (auto sound_it = all_sounds.begin();
+       sound_it != all_sounds.end(); sound_it++) {
     if (PT(MiniAudioSound) s_ptr = sound_it->lock()) {
       s_ptr->stop();
-      delete s_ptr;
+      s_ptr->cleanup();
     }
-    _all_sounds.erase(sound_it);
   }
+  _all_sounds.clear();
 
-  ma_device_uninit(&_device);
+  ma_sound_group_uninit(&_all_sounds_grp);
   ma_engine_uninit(&_engine);
   ma_resource_manager_uninit(&_resource_mgr);
+  ma_device_uninit(&_device);
 }

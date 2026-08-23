@@ -112,7 +112,7 @@ private:
   //patomic<type> var;
 
   // pointer to set of all managers
-  static pset<PT(MiniAudioManager)> *_managers;
+  static pset<MiniAudioManager *> *_managers;
 
   // deque of cached AudioSounds in this manager
   pdeque<WPT(MiniAudioSound)> _all_sounds;
