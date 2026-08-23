@@ -8,6 +8,13 @@ add_executable(run_cxx_tests catch2/catch_amalgamated.cpp ${cxx_test_sources})
 target_include_directories(run_cxx_tests PRIVATE catch2)
 target_link_libraries(run_cxx_tests panda)
 
+if(HAVE_AUDIO AND ((NOT HAVE_FMODEX AND NOT HAVE_OPENAL) OR HAVE_MINIAUDIO))
+  # The MiniAudio backend is a standalone module, so its headers are not
+  # exposed through the panda metalib.
+  target_include_directories(run_cxx_tests PRIVATE
+    "${PROJECT_SOURCE_DIR}/panda/src/audiotraits")
+endif()
+
 # Where supported, report each Catch2 test case as its own ctest test, with
 # its tags as labels (so e.g. `ctest -L express` works).  catch_discover_tests
 # requires CMake 3.19, and discovery runs the binary at build time, which is

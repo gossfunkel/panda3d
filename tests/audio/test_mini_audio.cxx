@@ -17,6 +17,9 @@ TEST_CASE("MiniAudioManager creates a valid MiniAudiosound", "[audio]") {
   REQUIRE(test_man->get_cache_limit() == 1);
   test_man->set_concurrent_sound_limit(1);
   REQUIRE(test_man->get_concurrent_sound_limit() == 1);
-  PT(AudioSound) test_sound = test_man->get_sound("wav_test.wav", 0, 0);
+  Filename sound_path = Filename::from_os_specific(
+    std::string(__FILE__).substr(0, std::string(__FILE__).find_last_of("/"))
+    + "/wav_test.wav");
+  PT(AudioSound) test_sound = test_man->get_sound(sound_path, 0, 0);
   REQUIRE(test_sound->status() == AudioSound::READY);
 }

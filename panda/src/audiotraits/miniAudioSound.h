@@ -18,25 +18,34 @@
 
 #include "audioSound.h"
 #include "miniAudioManager.h"
+#include "movieAudio.h"
+#include "miniAudioDataSource.h"
 
 class EXPCL_MINI_AUDIO MiniAudioSound final : public AudioSound {
   friend class MiniAudioManager;
 
   MiniAudioSound(MiniAudioManager *manager,
-               const Filename &file_name,
-               bool positional,
-               int mode);
+                 MovieAudio *source,
+                 const Filename &file_name,
+                 bool positional,
+                 int mode);
   MiniAudioSound(const MiniAudioSound &copy_sound);
   void cleanup();
 
   bool            _valid;
 
   MiniAudioManager *_manager;
-  ma_sound        *_ma_sound;
+  ma_sound        _ma_sound;
   int             _ma_flags;
 
   // iterator holding the manager's reference to the sound
   pdeque<WPT(MiniAudioSound)>::iterator _manager_it;
+
+  // The Panda MovieAudio object that this sound is based on.
+  PT(MovieAudio) _movie;
+
+  // The miniaudio data source that feeds this sound.
+  MiniAudioDataSource *_data_source;
 
   PN_stdfloat     _volume; // 0..1.0
   PN_stdfloat     _balance; // -1..1
@@ -66,6 +75,10 @@ class EXPCL_MINI_AUDIO MiniAudioSound final : public AudioSound {
   std::string     _finished_event;
 
   Filename        _filename;
+
+  // The basename of the sound file.
+  std::string     _basename;
+
 
   // _active is for things like a 'turn off sound effects' in a preferences
   //  panel.  _active is not about whether a sound is currently playing.  Use

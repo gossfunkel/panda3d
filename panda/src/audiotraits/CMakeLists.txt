@@ -8,6 +8,8 @@ elseif((NOT HAVE_FMODEX AND NOT HAVE_OPENAL) OR HAVE_MINIAUDIO)
     miniAudioManager.h
     miniAudioSound.I
     miniAudioSound.h
+    miniAudioDataSource.I
+    miniAudioDataSource.h
   )
 
   set(P3MA_SOURCES
@@ -15,6 +17,7 @@ elseif((NOT HAVE_FMODEX AND NOT HAVE_OPENAL) OR HAVE_MINIAUDIO)
     config_miniaudio.cxx
     miniAudioManager.cxx
     miniAudioSound.cxx
+    miniAudioDataSource.cxx
   )
 
   composite_sources(p3mini_audio P3MA_SOURCES)

@@ -3055,7 +3055,10 @@ if GetLinkAllStatic():
         configprc = configprc.replace("audio-library-name p3openal_audio", "audio-library-name p3mini_audio")
 elif PkgSkip("OPENAL"):
     if PkgSkip("FMODEX"):
-        configprc = configprc.replace("audio-library-name p3openal_audio", "#audio-library-name p3openal_audio")
+        if PkgSkip("MINIAUDIO"):
+            configprc = configprc.replace("audio-library-name p3openal_audio", "#audio-library-name p3openal_audio")
+        else:
+            configprc = configprc.replace("audio-library-name p3openal_audio", "audio-library-name p3mini_audio")
     else:
         configprc = configprc.replace("audio-library-name p3openal_audio", "audio-library-name p3fmod_audio")
 
@@ -4420,7 +4423,7 @@ if PkgSkip("FFMPEG") == 0:
 #
 
 if PkgSkip("MINIAUDIO") == 0:
-    OPTS=['DIR:panda/src/audiotraits', 'BUILDING:MINIAUDIO', 'MINIAUDIO']
+    OPTS=['DIR:panda/src/audiotraits', 'BUILDING:MINI_AUDIO', 'MINIAUDIO']
     TargetAdd('miniaudio.obj', opts=OPTS, input='miniaudio.c')
     TargetAdd('mini_audio_mini_audio_composite1.obj', opts=OPTS, input='mini_audio_composite1.cxx')
     TargetAdd('libp3mini_audio.dll', input='miniaudio.obj')
