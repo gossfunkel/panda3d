@@ -179,7 +179,7 @@ bool MiniAudioManager::configure_filters(FilterProperties *config) {
         // ma_biquad_node ?
         break;
       case FilterProperties::FT_pitchshift:
-        // TODOre
+        // TODO
         break;
       case FilterProperties::FT_chorus:
         // TODO
