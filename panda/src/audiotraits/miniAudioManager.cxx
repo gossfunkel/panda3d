@@ -236,6 +236,38 @@ get_sound(const Filename &file_name, bool positional, int mode) {
     return get_null_sound();
   }
 
+  // Obtain a MovieAudio for the resolved path.
+  // MovieAudio opens the file through the VirtualFileSystem, so
+  // sounds stored in the VFS (like multifiles) can be loaded.
+  PT(MovieAudio) mva = MovieAudio::get(path);
+
+  if (mva->get_filename().empty()) {
+    audio_error("get_sound - unsupported audio file: " << path);
+    return get_null_sound();
+  }
+
+  return get_sound(mva, positional, mode);
+}
+
+/*
+ * Construct a new sound using a MovieAudio source.
+ * The MovieAudio is decoded through its MovieAudioCursor
+ * (which reads through the VFS), rather than being handed
+ * to miniaudio's own file decoders.
+ */
+PT(AudioSound) MiniAudioManager::
+get_sound(MovieAudio *source, bool positional, int mode) {
+  if (!is_valid()) {
+    return get_null_sound();
+  }
+
+  if (source == nullptr || source->get_filename().empty()) {
+    audio_error("get_sound - invalid MovieAudio source");
+    return get_null_sound();
+  }
+
+  Filename path = source->get_filename();
+
   if (mode != StreamMode{SM_stream}) {
     if (_cache_counts.find(path) == _cache_counts.end() &&
         _cache_counts.size() >= _cache_limit) {
@@ -245,7 +277,7 @@ get_sound(const Filename &file_name, bool positional, int mode) {
   }
 
   MiniAudioSound *new_ma_sound =
-    new MiniAudioSound(this, path, positional, mode);
+    new MiniAudioSound(this, source, path, positional, mode);
 
   if (!new_ma_sound->is_valid()) {
     // The sound failed to load; return a null sound instead.
@@ -259,18 +291,6 @@ get_sound(const Filename &file_name, bool positional, int mode) {
     new_ma_sound->_manager_it = --_all_sounds.end();
   }
   return (PT(AudioSound))new_ma_sound;
-}
-
-/*
- * Construct a new sound using a MovieAudio source.
- * Note: this only uses the MovieAudio for its filename; it does not
- * use a MovieAudioCursor for decoding. MiniAudio manages decoding in
- * a performant manner already, so we use its reference counting and
- * cache implementation, which works similarly to ours.
- */
-PT(AudioSound) MiniAudioManager::
-get_sound(MovieAudio *source, bool positional, int mode) {
-  return get_sound(source->get_filename(), positional, mode);
 }
 
 /*

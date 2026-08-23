@@ -18,14 +18,17 @@
 
 #include "audioSound.h"
 #include "miniAudioManager.h"
+#include "movieAudio.h"
+#include "miniAudioDataSource.h"
 
 class EXPCL_MINI_AUDIO MiniAudioSound final : public AudioSound {
   friend class MiniAudioManager;
 
   MiniAudioSound(MiniAudioManager *manager,
-               const Filename &file_name,
-               bool positional,
-               int mode);
+                 MovieAudio *source,
+                 const Filename &file_name,
+                 bool positional,
+                 int mode);
   MiniAudioSound(const MiniAudioSound &copy_sound);
   void cleanup();
 
@@ -37,6 +40,12 @@ class EXPCL_MINI_AUDIO MiniAudioSound final : public AudioSound {
 
   // iterator holding the manager's reference to the sound
   pdeque<WPT(MiniAudioSound)>::iterator _manager_it;
+
+  // The Panda MovieAudio object that this sound is based on.
+  PT(MovieAudio) _movie;
+
+  // The miniaudio data source that feeds this sound.
+  MiniAudioDataSource *_data_source;
 
   PN_stdfloat     _volume; // 0..1.0
   PN_stdfloat     _balance; // -1..1

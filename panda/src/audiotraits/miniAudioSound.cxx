@@ -18,6 +18,7 @@ TypeHandle MiniAudioSound::_type_handle;
 MiniAudioSound::
 MiniAudioSound(
     MiniAudioManager *manager,
+    MovieAudio *source,
     const Filename &file_name,
     bool positional,
     int mode) :
@@ -26,9 +27,11 @@ MiniAudioSound(
       _manager(manager),
       _ma_flags(
         (mode == AudioManager::StreamMode{AudioManager::SM_stream})
-        ? MA_RESOURCE_MANAGER_DATA_SOURCE_FLAG_STREAM // decode in 1s pages
-        : MA_RESOURCE_MANAGER_DATA_SOURCE_FLAG_ASYNC), // load to ram later
+        ? MA_SOUND_FLAG_STREAM // decode in 1s pages
+        : MA_SOUND_FLAG_ASYNC), // load to ram later
       _manager_it(manager->_all_sounds.end()),
+      _movie(source),
+      _data_source(nullptr),
       _volume(1.0f),
       _balance(0),
       _play_rate(1.0),
@@ -69,8 +72,6 @@ MiniAudioSound(
       audio_warning("Copied stereo sound \"" << file_name.get_basename()
                     << "\" will not be spatialized");
   }
-  if (sample_rate != _manager->_device.sampleRate)
-    audio_error("Source sample rate mismatch with MiniAudio device sample rate");
 
   length();
 }
@@ -86,6 +87,8 @@ MiniAudioSound(const MiniAudioSound &copy_sound) :
     _manager(copy_sound._manager),
     _ma_flags(copy_sound._ma_flags),
     _manager_it(copy_sound._manager->_all_sounds.end()),
+    _movie(copy_sound._movie),
+    _data_source(nullptr),
     _volume(copy_sound._volume),
     _balance(copy_sound._balance),
     _play_rate(copy_sound._play_rate),
@@ -141,9 +144,6 @@ MiniAudioSound(const MiniAudioSound &copy_sound) :
                     << copy_sound._filename.get_basename()
                     << "\" will not be spatialized");
   }
-  if (sample_rate != _manager->_device.sampleRate)
-    audio_error("Source sample rate mismatch with MiniAudio "
-                << "device sample rate");
 }
 
 AudioSound *MiniAudioSound::make_copy() const {
@@ -172,12 +172,27 @@ void MiniAudioSound::cache() {
     else cache_it->second++;
 
     _ma_flags |= (_loop)
-      ? MA_RESOURCE_MANAGER_DATA_SOURCE_FLAG_LOOPING : 0;
+      ? MA_SOUND_FLAG_LOOPING : 0;
   }
-  if (ma_sound_init_from_file(
-      &_manager->_engine, _filename.c_str(), _ma_flags,
+
+  // Decode the sound through Panda3D's MovieAudio cursor, which reads
+  // through the VirtualFileSystem. This makes it possible to load sounds
+  // from the VFS like multifiles. It also supports the same audio formats
+  // as the rest of Panda3D.
+  if (_data_source == nullptr) {
+    _data_source = new MiniAudioDataSource(_movie);
+  }
+
+  if (!_data_source->is_valid()) {
+    audio_error("Failed to initialise AudioSound");
+    _valid = false;
+    return;
+  }
+
+  if (ma_sound_init_from_data_source(
+      &_manager->_engine, _data_source->get_data_source(), _ma_flags,
       &_manager->_all_sounds_grp,
-      NULL, &_ma_sound) != MA_SUCCESS) {
+      &_ma_sound) != MA_SUCCESS) {
     audio_error("Failed to initialise AudioSound");
     _valid = false;
     return;
@@ -207,6 +222,10 @@ void MiniAudioSound::uncache() {
       _manager->_cache_counts.erase(cache_it);
   }
   ma_sound_uninit(&_ma_sound);
+  if (_data_source != nullptr) {
+    delete _data_source;
+    _data_source = nullptr;
+  }
   _valid = false;
 }
 
@@ -371,6 +390,9 @@ PN_stdfloat MiniAudioSound::get_loop_start() const {
 
 void MiniAudioSound::set_time(PN_stdfloat time) {
   //ReMutexHolder holder(_lock);
+  if (time < 0.0f) {
+    time = 0.0f;
+  }
   ma_sound_seek_to_second(&_ma_sound, time);
 }
 
@@ -593,7 +615,6 @@ void MiniAudioSound::finished() {
   if (!is_valid()) return;
 
   stop();
-  set_time(_length);
   if (!_finished_event.empty()) throw_event(_finished_event);
 }
 
@@ -629,5 +650,9 @@ cleanup() {
     _manager_it = _manager->_all_sounds.end();
   }
   ma_sound_uninit(&_ma_sound);
+  if (_data_source != nullptr) {
+    delete _data_source;
+    _data_source = nullptr;
+  }
   _valid = false;
 }
