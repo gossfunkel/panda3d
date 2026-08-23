@@ -691,6 +691,11 @@ if(OpenAL_FOUND AND APPLE OR OPENAL_FOUND AND APPLE)
   set(HAVE_OPENAL_FRAMEWORK YES)
 endif()
 
+# MiniAudio
+# MiniAudio is bundled with the source tree, so it is always available.
+option(HAVE_MINIAUDIO
+  "This enables support for the MiniAudio sound library." ON)
+
 
 #
 # ------------ UI libraries ------------
