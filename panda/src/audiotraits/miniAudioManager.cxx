@@ -22,6 +22,8 @@ TypeHandle MiniAudioManager::_type_handle;
 //ReMutex MiniAudioManager::_lock;
 int MiniAudioManager::_active_managers = 0;
 pset<MiniAudioManager *> *MiniAudioManager::_managers = nullptr;
+ma_resource_manager_config *MiniAudioManager::_resource_mgr_conf = nullptr;
+ma_resource_manager *MiniAudioManager::_resource_mgr = nullptr;
 
 /**
  * Factory Function
@@ -64,10 +66,8 @@ MiniAudioManager() {
   l_fwd = LVector3(0, 0, 1);
   l_up = LVector3(0, 1, 0);
 
-  if (_managers == nullptr) _managers = new pset<MiniAudioManager *>;
-  _managers->insert(this);
-
-  ma_device_config device_config = ma_device_config_init(ma_device_type_playback);
+  ma_device_config device_config =
+    ma_device_config_init(ma_device_type_playback);
   device_config.playback.format = ma_format_f32;
   device_config.playback.channels = 2;
   device_config.sampleRate = 48000;
@@ -78,32 +78,37 @@ MiniAudioManager() {
     audio_error("Failed to initialise MiniAudio device.");
     return;
   }
-
   audio_cat.info() << "Using MiniAudio device " << _device.playback.name <<
     "." << std::endl;
 
-  // TODO share resource manager between MA engines
-  _resource_mgr_conf = ma_resource_manager_config_init();
-  _resource_mgr_conf.decodedFormat     = _device.playback.format;
-  _resource_mgr_conf.decodedChannels   = _device.playback.channels;
-  _resource_mgr_conf.decodedSampleRate = _device.sampleRate;
-#ifdef HAVE_THREADS
-  _resource_mgr_conf.jobThreadCount = 2;
-#endif
+  if (_managers == nullptr)
+    _managers = new pset<MiniAudioManager *>;
+  _managers->insert(this);
 
-  if (ma_resource_manager_init(&_resource_mgr_conf, &_resource_mgr)
-      != MA_SUCCESS) {
-    ma_device_uninit(&_device);
-    audio_error("Failed to initialise MiniAudio resource manager.");
+  if (MiniAudioManager::_resource_mgr == nullptr) {
+    *MiniAudioManager::_resource_mgr_conf = ma_resource_manager_config_init();
+    MiniAudioManager::_resource_mgr_conf->decodedFormat     = _device.playback.format;
+    MiniAudioManager::_resource_mgr_conf->decodedChannels   = _device.playback.channels;
+    MiniAudioManager::_resource_mgr_conf->decodedSampleRate = _device.sampleRate;
+#ifdef HAVE_THREADS
+    MiniAudioManager::_resource_mgr_conf->jobThreadCount = 2;
+#endif
+    if (ma_resource_manager_init(
+          MiniAudioManager::_resource_mgr_conf,
+          MiniAudioManager::_resource_mgr)
+        != MA_SUCCESS) {
+      ma_device_uninit(&_device);
+      audio_error("Failed to initialise MiniAudio resource manager.");
+    }
   }
 
   ma_engine_config audio_engine_conf;
   audio_engine_conf = ma_engine_config_init();
-  audio_engine_conf.pResourceManager = &_resource_mgr;
+  audio_engine_conf.pResourceManager = MiniAudioManager::_resource_mgr;
   audio_engine_conf.pDevice = &_device;
   audio_engine_conf.noAutoStart = MA_TRUE;
   if (ma_engine_init(&audio_engine_conf, &_engine) != MA_SUCCESS) {
-    ma_resource_manager_uninit(&_resource_mgr);
+    ma_resource_manager_uninit(MiniAudioManager::_resource_mgr);
     ma_device_uninit(&_device);
     audio_error("Failed to initialise MiniAudio engine.");
     return;
@@ -595,6 +600,7 @@ shutdown() {
       man_ptr->cleanup();
     }
   }
+  ma_resource_manager_uninit(MiniAudioManager::_resource_mgr);
 }
 
 MiniAudioManager::
@@ -644,6 +650,5 @@ cleanup() {
 
   ma_sound_group_uninit(&_all_sounds_grp);
   ma_engine_uninit(&_engine);
-  ma_resource_manager_uninit(&_resource_mgr);
   ma_device_uninit(&_device);
 }

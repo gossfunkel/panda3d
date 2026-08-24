@@ -2,6 +2,7 @@
 ### features and functionality:
 - config option to set device (declared in the config files) should be defined somewhere
 - ensure resource manager is shared across `MiniAudioManager`s
+- exhaustively go through the supported DSP effects in FilterConfig and implement a mapping from config settings to MiniAudio nodes with equivalent effects applied.
 - map out flow of `AudioSound`s to ensure none are orphaned
 - establish whether re-activating sounds should unpause them (NOTE: is this required for looping? see Darktohka comment on github)
 - windows build: does miniaudio require that we add some newer libs (like `winmm`) to `makepanda`?
@@ -11,6 +12,7 @@
 - set up config or logging for MiniAudio
 - more error checking with `nassert`
 - complete testing
+- check that it works on windows, mac, linux, android, emscripten
 - benchmarks with and without the `ReMutex`es
 ### Documentation
 - manual page for miniaudio
@@ -18,7 +20,6 @@
 
 # For a second PR (P3MiniAudio expanded):
 - custom distance attenuation factor fx node
-- exhaustively go through the supported DSP effects in FilterConfig and implement a mapping from config settings to MiniAudio nodes with equivalent effects applied.
 - fade in/out support
 - resampling support
 - sound generation support (note: this is currently disabled

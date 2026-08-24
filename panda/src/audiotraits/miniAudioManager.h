@@ -94,6 +94,8 @@ public:
 
 private:
   static int _active_managers;
+  static ma_resource_manager_config *_resource_mgr_conf;
+  static ma_resource_manager *_resource_mgr;
   bool _active;
   bool _is_valid;
   unsigned int _cache_limit;
@@ -102,8 +104,6 @@ private:
 
   // MiniAudio high-level interface objects
   ma_device _device;
-  ma_resource_manager_config _resource_mgr_conf;
-  ma_resource_manager _resource_mgr;
   ma_engine _engine;
   ma_node *_global_fx;
 
