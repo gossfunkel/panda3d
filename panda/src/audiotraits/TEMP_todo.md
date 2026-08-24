@@ -1,18 +1,17 @@
 # TODO list:
 ### features and functionality:
-- currently, the binaries don't link through correctly, causing load_dso to fail and a NullAudioManager to be generated
-- the config options declared in the config files should probably be defined somewhere
-- additional decoding vtables (vorbis)
+- config option to set device (declared in the config files) should be defined somewhere
+- ensure resource manager is shared across `MiniAudioManager`s
+- map out flow of `AudioSound`s to ensure none are orphaned
+- establish whether re-activating sounds should unpause them (NOTE: is this required for looping? see Darktohka comment on github)
+- windows build: does miniaudio require that we add some newer libs (like `winmm`) to `makepanda`?
 ### debugging, logging, and testing:
 - debug macro guard in `MaAudioSound`?
 - check over miniaudio.h 6.2.3. Data Streams
 - set up config or logging for MiniAudio
 - more error checking with `nassert`
-- write tests
-- run tests
+- complete testing
 - benchmarks with and without the `ReMutex`es
-### MiniAudio library files:
-- might need to make an empty header for interrogate?
 ### Documentation
 - manual page for miniaudio
 - reference pages: comments, sphinx
@@ -20,12 +19,12 @@
 # For a second PR (P3MiniAudio expanded):
 - custom distance attenuation factor fx node
 - exhaustively go through the supported DSP effects in FilterConfig and implement a mapping from config settings to MiniAudio nodes with equivalent effects applied.
-- fade in/out support?
-- resampling support?
+- fade in/out support
+- resampling support
+- sound generation support (note: this is currently disabled
 
 # For a general audio update PR:
-- replace `panda/src/audio/test_audio.cxx` with Catch2 test
-- keep a const static PT(NullAudioSound) instead of creating many objects
+- keep a const static PT(NullAudioSound) instead of creatig many objects
 
 # notes from MiniAudio header
 - resource manager uses refcounts to keep sources in memory until all sounds `uninit()`ed. Expiring sounds: what if we just keep a reference to a sound? checking this list seems more expensive than just sometimes reloading a sound, honestly. I think we should ditch it.
@@ -80,15 +79,9 @@ We have elected to format the internal backend names in the style
 `miniAudio*`/`[*_]mini_audio[_*]`. This optimises for internal consistency
 along with clarity, and has a minimal character cost (2 more than `ma`).
 
-I've been trying to debug and test the loading of the library and the
-initialisation of the backend with the Catch2 and Pytest testing. More in-
-depth debugging or knowledge of the p3d initialisation process might be
-needed to fix what I've done wrong here.
-
 #### Other tools to note / concepts involved
 - cmake
 - makepanda
-- pandabase? framework? TODO figure out how this whole thing is loaded in p3d
 - Catch2
 - Pytest
 - `nassertv` - assert a condition
@@ -98,5 +91,5 @@ needed to fix what I've done wrong here.
 - `friend` classes
 - `iterator`s and C++ containers
 - inheritance (`protected`, `virtual`, and `static` methods/members, and the `final` keyword)
-- heap allocated garbage collection using `PT()`s, memory management in general
+- heap allocated garbage collection using `PT()`s; memory management in general
 
