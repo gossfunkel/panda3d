@@ -86,6 +86,7 @@ MiniAudioManager() {
   _managers->insert(this);
 
   if (MiniAudioManager::_resource_mgr == nullptr) {
+    MiniAudioManager::_resource_mgr_conf = new ma_resource_manager_config();
     *MiniAudioManager::_resource_mgr_conf = ma_resource_manager_config_init();
     MiniAudioManager::_resource_mgr_conf->decodedFormat     = _device.playback.format;
     MiniAudioManager::_resource_mgr_conf->decodedChannels   = _device.playback.channels;
@@ -93,6 +94,7 @@ MiniAudioManager() {
 #ifdef HAVE_THREADS
     MiniAudioManager::_resource_mgr_conf->jobThreadCount = 2;
 #endif
+    MiniAudioManager::_resource_mgr = new ma_resource_manager();
     if (ma_resource_manager_init(
           MiniAudioManager::_resource_mgr_conf,
           MiniAudioManager::_resource_mgr)
@@ -601,6 +603,7 @@ shutdown() {
     }
   }
   ma_resource_manager_uninit(MiniAudioManager::_resource_mgr);
+  MiniAudioManager::_resource_mgr = nullptr;
 }
 
 MiniAudioManager::
