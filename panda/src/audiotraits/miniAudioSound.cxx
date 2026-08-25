@@ -491,8 +491,8 @@ void MiniAudioSound::set_3d_attributes(
       PN_stdfloat px, PN_stdfloat py, PN_stdfloat pz,
       PN_stdfloat vx, PN_stdfloat vy, PN_stdfloat vz) {
   //ReMutexHolder holder(_lock);
-  _position = (LVector3){px, py, pz};
-  _velocity = (LVector3){vx, vy, vz};
+  _position = LVector3(px, py, pz);
+  _velocity = LVector3(vx, vy, vz);
   ma_sound_set_position(&_ma_sound, px, py, pz);
   ma_sound_set_velocity(&_ma_sound, vx, vy, vz);
 }
