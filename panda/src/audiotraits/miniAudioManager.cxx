@@ -160,18 +160,40 @@ bool MiniAudioManager::configure_filters(FilterProperties *config) {
   if (_global_fx == nullptr)
     // TODO node config
     ma_node_init(&_engine.nodeGraph, nullptr, nullptr, _global_fx);
-
-  // TODO if we have set _global_fx, step through and reinit() where relevant
+  //else
+    // TODO reinit() _global_fx
+  ma_node_graph *node_graph = &_engine.nodeGraph;
+  ma_node *prev_node = _global_fx;
+  ma_uint32 channels = _device.playback.channels;
+  ma_uint32 samp_rate = _engine.samplerate;
   for (FilterProperties::FilterConfig conf_item : conf) {
     switch (conf_item._type) {
       case FilterProperties::FT_lowpass:
-        // ma_loshelf_node
+        ma_loshelf_node *new_node;
+        ma_loshelf_node_config *node_conf;
+        *node_conf = ma_loshelf_node_config_init(
+            channels, samp_rate, 1.f, b, a
+        );
+        ma_loshelf_node_init(node_graph, node_conf, nullptr, new_node);
         break;
       case FilterProperties::FT_highpass:
         // ma_hishelf_node
+        ma_hishelf_node *new_node;
+        ma_hishelf_node_config *node_conf;
+        *node_conf = ma_hishelf_node_config_init(
+            channels, samp_rate, 1.f, b, a
+        );
+        ma_hishelf_node_init(node_graph, node_conf, nullptr, new_node);
         break;
       case FilterProperties::FT_echo:
         // ma_delay_node
+        ma_delay_node *new_node;
+        ma_delay_node_config *node_conf;
+        ma_uint32 delay_frames = samp_rate * (ma_uint32)c;
+        *node_conf = ma_delay_node_config_init(
+            channels, samp_rate, delay_frames, d
+        );
+        ma_delay_node_init(node_graph, node_conf, nullptr, new_node);
         break;
       case FilterProperties::FT_flange:
         // ma_delay_node
@@ -201,6 +223,18 @@ bool MiniAudioManager::configure_filters(FilterProperties *config) {
         audio_error("Malformed filter config passed to MiniAudio Manager.");
         return false;
     }
+    if (ma_node_attach_output_bus(prev_node, 0, new_node, 0) != MA_SUCCESS) {
+      audio_error("Failed to set filter " << conf_item.type << ".");
+      break;
+    }
+    if (ma_node_attach_output_bus(
+          new_node, 0,
+          ma_node_graph_get_endpoint(node_graph), 0
+          ) != MA_SUCCESS) {
+      audio_error("Failed to set filter " << conf_item.type << ".");
+      break;
+    }
+    prevNode = new_node;
   }
   // ConfigVector is a typedef of pvector<FilterConfig>
   //struct FilterConfig {
