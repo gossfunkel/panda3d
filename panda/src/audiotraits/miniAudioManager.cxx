@@ -199,25 +199,25 @@ bool MiniAudioManager::configure_filters(FilterProperties *config) {
         // ma_delay_node
         break;
       case FilterProperties::FT_distort:
-        // TODO
+        // p3d_distort_node
         break;
       case FilterProperties::FT_normalize:
-        // TODO
+        // TODO p3d_normalize_node
         break;
       case FilterProperties::FT_parameq:
         // ma_biquad_node ?
         break;
       case FilterProperties::FT_pitchshift:
-        // TODO
+        // TODO p3d_repitch_node
         break;
       case FilterProperties::FT_chorus:
-        // TODO
+        // TODO p3d_chorus_node
         break;
       case FilterProperties::FT_sfxreverb:
-        // ma_delay
+        // ma_reverb_node (miniaudio extras)
         break;
       case FilterProperties::FT_compress:
-        // TODO
+        // TODO p3d_compress_node
         break;
       default:
         audio_error("Malformed filter config passed to MiniAudio Manager.");
