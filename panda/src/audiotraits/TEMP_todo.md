@@ -44,6 +44,7 @@
 - disable pitch and doppler by default until set as non-default value for the first time for performance improvement
 - set engine & resource manager sample rate to match first sound and leave unchanged to prevent conversions as sounds are added until a sound is added that doesn't have a matching rate; then disable engine rate.
 - `ma_data_source` is a *very* open API (it's just a `typedef void`)!
+- miniaudio has a built-in clipping function that can be _disabled_ with the device `noClip` option
 
 ## General notes
 In the OpenAL implementation, each AudioSound is a 'client' of a SoundData
