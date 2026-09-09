@@ -38,7 +38,7 @@ vgcore.*
 /*.app
 /*.pkg
 /*.dmg
-/*.whl
+#/*.whl
 /*.txz
 /*.apk
 
