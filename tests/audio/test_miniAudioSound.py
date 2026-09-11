@@ -18,7 +18,9 @@ def test_make_copy(audiomgr):
         pytest.skip("Sound loading failed")
 
     test_sound.set_active(1)
+    assert test_sound.get_active() == 1
     test_sound.set_3d_max_distance(20.0)
+    assert test_sound.get_3d_max_distance() == 20.0
     test_copy = test_sound.make_copy()
 
     assert test_copy.get_active() == test_sound.get_active()

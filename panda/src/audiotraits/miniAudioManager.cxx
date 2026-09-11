@@ -156,6 +156,7 @@ void MiniAudioManager::set_speaker_setup(SpeakerModeCategory cat) {
  * Parse config settings and return pointer to equivalent miniaudio node.
  */
 bool MiniAudioManager::configure_filters(FilterProperties *config) {
+  /*
   const FilterProperties::ConfigVector &conf = config->get_config();
   if (_global_fx == nullptr)
     // TODO node config
@@ -166,7 +167,6 @@ bool MiniAudioManager::configure_filters(FilterProperties *config) {
   ma_node *prev_node = _global_fx;
   ma_uint32 channels = _device.playback.channels;
   ma_uint32 samp_rate = _engine.sampleRate;
-  /*
   for (FilterProperties::FilterConfig conf_item : conf) {
     ma_node new_node;
     switch (conf_item._type) {
@@ -249,7 +249,7 @@ bool MiniAudioManager::configure_filters(FilterProperties *config) {
 
   // TODO save the first node in the new chain to _global_fx ?
   */
-  return true;
+  return false;
 }
 
 /**

@@ -10,9 +10,9 @@ def test_missing_file(audiomgr):
 
 @pytest.mark.parametrize("extension", ["ogg", "opus", "mp3", "flac"])
 def test_comments(audiomgr, extension):
-    if ("openal" or "mini") not in str(audiomgr).lower():
+    if ("openal" and "mini") not in str(audiomgr).lower():
         # NULL audio manager (as well as fmod) don't support comment reading
-        pytest.skip("Comment reading is only supported on OpenAL")
+        pytest.skip("Comment reading is only supported with OpenAL or MiniAudio")
     # ogg should be loaded with libvorbis, opus with libopus, mp3 with ffmpeg
     # we cannot test this though because after loading the loader information is gone
     sound_path = os.path.join(
