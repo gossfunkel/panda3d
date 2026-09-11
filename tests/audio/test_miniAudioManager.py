@@ -11,3 +11,6 @@ def test_get_sound(audiomgr):
     assert str(test_sound) != 'Load-Failure Stub'
     test_sound = audiomgr.get_sound(test_sound)
     assert (str(test_sound).startswith("NullAudioSound") != True)
+    test_sound.stop()
+    #audiomgr.uncache_sound(sound_path)
+    # TODO how to check if sound is cached (maybe needs to be done in Catch2 test)
