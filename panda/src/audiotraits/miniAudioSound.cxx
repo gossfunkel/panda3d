@@ -72,6 +72,7 @@ MiniAudioSound(
       audio_warning("Copied stereo sound \"" << file_name.get_basename()
                     << "\" will not be spatialized");
   }
+  _comment = std::move(_movie->open()->get_raw_comment());
 
   length();
 }
@@ -144,6 +145,7 @@ MiniAudioSound(const MiniAudioSound &copy_sound) :
                     << copy_sound._filename.get_basename()
                     << "\" will not be spatialized");
   }
+  _comment = std::move(copy_sound.get_raw_comment());
 }
 
 AudioSound *MiniAudioSound::make_copy() const {

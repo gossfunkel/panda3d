@@ -22,4 +22,10 @@ TEST_CASE("MiniAudioManager creates a valid MiniAudiosound", "[audio]") {
     + "/wav_test.wav");
   PT(AudioSound) test_sound = test_man->get_sound(sound_path, 0, 0);
   REQUIRE(test_sound->status() == AudioSound::READY);
+  test_sound->set_loop_count(0);
+  test_sound->set_loop(true);
+  test_sound->play();
+  REQUIRE(test_sound->status() == AudioSound::PLAYING);
+  test_sound->stop();
+  REQUIRE(test_sound->status() == AudioSound::READY);
 }
